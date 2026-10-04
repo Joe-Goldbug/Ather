@@ -4048,6 +4048,99 @@ textarea:focus {
   font-size: 1.05rem;
 }
 
+/* 补充输入区内的按钮是表单动作，不应继承主选项的巨型尺寸 */
+.supplement-input-area .report-actions {
+  justify-content: flex-start;
+  gap: 0.6rem;
+  margin-top: 0.85rem;
+}
+
+.supplement-input-area .report-actions button {
+  min-height: 0;
+  padding: 0.5rem 1rem;
+  font-size: 0.95rem;
+  font-weight: 500;
+}
+
+/* 单条 observation 的反馈是卡片内的次级操作，尺寸应小于整报告级三选项 */
+.theme-assessment-page .report-actions--per-observation {
+  justify-content: flex-start;
+  gap: 0.5rem;
+  margin-top: 0.85rem;
+}
+
+.theme-assessment-page .report-actions--per-observation button {
+  min-height: 0;
+  padding: 0.4rem 0.85rem;
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
+.theme-assessment-page .report-actions--per-observation button.is-selected::after {
+  margin-left: 0.35rem;
+  font-size: 0.85em;
+}
+
+/* ── 反馈选中态 ──────────────────────────────────────────────
+   反馈按钮是单选语义（三选一）。没有选中态时用户点完无法确认
+   系统是否收到、当前是哪一项，等同于"点了没反应"。
+   aria-pressed 供无障碍读取，is-selected 负责视觉。*/
+.theme-assessment-page .report-actions button.is-selected {
+  background: var(--foreground) !important;
+  color: var(--surface) !important;
+  border-color: var(--foreground) !important;
+}
+
+.theme-assessment-page .report-actions button.is-selected::after {
+  content: "✓";
+  margin-left: 0.45rem;
+  font-size: 0.95em;
+  line-height: 1;
+}
+
+.theme-assessment-page .report-actions button.is-selected:hover {
+  background: var(--foreground) !important;
+  color: var(--surface) !important;
+  opacity: 0.85;
+}
+
+/* 保存中的状态提示：让"已记录"这件事本身可见 */
+.feedback-restored {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.6rem;
+  max-width: 44rem;
+  margin: 1.25rem auto 0;
+  padding: 0.85rem 1.1rem;
+  background: var(--surface-muted);
+  border: 1px solid var(--border-light);
+  border-left: 3px solid var(--foreground);
+  border-radius: 4px;
+  font-size: 0.95rem;
+  line-height: 1.65;
+  color: var(--foreground);
+  text-align: left;
+}
+
+.feedback-restored strong {
+  font-weight: 600;
+}
+
+.feedback-restored-mark {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.35rem;
+  height: 1.35rem;
+  margin-top: 0.1rem;
+  border-radius: 9999px;
+  background: var(--foreground);
+  color: var(--surface);
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
 /* The profile keeps the same visual language while giving accumulated rounds room to read. */
 .theme-profile-page {
   max-width: 1120px;
@@ -4100,8 +4193,12 @@ textarea:focus {
 }
 
 /* ── 历史轮次区块（Ather-Solana：/theme-assessment 选择页）─────────────
-   样式沿用 .evidence-node 系列（与原项目 /profile 一致），
-   但不套 .theme-profile-page 前缀 —— 该页在迁移中未启用。*/
+   视觉语言对齐原项目 /profile 的 themeRounds 区块：卡片式 evidence-node，
+   挂在 .evidence-nodes 容器内以获得一致的纵向间距。 */
+.theme-round-history-list {
+  gap: 0.75rem;
+}
+
 .theme-round-history-header {
   display: flex;
   align-items: baseline;
@@ -4127,32 +4224,73 @@ textarea:focus {
 }
 
 .theme-round-history-toggle:hover {
-  background: var(--background-subtle, rgba(0, 0, 0, 0.04));
+  background: var(--surface-muted);
 }
 
-.theme-round-history-item {
-  margin-bottom: 0.75rem;
+/* 卡片化：与结果页 .result-dim-card 同一套表面语言 */
+.theme-assessment-page .theme-round-history-item {
+  display: block;
+  padding: 0.9rem 1rem;
+  background: var(--surface-muted);
+  border: 1px solid var(--border-light);
+  border-radius: 4px;
+  font-size: 1rem;
+  line-height: 1.65;
 }
 
-.theme-round-history-item .theme-round-headline {
+.theme-assessment-page .theme-round-history-item .evidence-node-meta {
+  display: flex;
+  gap: 0.8rem;
+  align-items: baseline;
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+  margin-bottom: 0.45rem;
+}
+
+.theme-assessment-page .theme-round-history-item .evidence-node-source {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--foreground);
+}
+
+.theme-assessment-page .theme-round-history-item .theme-round-headline {
   font-size: 1.02rem;
+  font-weight: 600;
   line-height: 1.65;
   margin: 0.35rem 0 0;
+  color: var(--foreground);
 }
 
-.theme-round-history-item .theme-round-boundary,
-.theme-round-history-item .theme-round-feedback {
+.theme-assessment-page .theme-round-history-item .theme-round-boundary,
+.theme-assessment-page .theme-round-history-item .theme-round-feedback {
   max-width: none;
   font-size: 0.9rem;
   line-height: 1.6;
   margin: 0.4rem 0 0;
 }
 
-.theme-round-history-item .evidence-node-link {
+/* 争议状态需要可见的语义色，否则用户看不出这条记录与普通轮次的区别 */
+.theme-assessment-page .theme-round-feedback {
+  color: var(--text-secondary);
+}
+
+.theme-assessment-page .theme-round-history-item .evidence-node-link {
   display: inline-block;
-  margin-top: 0.5rem;
+  margin-top: 0.65rem;
   margin-right: 1rem;
   font-size: 0.9rem;
+  min-height: 0;
+  padding: 0.2rem 0;
+  border: 0;
+  background: transparent;
+  color: var(--foreground);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.theme-assessment-page .theme-round-history-item .evidence-node-link:hover {
+  background: transparent;
+  opacity: 0.75;
 }
 
 @media (max-width: 768px) {

@@ -265,6 +265,14 @@ export default function ThemeAssessmentPage() {
 
   if (result) {
     const portrait = result.result;
+    // 整报告级反馈的当前选择：用于按钮选中态。latest_feedback 只在整报告级反馈
+    // （observation_question_id 为空）时代表用户对整份结果的选择。
+    const wholeChoice: 'confirm' | 'partial' | 'refute' | null =
+      result.latest_feedback && !result.latest_feedback.observation_question_id
+        ? result.latest_feedback.action === 'clarify'
+          ? null
+          : result.latest_feedback.action
+        : null;
     return (
       <main className="report-container theme-assessment-page">
         <header className="report-header">
@@ -299,16 +307,23 @@ export default function ThemeAssessmentPage() {
                     {observationFeedback.state === 'needs_follow_up' && ' 这条先作为有争议的记录保留。'}
                   </p>
                 )}
-                <div className="report-actions report-actions--per-observation">
-                  <button type="button" disabled={submitting} onClick={() => respond('confirm', observation.evidence_question_id)}>
-                    这条符合
-                  </button>
-                  <button type="button" disabled={submitting} onClick={() => respond('partial', observation.evidence_question_id)}>
-                    部分符合
-                  </button>
-                  <button type="button" disabled={submitting} onClick={() => respond('refute', observation.evidence_question_id)}>
-                    不太符合
-                  </button>
+                <div className="report-actions report-actions--per-observation" role="group" aria-label={`对「${observation.focus}」这条观察的反馈`}>
+                  {([
+                    { action: 'confirm', label: '这条符合' },
+                    { action: 'partial', label: '部分符合' },
+                    { action: 'refute', label: '不太符合' },
+                  ] as const).map(({ action, label }) => (
+                    <button
+                      key={action}
+                      type="button"
+                      className={observationFeedback?.action === action ? 'is-selected' : undefined}
+                      aria-pressed={observationFeedback?.action === action}
+                      disabled={submitting}
+                      onClick={() => respond(action, observation.evidence_question_id)}
+                    >
+                      {label}
+                    </button>
+                  ))}
                 </div>
               </article>
             );
@@ -332,20 +347,28 @@ export default function ThemeAssessmentPage() {
         </div>
         <section className="report-section">
           <h2>这和你真实吗？</h2>
-          <div className="report-actions">
-            <button type="button" disabled={submitting} onClick={() => respond('confirm')}>
-              大致符合
-            </button>
-            <button type="button" disabled={submitting} onClick={() => respond('partial')}>
-              部分符合
-            </button>
-            <button type="button" disabled={submitting} onClick={() => respond('refute')}>
-              不太符合
-            </button>
+          <div className="report-actions" role="group" aria-label="对整份结果的反馈">
+            {([
+              { action: 'confirm', label: '大致符合' },
+              { action: 'partial', label: '部分符合' },
+              { action: 'refute', label: '不太符合' },
+            ] as const).map(({ action, label }) => (
+              <button
+                key={action}
+                type="button"
+                className={wholeChoice === action ? 'is-selected' : undefined}
+                aria-pressed={wholeChoice === action}
+                disabled={submitting}
+                onClick={() => respond(action)}
+              >
+                {submitting && wholeChoice === action ? '正在保存…' : label}
+              </button>
+            ))}
             <button
               type="button"
-              disabled={submitting}
+              className={showSupplement ? 'is-selected' : undefined}
               aria-expanded={showSupplement}
+              disabled={submitting}
               onClick={() => {
                 setShowSupplement(true);
                 setFeedbackStatus('');
@@ -393,12 +416,20 @@ export default function ThemeAssessmentPage() {
           )}
           {(feedbackStatus || result.latest_feedback) && (
             <p role="status" className="feedback-restored">
-              {feedbackStatus || (
-                <>
-                  {result.latest_feedback && feedbackSummary(result.latest_feedback.action, Boolean(result.latest_feedback.observation_question_id))}
-                  {result.latest_feedback?.explanation && ` ${result.latest_feedback.explanation}`}
-                </>
-              )}
+              <span className="feedback-restored-mark" aria-hidden="true">✓</span>
+              <span>
+                {feedbackStatus ? (
+                  <>
+                    <strong>已记录你的选择。</strong> {feedbackStatus}
+                  </>
+                ) : (
+                  <>
+                    <strong>已记录你的选择。</strong>{' '}
+                    {result.latest_feedback && feedbackSummary(result.latest_feedback.action, Boolean(result.latest_feedback.observation_question_id))}
+                    {result.latest_feedback?.explanation && ` ${result.latest_feedback.explanation}`}
+                  </>
+                )}
+              </span>
             </p>
           )}
           {error && (
@@ -540,7 +571,8 @@ export default function ThemeAssessmentPage() {
             </button>
           </div>
 
-          {(showHistory ? rounds : rounds.slice(0, 3)).map((round) => {
+          <div className="evidence-nodes theme-round-history-list">
+            {(showHistory ? rounds : rounds.slice(0, 3)).map((round) => {
             const inProgress =
               round.status === 'in_progress' || round.status === 'ready_to_complete';
             return (
@@ -614,6 +646,7 @@ export default function ThemeAssessmentPage() {
               </article>
             );
           })}
+          </div>
 
           {showHistory && rounds.length > 3 && (
             <p className="report-detail">仅显示最近 30 轮。</p>
