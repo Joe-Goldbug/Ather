@@ -20,6 +20,11 @@ packages/**/*.d.ts.map
 .tmp/
 *.pid
 
+# agent / editor workspace data
+.workbuddy/
+.vscode/
+.idea/
+
 # test artifacts
 e2e-output/
 playwright-report/
