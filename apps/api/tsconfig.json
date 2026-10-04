@@ -1,0 +1,36 @@
+{
+  "compilerOptions": {
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "target": "ES2022",
+    "lib": ["ES2022"],
+    "outDir": "./dist",
+    "rootDir": "./src",
+    "baseUrl": ".",
+    "paths": {
+      "@ather/core": ["../../packages/core/dist/src/index.d.ts"],
+      "@ather/core/assessment": ["../../packages/core/dist/src/assessment/index.d.ts"],
+      "@ather/core/shared": ["../../packages/core/dist/src/shared/index.d.ts"],
+      "@ather/core/shared/locales": ["../../packages/core/dist/src/shared/locales.d.ts"]
+    },
+    "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true,
+    "strict": false,
+    "noImplicitAny": false,
+    "skipLibCheck": true,
+    "esModuleInterop": true,
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true,
+    "jsx": "react-jsx"
+  },
+  "include": ["src/**/*"],
+  "exclude": [
+    "node_modules",
+    "dist",
+    "test",
+    "src/**/*.spec.ts",
+    "src/**/*.test.ts",
+    "src/modules/dev/**/*"
+  ]
+}

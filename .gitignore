@@ -1,0 +1,41 @@
+# dependencies
+node_modules/
+node_modules_real/
+
+# build output
+dist/
+.next/
+.next-dev/
+out/
+build/
+*.tsbuildinfo
+
+# TypeScript in-place compile artifacts (tsc emits next to sources)
+packages/**/*.js
+packages/**/*.js.map
+packages/**/*.d.ts
+packages/**/*.d.ts.map
+
+# local scratch / temp
+.tmp/
+*.pid
+
+# test artifacts
+e2e-output/
+playwright-report/
+test-results/
+
+# logs
+*.log
+npm-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# env & secrets
+.env
+.env.local
+.env.*.local
+
+# OS
+.DS_Store
+Thumbs.db
