@@ -56,8 +56,8 @@ export async function generateMetadata(): Promise<Metadata> {
   }
 
   return {
-    title: 'Ather',
-    description: lookup(bundle, 'landing.tagline') ?? 'Ather',
+    title: 'Eva',
+    description: lookup(bundle, 'landing.tagline') ?? 'Eva',
   };
 }
 

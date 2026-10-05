@@ -1,10 +1,19 @@
-# Ather — Anonymous Assessment
+# Eva (Eva-web3)
 
-The persona-exploration assessment loop, extracted from
-[`Joe-Goldbug/ather-cyberpunk-self-discovery`](https://github.com/Joe-Goldbug/ather-cyberpunk-self-discovery)
-and rebuilt without accounts.
+> **项目仓库**：[https://github.com/EthanLau1/Eva-web3](https://github.com/EthanLau1/Eva-web3)  
+> **核心定位**：IA（Intelligence Augmentation，增强人类智能）与 Web3 自主认知凭证平台。
 
-Extracted from branch `feature/Ather-Ethan` at commit `2eb1afa` (2026-09-28).
+## 架构与设计规范 (Docs)
+
+本项目关于 IA 目标、Web2/Web3 边界、公链选型与 V1 MVP 规划的设计文档已归档于 `docs/`：
+
+- [00-eva-ia-web3-discussion.md](docs/00-eva-ia-web3-discussion.md)：Eva IA 与 Web3 首个 Demo 讨论总纲
+- [01-chain-selection.md](docs/01-chain-selection.md)：基础设施选型评估（首选 Base 链）
+- [02-architecture-and-boundary.md](docs/02-architecture-and-boundary.md)：Web2 / Web3 边界架构与系统设计
+- [03-v1-mvp-spec.md](docs/03-v1-mvp-spec.md)：V1 MVP 功能规格说明书（RWA 算力基金 + 认知凭证 SBT）
+- [04-industry-insights-and-pitfalls.md](docs/04-industry-insights-and-pitfalls.md)：行业案例借鉴与避坑指南
+
+---
 
 ## What this repository is
 
@@ -34,7 +43,7 @@ computation, which is why it needs no auth layer and no RLS.
 ## Layout system
 
 The visual identity comes from three pieces that must stay in sync with the
-original. All three are copied verbatim from `origin/feature/Ather-Ethan`:
+original. All three are aligned with the upstream baseline design system:
 
 | File | What it provides |
 |---|---|
@@ -103,7 +112,7 @@ by `sha256(guest_run_id:node_id:option_id)`, so the order is:
 
 ## Relationship to the original
 
-Code was copied from `feature/Ather-Ethan` and trimmed. What was removed:
+Code was extracted from the earlier prototype branch and trimmed. What was removed:
 
 | Removed | Why |
 |---|---|

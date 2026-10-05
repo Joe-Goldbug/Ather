@@ -1,7 +1,7 @@
-// Ather-Solana API — 闭环主链路服务
+// Eva-web3 API — 闭环主链路服务
 //
 // 相比最初的 anonymous 模式，本次装配引入：
-//   - cookie-parser：AuthGuard 需读 ather_session cookie
+//   - cookie-parser：AuthGuard 需读 session cookie
 //   - listen-host：部署到 Railway/Fly 时必须监听 0.0.0.0
 //   - AUTH 生产环境必需项校验：DATABASE_URL / REDIS_URL / RESEND_API_KEY
 import 'dotenv/config';
@@ -53,24 +53,24 @@ async function bootstrap() {
   }
 
   const port = Number(process.env.PORT ?? 3001);
-  const host = resolveListenHost(process.env.ATHER_LISTEN_HOST);
+  const host = resolveListenHost(process.env.EVA_LISTEN_HOST ?? process.env.ATHER_LISTEN_HOST);
   await app.listen(port, host);
   console.log(
-    `[Ather-Solana API] Running on http://${host}:${port} | ` +
+    `[Eva-web3 API] Running on http://${host}:${port} | ` +
       `NODE_ENV=${process.env.NODE_ENV ?? 'development'} | ` +
       `MOCK_REDIS=${process.env.MOCK_REDIS === '1' ? 1 : 0}`,
   );
 }
 
 bootstrap().catch((err) => {
-  console.error('[Ather-Solana API] bootstrap failed:', err);
+  console.error('[Eva-web3 API] bootstrap failed:', err);
   process.exit(1);
 });
 
 process.on('unhandledRejection', (reason) => {
-  console.error('[Ather-Solana API] unhandledRejection (kept alive):', reason);
+  console.error('[Eva-web3 API] unhandledRejection (kept alive):', reason);
 });
 
 process.on('uncaughtException', (err) => {
-  console.error('[Ather-Solana API] uncaughtException (kept alive):', err);
+  console.error('[Eva-web3 API] uncaughtException (kept alive):', err);
 });

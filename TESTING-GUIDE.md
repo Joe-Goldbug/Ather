@@ -1,4 +1,4 @@
-# Ather-Solana 开发者测试指引
+# Eva-web3 开发者测试指引
 
 > 启动时间：2026-10-04 17:26
 > 状态：**可测试**（闭环 10/10 PASS，三页面 200，RLS 隔离生效）
@@ -53,9 +53,9 @@ fetch('/api/auth/dev-login', {method:'POST'}).then(r=>r.json()).then(console.log
 
 ### 方式 D：邮箱 OTP —— **当前不可用**
 
-`POST /auth/send-code` 返回 403：`The ather.live domain is not verified`。
+`POST /auth/send-code` 返回 403：`The eva.live domain is not verified`。
 
-原因：Resend 后台未验证 `ather.live` 域名。**属账号侧配置，代码无关**。
+原因：Resend 后台未验证 `eva.live` 域名。**属账号侧配置，代码无关**。
 需要的话去 https://resend.com/domains 验证域名。
 
 ### 登录流程自测
@@ -71,7 +71,7 @@ node scripts/verify-login-flow.mjs
 
 ## 三、可以测什么（正式主链路）
 
-依据 `docs/CURRENT-PRODUCT-TRUTH-2026-06-29.md`，Ather 的正式主链路是：
+依据 `docs/CURRENT-PRODUCT-TRUTH-2026-06-29.md`，Eva 的正式主链路是：
 
 ```
 6–8题主题轮 → 当前轮结果 → 确认/反驳/补充 → Profile 轮次历史 → 继续下一轮
@@ -93,7 +93,7 @@ node scripts/verify-login-flow.mjs
 ### 一键回归
 
 ```bash
-cd D:\start-up\Ather-Solana
+cd D:\start-up\Eva-web3
 node scripts/e2e-closed-loop.mjs
 ```
 
@@ -107,7 +107,7 @@ node scripts/e2e-closed-loop.mjs
 
 ### 认证
 ```
-POST /auth/dev-login          免密登录（dev@ather.local）
+POST /auth/dev-login          免密登录（dev@eva.local）
 GET  /auth/me                 当前用户 + 能力位
 POST /auth/send-code          发验证码（当前 403）
 POST /auth/verify-code        校验验证码
@@ -169,7 +169,7 @@ POST /v1/assessment-rounds/{roundId}/result/responses
 
 症状：提交作答时返回 `question_not_available`。
 
-原因：这是源仓库继承的竞态（Ather-ethan 同样存在）。
+原因：这是源仓库继承的竞态（原型系统 同样存在）。
 
 **绕过方式**：`POST .../complete` 返回的 409 响应里，`next` 字段携带的 `item_id` 是权威可用的：
 
@@ -193,7 +193,7 @@ POST /v1/assessment-rounds/{roundId}/result/responses
 
 ### 6.1 你问的三个功能：**都没有迁移**
 
-| 功能 | Ather-ethan 有？ | Ather-Solana | 原因 |
+| 功能 | 原型系统 有？ | Eva-web3 | 原因 |
 |---|---|---|---|
 | **chat 对话** | ✅ 527 行 | ❌ **未迁移** | 官方标为「非正式/兼容路径」 |
 | **历史记录** | ✅ `/profile`(289行) | ⚠️ **部分** | 见下|
@@ -201,9 +201,9 @@ POST /v1/assessment-rounds/{roundId}/result/responses
 
 ### 6.2 「历史记录」的准确情况
 
-Ather-ethan 有两种"历史"，要分开看：
+原型系统 有两种"历史"，要分开看：
 
-| 历史 | Ather-ethan | Ather-Solana |
+| 历史 | 原型系统 | Eva-web3 |
 |---|---|---|
 | **测评轮次历史** | `/profile` 页展示 | ✅ **已迁**—— `GET /v1/assessment-rounds`，在 `/theme-assessment` 页可见 |
 | **人格画像历史** | `/profile` + portrait/evidence | ❌ 未迁（依赖 portrait，属 P2/P3） |
@@ -224,7 +224,7 @@ Ather-ethan 有两种"历史"，要分开看：
 
 ### 6.4 迁移 corrections 需要注意
 
-`corrections.service.ts`(132 行) 的**写路径在 Ather-ethan 已被官方退役**
+`corrections.service.ts`(132 行) 的**写路径在 原型系统 已被官方退役**
 （`corrections.controller.ts:23` → `legacy_corrections_retired`）。
 
 所以如果你要的是「用户能纠正 AI 的判断」这个能力，**不能直接搬 corrections 模块**，
@@ -239,9 +239,9 @@ Ather-ethan 有两种"历史"，要分开看：
 
 ## 七、数据与隔离
 
-- **数据库**：Neon（复用 Ather-ethan 实例），数据落在独立 schema `ather_solana`
+- **数据库**：Neon（复用 原型系统 实例），数据落在独立 schema `eva_web3`
 - **表数量**：14 张，其中 6 张启用 RLS
-- **不污染源项目**：Ather-ethan 的 `public` schema 完全未动
+- **不污染源项目**：原型系统 的 `public` schema 完全未动
 
 ### RLS 验证
 
@@ -254,7 +254,7 @@ node scripts/verify-rls.mjs
 FORCE RLS: 6/6 表已启用
 匿名经策略可见: 0 行
 匿名无条件可见: 74 行
-以 dev@ather.local 身份可见自己的轮次: 9 行
+以 dev@eva.local 身份可见自己的轮次: 9 行
 RLS_OK
 ```
 
@@ -305,11 +305,11 @@ Stop-Process -Id <api-pid>,<web-pid> -Force
 ## 九、重启流程
 
 ```bash
-cd D:\start-up\Ather-Solana
+cd D:\start-up\Eva-web3
 
 # 1. Redis（若未运行）
 ./.workbuddy/tmp/redis/redis-server.exe --port 6379 --save "" --appendonly no
-#    注：Ather-ethan 的二进制可复用；Ather-Solana 内没有自带
+#    注：原型系统 的二进制可复用；Eva-web3 内没有自带
 
 # 2. 构建
 cd packages/core && bun run build && cd ../..

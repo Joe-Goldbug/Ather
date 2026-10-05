@@ -1,4 +1,4 @@
-# 测试指引 · Ather-Solana
+# 测试指引 · Eva-web3
 
 服务已启动，可直接测试。
 
@@ -35,7 +35,7 @@ Web 监听 `0.0.0.0:3500`，同一局域网的其他设备也能访问（把 `lo
 
 ## 端口说明
 
-本机 3000 端口被原项目 `ather-cyberpunk-self-discovery` 占用，所以新项目用了：
+本机 3000 端口如被其他项目占用，可自定义端口配置：
 
 - **3001** — API
 - **3300** — Web
@@ -44,7 +44,7 @@ Web 监听 `0.0.0.0:3500`，同一局域网的其他设备也能访问（把 `lo
 
 ```bash
 # API
-cd D:\start-up\Ather-Solana
+cd Eva-web3
 PORT=3002 node apps/api/dist/main.js
 
 # Web
@@ -59,7 +59,7 @@ NEXT_PUBLIC_API_URL=http://127.0.0.1:3002 npx next start -p 3400
 服务保持运行的情况下：
 
 ```bash
-cd D:\start-up\Ather-Solana
+cd Eva-web3
 CHROME_PATH="C:/Program Files/Google/Chrome/Application/chrome.exe" npm run test:e2e
 ```
 

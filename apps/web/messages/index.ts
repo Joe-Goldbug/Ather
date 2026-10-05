@@ -8,7 +8,7 @@ import { ja } from './ja';
 import { es } from './es';
 
 // Infer the type from zh-CN as the canonical shape; minor field differences across
-// locales are handled via loose Record<locale, object> rather than strict typing.
+// locales are handled via loose Record<locale, object> reva than strict typing.
 export const messages = {
   'zh-CN': zhCN,
   en,

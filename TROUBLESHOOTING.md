@@ -15,13 +15,13 @@ Call Stack
 
 `nkbihfbeogaeaoehlefnkodbefgpgknn` 是 **MetaMask 官方扩展 ID**。
 `chrome-extension://` 开头的堆栈说明错误来自扩展的注入脚本，
-**与 Ather-Solana 源码无关**。
+**与 Eva-web3 源码无关**。
 
 ### 已核实
 
 | 检查项 | 结果 |
 |---|---|
-| Ather-Solana 代码里有 `window.ethereum` / wagmi / ethers / web3 | ❌ 完全没有 |
+| Eva-web3 代码里有 `window.ethereum` / wagmi / ethers / web3 | ❌ 完全没有 |
 | `play` / `whitepaper` 页提到 wallet | 仅文案与注释（「不把 Web3 叙事提前到核心链路」） |
 | `/theme-assessment` 返回 | ✅ 200，HTML 里无 MetaMask/ethereum 字样 |
 | 页面外链脚本 | 6 个，**全部本地**，无第三方注入 |
@@ -59,7 +59,7 @@ chrome://newtab → Ctrl+Shift+N → 访问 http://localhost:3000/theme-assessme
 
 ### ⚠️ 这不是需要「修复」的缺陷
 
-Ather-Solana 当前**没有接入任何钱包功能**（钱包绑定属P4 阶段）。
+Eva-web3 当前**没有接入任何钱包功能**（钱包绑定属P4 阶段）。
 即使把 MetaMask 完全卸载，核心链路（登录 → 五主题 → 6 题 → 反馈 → 历史）也不受影响。
 
 ---
@@ -109,7 +109,7 @@ Get-NetTCPConnection -LocalPort 3002 -State Listen |
 然后：
 
 ```bash
-cd D:\start-up\Ather-Solana\apps\api
+cd apps/api
 PORT=3002 node dist/main.js
 ```
 
@@ -131,4 +131,4 @@ PORT=3002 node dist/main.js
 
 `scripts/e2e-closed-loop.mjs` 里已实现这个兜底。
 
-这是从 Ather-ethan 继承的竞态，计划在 P1 修复。
+这是继承自原型的竞态，计划在后续迭代中修复。
