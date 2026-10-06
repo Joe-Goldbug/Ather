@@ -1,16 +1,14 @@
 'use client';
 
-// Ather-Solana 顶栏
+// Eva-Solana 顶栏
 //
-// 相对 Ather-ethan 的改动（迁移时补齐，原项目 TopBar 只有 logo + White Paper + 语言切换，
+// 相对原项目的改动（迁移时补齐，原项目 TopBar 只有 logo + White Paper + 语言切换，
 // **没有登录入口**，导致用户找不到登录）：
 //   1. 右上角按会话状态渲染「登录 / 注册」或「退出登录」
 //   2. 当前所在页面的导航项高亮
-//   3. 保留 Ather logo 指向首页（原项目同行为）
+//   3. 保留 Eva logo 指向首页
 //
-// 点击 Ather 不做登录——它只是回首页。登录入口在右上角。
-// 用户提到的「点左上角 Ather 就能登录」在 Ather-ethan 里也不成立：
-// `TopBar.tsx:12` 的 logo 只 `href="/"`。
+// 点击 Eva 不做登录——它只是回首页。登录入口在右上角。
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';

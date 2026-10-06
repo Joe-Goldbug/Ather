@@ -73,20 +73,22 @@ export class AuthController {
       throw new UnauthorizedException('dev-login is disabled in production');
     }
 
-    const devEmail = 'dev@ather.local';
+    const devEmail = 'dev@eva.local';
     // May throw ServiceUnavailableException (→ 503). Bubbles to Nest's default
     // exception filter which returns `{ statusCode: 503, message, error: 'Service Unavailable' }`.
     const result = await this.auth.loginOrRegisterWithDevFallback(devEmail);
 
     const forwardedProto = (req.headers['x-forwarded-proto'] ?? '').toString();
     const isHttps = req.secure || forwardedProto === 'https';
-    res.cookie('ather_session', result.token, {
+    const cookieOpts = {
       httpOnly: true,
       secure: isHttps,
-      sameSite: isHttps ? 'none' : 'lax',
+      sameSite: isHttps ? 'none' as const : 'lax' as const,
       path: '/',
       maxAge: 30 * 24 * 60 * 60 * 1000,
-    });
+    };
+    res.cookie('eva_session', result.token, cookieOpts);
+    res.cookie('ather_session', result.token, cookieOpts);
 
     return {
       user_id: result.user_id,
@@ -115,13 +117,15 @@ export class AuthController {
       // Set cookie same as verify-code does
       const forwardedProto = (req.headers['x-forwarded-proto'] ?? '').toString();
       const isHttps = req.secure || forwardedProto === 'https';
-      res.cookie('ather_session', result.token, {
+      const cookieOpts = {
         httpOnly: true,
         secure: isHttps,
-        sameSite: isHttps ? 'none' : 'lax',
+        sameSite: isHttps ? 'none' as const : 'lax' as const,
         path: '/',
         maxAge: 30 * 24 * 60 * 60 * 1000,
-      });
+      };
+      res.cookie('eva_session', result.token, cookieOpts);
+      res.cookie('ather_session', result.token, cookieOpts);
 
       return { message: 'OTP sent successfully', dev_auto_login: true, user_id: result.user_id };
     }
@@ -150,13 +154,15 @@ export class AuthController {
     // Set cookie
     const forwardedProto = (req.headers['x-forwarded-proto'] ?? '').toString();
     const isHttps = req.secure || forwardedProto === 'https';
-    res.cookie('ather_session', result.token, {
+    const cookieOpts = {
       httpOnly: true,
       secure: isHttps,
-      sameSite: isHttps ? 'none' : 'lax',
+      sameSite: isHttps ? 'none' as const : 'lax' as const,
       path: '/',
       maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
-    });
+    };
+    res.cookie('eva_session', result.token, cookieOpts);
+    res.cookie('ather_session', result.token, cookieOpts);
 
     return {
       user_id: result.user_id,
@@ -169,7 +175,8 @@ export class AuthController {
   @HttpCode(HttpStatus.OK)
   async logout(@Req() req: Request, @Res({ passthrough: true }) res: Response) {
     // Revoke token in DB so Bearer-based clients are also invalidated
-    const token = req.cookies?.['ather_session']
+    const token = req.cookies?.['eva_session']
+      ?? req.cookies?.['ather_session']
       ?? (req.headers['authorization']?.toString().replace('Bearer ', '') ?? null);
     if (token) {
       await this.auth.revokeToken(token).catch(() => { /* best-effort */ });
@@ -177,12 +184,14 @@ export class AuthController {
 
     const forwardedProto = (req.headers['x-forwarded-proto'] ?? '').toString();
     const isHttps = req.secure || forwardedProto === 'https';
-    res.clearCookie('ather_session', {
+    const clearOpts = {
       httpOnly: true,
       secure: isHttps,
-      sameSite: isHttps ? 'none' : 'lax',
+      sameSite: isHttps ? 'none' as const : 'lax' as const,
       path: '/',
-    });
+    };
+    res.clearCookie('eva_session', clearOpts);
+    res.clearCookie('ather_session', clearOpts);
     return { message: 'Logged out successfully' };
   }
 }

@@ -1,12 +1,12 @@
 // apps/web/lib/i18n.ts
-// Task 1: i18n runtime for Ather web
+// Task 1: i18n runtime for Eva web
 // Supports: zh-CN, ja, es, en
 // Locale is persisted in localStorage and reflected in <html lang>
 
 import { messages } from '../messages/index';
-import { SUPPORTED_LOCALES, LOCALE_LABELS, type Locale } from '@ather/core/shared';
+import { SUPPORTED_LOCALES, LOCALE_LABELS, type Locale } from '@eva/core/shared';
 
-// NOTE: Locale and SUPPORTED_LOCALES are imported from @ather/core/shared/locales
+// NOTE: Locale and SUPPORTED_LOCALES are imported from @eva/core/shared/locales
 export type { Locale };
 export { SUPPORTED_LOCALES };
 
@@ -17,8 +17,10 @@ const LOCALE_NAMES: Record<Locale, string> = {
   es: 'Spanish',
 };
 
-const LOCALE_STORAGE_KEY = 'ather_locale';
-export const LOCALE_COOKIE_NAME = 'ather_locale';
+const LOCALE_STORAGE_KEY = 'eva_locale';
+const LEGACY_LOCALE_STORAGE_KEY = 'ather_locale';
+export const LOCALE_COOKIE_NAME = 'eva_locale';
+export const LEGACY_LOCALE_COOKIE_NAME = 'ather_locale';
 const LOCALE_BROWSER_MAP: Record<string, Locale> = {
   zh: 'zh-CN', 'zh-CN': 'zh-CN', 'zh-TW': 'zh-CN',
   en: 'en',
@@ -37,7 +39,7 @@ function detectBrowserLocale(): Locale {
 /** Get persisted locale from localStorage */
 export function getStoredLocale(): Locale | null {
   if (typeof localStorage === 'undefined') return null;
-  const stored = localStorage.getItem(LOCALE_STORAGE_KEY);
+  const stored = localStorage.getItem(LOCALE_STORAGE_KEY) ?? localStorage.getItem(LEGACY_LOCALE_STORAGE_KEY);
   if (stored && SUPPORTED_LOCALES.includes(stored as Locale)) return stored as Locale;
   return null;
 }

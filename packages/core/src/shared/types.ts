@@ -1,5 +1,5 @@
 // ================================================================
-// Ather Engine - Type Definitions
+// Eva Engine - Type Definitions
 // All interfaces for script, memory, chat, and LLM integration
 // ================================================================
 
@@ -33,7 +33,7 @@ export interface VectorDimension<T = number> {
 }
 
 /**
- * One instance of user refuting (or confirming) Ather's personality claim.
+ * One instance of user refuting (or confirming) Eva's personality claim.
  */
 export interface RefutationEntry {
   id: string;
@@ -184,9 +184,9 @@ export interface ScriptResult {
   evidence_log: ScriptEvidence[];
   // Evidence-based narrative (no labels, just observations citing their choices)
   narrative: string;
-  // One Ather-style insight (punchy, slightly challenging)
+  // One Eva-style insight (punchy, slightly challenging)
   key_insight: string;
-  // Ather's first message entering chat (bridges script → chat)
+  // Eva's first message entering chat (bridges script → chat)
   ather_opening: string;
   share_card: ScriptResultShareCard;
   /** Slug-based archetype id (e.g. "boundary_guard") for frontend bucketing. */
@@ -370,7 +370,7 @@ export interface WeeklySummary {
   pattern_discoveries: string[];
   key_events: EventEntity[];
   vector_drift: Partial<PersonalityVector>;
-  ather_message: string;          // Ather's weekly review message
+  ather_message: string;          // Eva's weekly review message
   generated_at: number;
 }
 
@@ -486,7 +486,7 @@ export interface ChatResponse {
   diary_update?: DiaryEntry;
   /** Fired when RCI > 1.96 on any dimension — signals a statistically significant shift */
   you_shifted?: YouShifted;
-  /** Auto-generated when user explicitly refutes Ather's claim in chat. */
+  /** Auto-generated when user explicitly refutes Eva's claim in chat. */
   correction_signal?: ChatCorrectionSignal;
   /** Dialogue state after this turn — null if state unchanged */
   updated_state?: DialogueState;
@@ -499,7 +499,7 @@ export interface ChatResponse {
 // ---------------------------------------------------------------
 
 export type DialoguePhase =
-  | 'probing'      // Active measurement — Ather is probing for evidence
+  | 'probing'      // Active measurement — Eva is probing for evidence
   | 'insufficient' // Not enough evidence yet — keep going
   | 'enough'       // Sufficient evidence — start soft-guiding toward close
   | 'closing'      // Soft-closing: guiding conversation toward natural end (turns 4-6)
@@ -521,7 +521,7 @@ export interface DialogueState {
   max_turns: number;
   /** Whether micro-test was triggered this turn */
   micro_test_pending: boolean;
-  /** Ather's last probe hint (for context continuity) */
+  /** Eva's last probe hint (for context continuity) */
   last_probe_hint: string;
 }
 

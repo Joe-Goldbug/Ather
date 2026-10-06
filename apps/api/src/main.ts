@@ -24,7 +24,7 @@ async function bootstrap() {
 
   const app = await NestFactory.create(AppModule);
 
-  // AuthGuard 依赖 req.cookies['ather_session']，必须先于路由挂载
+  // AuthGuard 依赖 req.cookies['eva_session'] / ['ather_session']，必须先于路由挂载
   app.use(cookieParser());
 
   app.useGlobalPipes(

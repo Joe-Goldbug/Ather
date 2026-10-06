@@ -66,7 +66,7 @@ export default function ThemeAssessmentPage() {
   const [feedbackStatus, setFeedbackStatus] = useState('');
   const [showSupplement, setShowSupplement] = useState(false);
   const [supplementText, setSupplementText] = useState('');
-  // 历史轮次：与 coverage 并行拉取，供选择页展示（对齐 Ather-ethan /profile 的历史区块）
+  // 历史轮次：与 coverage 并行拉取，供选择页展示（对齐 /profile 的历史区块）
   const [rounds, setRounds] = useState<ThemeRoundHistoryItem[]>([]);
   const [showHistory, setShowHistory] = useState(false);
 
@@ -554,7 +554,7 @@ export default function ThemeAssessmentPage() {
       </section>
 
       {/* ── 历史轮次 ──────────────────────────────────────────────
-          数据源 GET /v1/assessment-rounds（与 Ather-ethan /profile 的
+          数据源 GET /v1/assessment-rounds（与 /profile 的
           themeRounds 区块同源同字段）。三个状态分支对齐原项目设计：
           needs_follow_up / whole_result_refuted / recorded。*/}
       {rounds.length > 0 && (

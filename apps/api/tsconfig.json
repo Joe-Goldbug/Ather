@@ -8,6 +8,10 @@
     "rootDir": "./src",
     "baseUrl": ".",
     "paths": {
+      "@eva/core": ["../../packages/core/dist/src/index.d.ts"],
+      "@eva/core/assessment": ["../../packages/core/dist/src/assessment/index.d.ts"],
+      "@eva/core/shared": ["../../packages/core/dist/src/shared/index.d.ts"],
+      "@eva/core/shared/locales": ["../../packages/core/dist/src/shared/locales.d.ts"],
       "@ather/core": ["../../packages/core/dist/src/index.d.ts"],
       "@ather/core/assessment": ["../../packages/core/dist/src/assessment/index.d.ts"],
       "@ather/core/shared": ["../../packages/core/dist/src/shared/index.d.ts"],

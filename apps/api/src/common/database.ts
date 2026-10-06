@@ -10,10 +10,10 @@ import { createQueryPool, type QueryPool } from './pool.js';
 // Per-request token storage — set by SessionInterceptor after AuthGuard validates
 const tokenStorage = new AsyncLocalStorage<string>();
 
-const CLIENT_ERROR_GUARD = Symbol.for('ather.clientErrorGuard');
+const CLIENT_ERROR_GUARD = Symbol.for('eva.clientErrorGuard');
 
 /**
- * [Ather-Solana 2026-10-04] 连接故障重试。
+ * [Eva-Solana 2026-10-04] 连接故障重试。
  *
  * 背景：Neon 池化连接被耗尽或网络抖动后，池不会自愈——
  * 后续请求持续抛 `ErrorEvent { type: 'error' }`，表现为

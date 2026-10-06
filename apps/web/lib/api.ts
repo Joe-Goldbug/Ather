@@ -1,5 +1,5 @@
 // apps/web/lib/api.ts
-// Ather-Solana Web API 客户端 —— 闭环主链路最小集合
+// Eva Web API 客户端 —— 闭环主链路最小集合
 //
 // 依据 docs/CURRENT-PRODUCT-TRUTH-2026-06-29.md 的正式主链路：
 //   建轮 → 逐题作答 → 完成 → 读结果 → 提交反馈 → 轮次历史
@@ -13,7 +13,7 @@
 // SSR 走 NEXT_PUBLIC_API_URL，生产缺失时直接抛错，不静默回落 localhost。
 
 // apps/web/lib/api.ts
-// Ather Web API client — Phase 6/7
+// Eva Web API client
 // All calls go to the NestJS API (apps/api).
 
 // Browser → relative `/api` (Next.js rewrites proxy to backend port).
@@ -329,4 +329,4 @@ export const guestAssessmentApi = {
       body: JSON.stringify(body),
     }),
 };
-
+

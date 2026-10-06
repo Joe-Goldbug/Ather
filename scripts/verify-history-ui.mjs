@@ -12,7 +12,7 @@ const check = (l, ok, d = '') => {
 // 1. 登录取 cookie
 const login = await fetch(`${WEB}/api/auth/dev-login`, { method: 'POST' });
 const cookie = (login.headers.getSetCookie?.() ?? []).map((c) => c.split(';')[0]).join('; ');
-check('登录', login.status === 200 && cookie.includes('ather_session'), `status=${login.status}`);
+check('登录', login.status === 200 && (cookie.includes('eva_session') || cookie.includes('ather_session')), `status=${login.status}`);
 
 // 2. history API 返回结构是否满足 UI 所需
 const hist = await fetch(`${WEB}/api/v1/assessment-rounds`, { headers: { Cookie: cookie } });

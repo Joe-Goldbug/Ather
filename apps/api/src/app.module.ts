@@ -1,5 +1,5 @@
 // apps/api/src/app.module.ts
-// Ather-Solana 闭环装配（正式主链路：主题轮 → 结果 → 反馈 → 轮次历史）
+// Eva-Solana 闭环装配（正式主链路：主题轮 → 结果 → 反馈 → 轮次历史）
 //
 // 依据 docs/CURRENT-PRODUCT-TRUTH-2026-06-29.md：
 //   chat / report / portrait / evidence / captures 均为「非正式/兼容路径」，

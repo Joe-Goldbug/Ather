@@ -1,10 +1,10 @@
 // apps/api/src/modules/auth/auth.service.ts
 // Auth service — validates tokens and retrieves user context.
-// Uses @ather/core for domain logic. DB access via Database module.
+// Uses @eva/core for domain logic. DB access via Database module.
 
 import { Injectable, UnauthorizedException, HttpException, HttpStatus, Inject, ServiceUnavailableException } from '@nestjs/common';
-import type { Memory } from '@ather/core';
-import { CURRENT_MICRO_SCENARIO_SET, CURRENT_SCENARIO_SET, createMemory } from '@ather/core';
+import type { Memory } from '@eva/core';
+import { CURRENT_MICRO_SCENARIO_SET, CURRENT_SCENARIO_SET, createMemory } from '@eva/core';
 import { Database } from '../../common/database.js';
 import type { PoolClient } from '../../common/pool.js';
 import { RedisService } from '../../common/redis.service.js';
@@ -72,9 +72,9 @@ export class AuthService {
     const html = await render(VerificationEmail({ validationCode: otp }));
 
     const { error } = await this.resend.emails.send({
-      from: 'Ather <noreply@ather.live>',
+      from: 'Eva <noreply@eva.live>',
       to: email,
-      subject: 'Ather 登录验证码',
+      subject: 'Eva 登录验证码',
       html,
     });
 

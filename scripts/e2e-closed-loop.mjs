@@ -1,4 +1,4 @@
-// Ather-Solana 闭环端到端自测
+// Eva-Solana 闭环端到端自测
 // 覆盖：访客测评 → dev-login → 建轮 → 逐题作答 → complete → 读结果 → 提交反馈 → 轮次历史 → 主题覆盖
 //
 // 用法：node scripts/e2e-closed-loop.mjs [baseUrl]
@@ -12,10 +12,11 @@ const COOKIE_FILE = '.tmp/cookies.txt';
 let cookie = '';
 try {
   const raw = readFileSync(COOKIE_FILE, 'utf8');
-  const line = raw.split('\n').find((l) => l.includes('ather_session'));
+  const line = raw.split('\n').find((l) => l.includes('eva_session') || l.includes('ather_session'));
   if (line) {
     const parts = line.trim().split('\t');
-    cookie = `ather_session=${parts[parts.length - 1]}`;
+    const val = parts[parts.length - 1];
+    cookie = val.includes('=') ? val : (line.includes('eva_session') ? `eva_session=${val}` : `ather_session=${val}`);
   }
 } catch {
   /* 首次运行无 cookie */

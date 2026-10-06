@@ -439,7 +439,7 @@ input:focus, textarea:focus {
   padding: 0;
 }
 
-/* ── 顶栏导航（Ather-Solana 补齐：原项目 TopBar 无导航也无登录入口）───── */
+/* ── 顶栏导航（Eva-Solana 补齐：原项目 TopBar 无导航也无登录入口）───── */
 .top-bar__center {
   display: flex;
   align-items: center;
@@ -705,6 +705,7 @@ input:focus, textarea:focus {
   border-bottom-right-radius: 4px;
 }
 
+.message.eva,
 .message.ather {
   align-self: flex-start;
   background: transparent;
@@ -2073,7 +2074,7 @@ input:focus, textarea:focus {
   margin: 0 auto;
 }
 
-/* Confirm section (Ather 想继续确认的事) */
+/* Confirm section (Eva 想继续确认的事) */
 .confirm-section {
   max-width: 580px;
   margin: 0 auto;
@@ -2842,7 +2843,8 @@ textarea:focus {
   background: var(--surface) !important;
   color: var(--foreground) !important;
 }
-/* Ather AI 消息 */
+/* Eva AI 消息 */
+.message.eva,
 .message.ather,
 .sketch-box-blue {
   position: relative !important;
@@ -4192,7 +4194,7 @@ textarea:focus {
   margin: 0.5rem 0 0;
 }
 
-/* ── 历史轮次区块（Ather-Solana：/theme-assessment 选择页）─────────────
+/* ── 历史轮次区块（Eva-Solana：/theme-assessment 选择页）─────────────
    视觉语言对齐原项目 /profile 的 themeRounds 区块：卡片式 evidence-node，
    挂在 .evidence-nodes 容器内以获得一致的纵向间距。 */
 .theme-round-history-list {

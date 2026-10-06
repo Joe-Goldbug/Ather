@@ -1,5 +1,5 @@
 // ================================================================
-// Ather Engine - Memory Manager
+// Eva Engine - Memory Manager
 // All CRUD operations on the Memory object.
 // Stateless functions — caller owns persistence (DB / localStorage / Redis).
 // ================================================================
@@ -434,7 +434,7 @@ const CONFIDENCE_DELTA: Record<RefutationResponse, number> = {
 };
 
 /**
- * Record a user's refutation/confirmation of an Ather personality claim.
+ * Record a user's refutation/confirmation of an Eva personality claim.
  * Returns updated memory with adjusted confidence in pnn_vector if available.
  */
 export function recordRefutation(
@@ -888,14 +888,14 @@ export function detectYouShifted(
     },
     longterm_moderate_positive: {
       'zh-CN': (d, bq, aq) => bq && aq
-        ? `跟你刚开始用 Ather 的时候比，你在「${d}」这件事上已经不一样了。\n\n你之前说：「${bq}」\n现在你会说：「${aq}」\n\n这是真实的成长。`
-        : `跟你刚开始用 Ather 的时候比，你在「${d}」这件事上已经不一样了。这是真实的成长。`,
+        ? `跟你刚开始用 Eva 的时候比，你在「${d}」这件事上已经不一样了。\n\n你之前说：「${bq}」\n现在你会说：「${aq}」\n\n这是真实的成长。`
+        : `跟你刚开始用 Eva 的时候比，你在「${d}」这件事上已经不一样了。这是真实的成长。`,
       en: (d, bq, aq) => bq && aq
         ? `Compared to when you first started, you've genuinely changed in "${d}".\n\nYou used to say: "${bq}"\nNow: "${aq}"\n\nThat's real growth.`
         : `Compared to when you first started, you've genuinely changed in "${d}". That's real growth.`,
       ja: (d, bq, aq) => bq && aq
         ? `最初と比べると、「${d}」で本当に変わった。\n\n以前：「${bq}」\n今：「${aq}」\n\nこれは本物の成長だ。`
-        : `最初と比べると、「${d}」で本当に変わった。これは本物の成長だ。`,
+        : `最初と比べると、「${d}」で本当に変わった。这是本物の成長だ。`,
       es: (d, bq, aq) => bq && aq
         ? `Comparado con cuando empezaste, has cambiado genuinamente en "${d}".\n\nAntes: "${bq}"\nAhora: "${aq}"\n\nEso es crecimiento real.`
         : `Comparado con cuando empezaste, has cambiado genuinamente en "${d}". Eso es crecimiento real.`,
@@ -928,9 +928,9 @@ export function detectYouShifted(
     },
     both_subtle_positive:   { 'zh-CN': (d) => `你在「${d}」上的变化，不只是最近——从开始到现在，一直在慢慢往好的方向走。`,  en: (d) => `The change in "${d}" isn't just recent — you've been slowly moving in a better direction from the very start.`, ja: (d) => `「${d}」の変化は最近だけでなく、最初からずっとよい方向に向かっている。`, es: (d) => `El cambio en "${d}" no es solo reciente — has ido lentamente en una mejor dirección desde el principio.` },
     both_subtle_negative:   { 'zh-CN': (d) => `我注意到你在「${d}」上的变化，不只是最近——从一开始就在慢慢积累，我们来看看这条线。`, en: (d) => `The shift in "${d}" isn't just recent — it's been accumulating from the start. Let's look at this pattern.`, ja: (d) => `「${d}」の変化は最近だけでなく、最初から積み重なっている。このパターンを見てみよう。`, es: (d) => `El cambio en "${d}" no es solo reciente — ha ido acumulándose desde el principio. Veamos este patrón.` },
-    both_moderate_positive: { 'zh-CN': (d, bq, aq) => bq && aq ? `你不只是最近在变——在「${d}」这件事上，从你一开始用 Ather 到现在，一直在走一条新的路。\n\n你之前说：「${bq}」\n现在你说：「${aq}」` : `你不只是最近在变——在「${d}」这件事上，从一开始到现在，一直在走一条新的路。`, en: (d, bq, aq) => bq && aq ? `You haven't just changed recently — in "${d}", you've been on a new path since the very beginning.\n\nBefore: "${bq}"\nNow: "${aq}"` : `You haven't just changed recently — in "${d}", you've been on a new path all along.`, ja: (d, bq, aq) => bq && aq ? `「${d}」の変化は最近だけでなく、最初から新しい道を歩んでいる。\n\n以前：「${bq}」\n今：「${aq}」` : `「${d}」の変化は最近だけでなく、最初から新しい道を歩んでいる。`, es: (d, bq, aq) => bq && aq ? `No solo has cambiado recientemente — en "${d}", has estado en un nuevo camino desde el principio.\n\nAntes: "${bq}"\nAhora: "${aq}"` : `No solo has cambiado recientemente — en "${d}", has estado en un nuevo camino desde el principio.` },
+    both_moderate_positive: { 'zh-CN': (d, bq, aq) => bq && aq ? `你不只是最近在变——在「${d}」这件事上，从你一开始用 Eva 到现在，一直在走一条新的路。\n\n你之前说：「${bq}」\n现在你说：「${aq}」` : `你不只是最近在变——在「${d}」这件事上，从一开始到现在，一直在走一条新的路。`, en: (d, bq, aq) => bq && aq ? `You haven't just changed recently — in "${d}", you've been on a new path since the very beginning.\n\nBefore: "${bq}"\nNow: "${aq}"` : `You haven't just changed recently — in "${d}", you've been on a new path all along.`, ja: (d, bq, aq) => bq && aq ? `「${d}」の変化は最近だけでなく、最初から新しい道を歩んでいる。\n\n以前：「${bq}」\n今：「${aq}」` : `「${d}」の変化は最近だけでなく、最初から新しい道を歩んでいる。`, es: (d, bq, aq) => bq && aq ? `No solo has cambiado recientemente — en "${d}", has estado en un nuevo camino desde el principio.\n\nAntes: "${bq}"\nAhora: "${aq}"` : `No solo has cambiado recientemente — en "${d}", has estado en un nuevo camino desde el principio.` },
     both_moderate_negative: { 'zh-CN': (d) => `在「${d}」上，近期和长期都有变化的信号——这条线需要我们认真聊聊。`, en: (d) => `There are signals of change in "${d}" both recently and over time — this pattern deserves a serious conversation.`, ja: (d) => `「${d}」には短期・長期両方で変化のサインがある。このパターンについてちゃんと話そう。`, es: (d) => `Hay señales de cambio en "${d}" tanto recientemente como a largo plazo — este patrón merece una conversación seria.` },
-    both_profound_positive: { 'zh-CN': (d, bq, aq) => bq && aq ? `从你开始用 Ather 到今天，你在「${d}」上的变化，已经跨越了几个阶段。\n\n你最初说：「${bq}」\n现在你说：「${aq}」\n\n这是你自己走出来的路。` : `从你开始用 Ather 到今天，你在「${d}」上的变化已经跨越了几个阶段。这是你自己走出来的路。`, en: (d, bq, aq) => bq && aq ? `From when you started to today, the change in "${d}" has spanned multiple chapters.\n\nAt first: "${bq}"\nNow: "${aq}"\n\nThis is a path you built yourself.` : `From when you started to today, the change in "${d}" has spanned multiple chapters. This is a path you built yourself.`, ja: (d, bq, aq) => bq && aq ? `最初から今日まで、「${d}」の変化はいくつかの段階を経てきた。\n\n最初：「${bq}」\n今：「${aq}」\n\nこれはあなた自身が歩んだ道だ。` : `最初から今日まで、「${d}」の変化はいくつかの段階を経てきた。これはあなた自身の道だ。`, es: (d, bq, aq) => bq && aq ? `Desde que empezaste hasta hoy, el cambio en "${d}" ha abarcado varios capítulos.\n\nAl principio: "${bq}"\nAhora: "${aq}"\n\nEste es un camino que tú mismo construiste.` : `Desde que empezaste hasta hoy, el cambio en "${d}" ha abarcado varios capítulos. Este es un camino que tú mismo construiste.` },
+    both_profound_positive: { 'zh-CN': (d, bq, aq) => bq && aq ? `从你开始用 Eva 到今天，你在「${d}」上的变化，已经跨越了几个阶段。\n\n你最初说：「${bq}」\n现在你说：「${aq}」\n\n这是你自己走出来的路。` : `从你开始用 Eva 到今天，你在「${d}」上的变化已经跨越了几个阶段。这是你自己走出来的路。`, en: (d, bq, aq) => bq && aq ? `From when you started to today, the change in "${d}" has spanned multiple chapters.\n\nAt first: "${bq}"\nNow: "${aq}"\n\nThis is a path you built yourself.` : `From when you started to today, the change in "${d}" has spanned multiple chapters. This is a path you built yourself.`, ja: (d, bq, aq) => bq && aq ? `最初から今日まで、「${d}」の変化はいくつかの段階を経てきた。\n\n最初：「${bq}」\n今：「${aq}」\n\nこれはあなた自身が歩んだ道だ。` : `最初から今日まで、「${d}」の変化はいくつかの段階を経てきた。これはあなた自身の道だ。`, es: (d, bq, aq) => bq && aq ? `Desde que empezaste hasta hoy, el cambio en "${d}" ha abarcado varios capítulos.\n\nAl principio: "${bq}"\nAhora: "${aq}"\n\nEste es un camino que tú mismo construiste.` : `Desde que empezaste hasta hoy, el cambio en "${d}" ha abarcado varios capítulos. Este es un camino que tú mismo construiste.` },
     both_profound_negative: { 'zh-CN': (d) => `在「${d}」上，你的变化是长期积累的——近期加速了。我们需要停下来认真看看这条线从哪里开始。`, en: (d) => `The change in "${d}" has been building for a long time — and it's accelerating recently. We need to stop and look at where this line started.`, ja: (d) => `「${d}」の変化は長期間積み重なり、最近加速している。この流れがどこから始まったか、立ち止まってちゃんと見てみよう。`, es: (d) => `El cambio en "${d}" ha estado acumulándose por mucho tiempo — y está acelerando recientemente. Necesitamos detenernos y ver dónde comenzó esta línea.` },
   };
 

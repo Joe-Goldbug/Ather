@@ -19,7 +19,7 @@ import {
   type ThemeRoundAnswer,
   type ThemeRoundResult,
   validateThemeRoundAnswers,
-} from '@ather/core';
+} from '@eva/core';
 
 import {
   GUEST_EPISODE_ID,
@@ -29,7 +29,7 @@ import {
   RAIN_BEFORE_STOP_NODES,
   buildGuestEpisodeResult,
   validateGuestEpisodeAnswers
-} from '@ather/core';
+} from '@eva/core';
 import * as crypto from 'crypto';
 
 export interface CompleteGuestOpeningBody {
@@ -150,7 +150,7 @@ function guestClaimSecret() {
   if (process.env.NODE_ENV === 'production') {
     throw new InternalServerErrorException({ code: 'guest_claim_secret_missing' });
   }
-  return 'ather-local-guest-claim-secret';
+  return 'eva-local-guest-claim-secret';
 }
 
 function publicGuestNodes(guestRunId: string) {

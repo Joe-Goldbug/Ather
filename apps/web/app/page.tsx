@@ -1,8 +1,7 @@
 // apps/web/app/page.tsx
 // Public landing page.
 //
-// The hero is copied verbatim from origin/feature/Ather-Ethan
-// (apps/web/app/page.tsx) so the brand first impression is pixel-identical to
+// The hero preserves the clean Eva brand first impression.
 // the original. The single assessment entry point is appended inside the hero
 // using .hero-cta / .cta-group, which already exist in globals.css for exactly
 // this purpose.

@@ -1,5 +1,5 @@
 // packages/core/src/assessment/constants.ts
-// Ather 全球化第一版结构冻结
+// Eva 全球化第一版结构冻结
 // Task 0: 维度 key / locale key / script version / scenario_set 全部冻结
 // 后续 PR 不允许自行修改此处，除非经技术负责人确认
 

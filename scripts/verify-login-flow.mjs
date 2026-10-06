@@ -23,7 +23,7 @@ const setCookie = login.headers.getSetCookie?.() ?? [];
 const cookie = setCookie.map((c) => c.split(';')[0]).join('; ');
 const body = await login.json();
 check('dev-login 返回用户', login.status === 200 && !!body.user_id, `user_id=${body.user_id ?? '-'} session_mode=${body.session_mode ?? '-'}`);
-check('dev-login 下发 ather_session cookie', cookie.includes('ather_session'), cookie ? cookie.slice(0, 40) + '...' : '无 cookie');
+check('dev-login 下发 session cookie', cookie.includes('eva_session') || cookie.includes('ather_session'), cookie ? cookie.slice(0, 40) + '...' : '无 cookie');
 
 // ④ 带 cookie 可访问受保护资源
 const withCookie = await fetch(`${BASE}/v1/assessment-themes/coverage`, { headers: { Cookie: cookie } });

@@ -1,4 +1,4 @@
-// Ather-Solana 数据库迁移执行器
+// Eva-Solana 数据库迁移执行器
 //
 // ⚠️ Neon 池化连接**不支持 search_path 启动参数**
 //    （报unsupported startup parameter in options: search_path），

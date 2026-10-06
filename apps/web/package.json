@@ -13,7 +13,7 @@
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "lucide-react": "^0.454.0",
-    "@ather/core": "file:../../packages/core"
+    "@eva/core": "file:../../packages/core"
   },
   "devDependencies": {
     "@types/node": "^20",
