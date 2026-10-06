@@ -45,9 +45,9 @@ export function validateDatabaseUrl(connectionString: string | undefined): strin
 }
 
 /**
- * Ather-Solana 特有：目标schema 名。
+ * Eva-Solana 目标 schema 名。
  *
- * 与 Ather-ethan 共用同一个 Neon 实例，但本项目的数据放在独立 schema
+ * 本项目的数据放在独立 schema
  * （默认 `ather_solana`），避免污染源项目数据。
  *
  * ⚠️ 为什么不写在连接串里？Neon 的池化连接**不支持** search_path 启动参数：

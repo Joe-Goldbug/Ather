@@ -1,9 +1,9 @@
--- 000_foundation.sql — Ather-Solana 闭环基础表
+-- 000_foundation.sql — Eva-Solana 闭环基础表
 --
--- 从 Ather-ethan 的 packages/database/src/schema.sql 精简而来，
+-- 从原项目旧版代码库的 packages/database/src/schema.sql 精简而来，
 -- 只保留闭环必需（认证 + 主题轮）依赖的表。
 --
--- 迁移文件名统一为「4位序号_描述.sql」格式，避免与 Ather-ethan
+-- 迁移文件名统一为「4位序号_描述.sql」格式，避免与原旧版
 -- 混用的两套格式（2026-09-02-x.sql /20260725120000_x.sql）产生排序错位。
 
 BEGIN;
@@ -89,7 +89,7 @@ CREATE INDEX IF NOT EXISTS idx_login_events_user ON login_events(user_id);
 --   SELECT EXISTS (SELECT 1 FROM assessment_runs
 --                  WHERE user_id = $1 AND scenario_set = $2)
 -- 注意：主题轮不写这张表（闭环走 theme_assessment_*），但 auth/me 依赖它存在。
--- 基线的**写入**路径在 Ather-ethan 已退役（Ather-Solana 走主题轮路线），
+-- 基线的**写入**路径在原项目中已退役（Eva-Solana 走主题轮路线），
 -- 因此本表目前只读，为将来接入基线预留。
 CREATE TABLE IF NOT EXISTS assessment_runs (
   id             UUID PRIMARY KEY DEFAULT gen_random_uuid(),

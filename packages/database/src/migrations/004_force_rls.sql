@@ -4,7 +4,7 @@
 --       而 PostgreSQL 的 RLS 对表owner 默认不生效（除非 FORCE）。
 --       结果：`SET search_path` + `set_config('app.session_token')` 全部照做，
 --       但策略被跳过—— 任何登录用户都能读到全表数据，**静默越权且不报错**。
---       Ather-ethan 同样存在此问题（未使用 FORCE RLS）。
+--       旧版实现同样存在此问题（未使用 FORCE RLS）。
 --
 -- 解法：ALTER TABLE ... FORCE ROW LEVEL SECURITY，让 owner 也受策略约束。
 --

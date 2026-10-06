@@ -14,7 +14,8 @@ const c = new Client({
   connectionTimeoutMillis: 20000,
 });
 await c.connect();
-await c.query('SET search_path TO ather_solana');
+const schema = process.env.DATABASE_SCHEMA || process.env.EVA_DATABASE_SCHEMA || 'ather_solana';
+await c.query(`SET search_path TO ${schema}`);
 
 const TABLES = [
   'theme_assessment_rounds',
@@ -29,7 +30,7 @@ const TABLES = [
 const force = await c.query(
   `SELECT relname, relrowsecurity, relforcerowsecurity
    FROM pg_class
-   WHERE relnamespace = 'ather_solana'::regnamespace AND relname = ANY($1)`,
+   WHERE relnamespace = schema::regnamespace AND relname = ANY($1)`,
   [TABLES],
 );
 const notForced = force.rows.filter((r) => !r.relforcerowsecurity).map((r) => r.relname);

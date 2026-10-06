@@ -1,4 +1,4 @@
-// End-to-end smoke test for the anonymous assessment loop.
+// Eva-web3: End-to-end smoke test for the anonymous assessment loop.
 //
 // Verifies the full closed loop in a real browser: home -> play -> answer all
 // six decision nodes -> result -> whitepaper search.

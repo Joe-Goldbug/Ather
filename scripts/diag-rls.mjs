@@ -7,7 +7,8 @@ const c = new Client({
   connectionTimeoutMillis: 20000,
 });
 await c.connect();
-await c.query('SET search_path TO ather_solana');
+const schema = process.env.DATABASE_SCHEMA || process.env.EVA_DATABASE_SCHEMA || 'ather_solana';
+await c.query(`SET search_path TO ${schema}`);
 await c.query("SELECT set_config('app.session_token', '', false)");
 
 const probe = await c.query("SELECT current_setting('app.session_token', true) AS tok");

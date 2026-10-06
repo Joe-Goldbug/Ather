@@ -4,7 +4,7 @@
 // 依据 docs/CURRENT-PRODUCT-TRUTH-2026-06-29.md 的正式主链路：
 //   建轮 → 逐题作答 → 完成 → 读结果 → 提交反馈 → 轮次历史
 //
-// 本文件由 Ather-ethan 的 lib/api.ts 按段落精确抽取生成，
+// 本文件按产品主链路抽取生成，
 // auth / themeAssessment / guest 三段签名与源仓库完全一致。
 // 未迁入：chat / report / evidence / diary / weeklyReview / portrait
 //        / observations / consent（均属非正式路径或 P2 范围）。

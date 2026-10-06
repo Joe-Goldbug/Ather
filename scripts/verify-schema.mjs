@@ -24,10 +24,12 @@ const c = new Client({
   connectionTimeoutMillis: 20000,
 });
 await c.connect();
-await c.query('SET search_path TO ather_solana');
+const schema = process.env.DATABASE_SCHEMA || process.env.EVA_DATABASE_SCHEMA || 'ather_solana';
+await c.query(`SET search_path TO ${schema}`);
 
 const r = await c.query(
-  "SELECT tablename FROM pg_tables WHERE schemaname='ather_solana' ORDER BY tablename",
+  'SELECT tablename FROM pg_tables WHERE schemaname = $1 ORDER BY tablename',
+  [schema],
 );
 const have = new Set(r.rows.map((x) => x.tablename));
 process.stdout.write(`schema 内共 ${have.size} 张表\n`);
@@ -42,8 +44,9 @@ for (const t of NEED) {
 const rls = await c.query(
   `SELECT c.relname FROM pg_class c
    JOIN pg_namespace n ON n.oid = c.relnamespace
-   WHERE n.nspname='ather_solana' AND c.relrowsecurity
+   WHERE n.nspname = $1 AND c.relrowsecurity
    ORDER BY c.relname`,
+  [schema],
 );
 process.stdout.write(`RLS 启用表(${rls.rows.length}): ${rls.rows.map((x) => x.relname).join(', ')}\n`);
 process.stdout.write(missing === 0 ? 'ALL_TABLES_PRESENT\n' : `MISSING_COUNT=${missing}\n`);
