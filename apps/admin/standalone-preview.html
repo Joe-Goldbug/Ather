@@ -1,0 +1,528 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>EVA Signal Room - 单独测试版 (Standalone Preview)</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500;700&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #f5f6f2;
+      --surface: #ffffff;
+      --line: #dfe4d8;
+      --text: #1d241d;
+      --muted: #858e83;
+      --lime: #e8f4c2;
+      --lime-strong: #9cb826;
+      --lime-text: #596e08;
+      --accent: #283726;
+      --sidebar-width: 240px;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'IBM Plex Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      -webkit-font-smoothing: antialiased;
+    }
+    .admin-shell { display: flex; min-height: 100vh; }
+    .sidebar {
+      width: var(--sidebar-width);
+      background: #fafbf8;
+      border-right: 1px solid var(--line);
+      padding: 24px 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 28px;
+      flex-shrink: 0;
+    }
+    .brand-lockup { display: flex; align-items: center; gap: 12px; }
+    .brand-mark {
+      width: 32px; height: 32px; border-radius: 8px; background: var(--accent);
+      color: var(--lime); display: grid; place-items: center; font-weight: 700; font-family: 'DM Mono', monospace;
+    }
+    .brand-title { font-size: 14px; font-weight: 700; letter-spacing: -0.02em; }
+    .brand-subtitle { font-size: 10px; color: var(--muted); font-family: 'DM Mono', monospace; }
+    .mode-chip {
+      display: inline-flex; align-items: center; gap: 6px; padding: 4px 8px; border-radius: 6px;
+      background: #eff5de; color: #5f750c; font-size: 11px; font-family: 'DM Mono', monospace; font-weight: 500;
+    }
+    .mode-dot { width: 6px; height: 6px; border-radius: 50%; background: #7ba212; }
+    .side-nav { display: flex; flex-direction: column; gap: 4px; }
+    .side-nav-button {
+      display: flex; align-items: center; gap: 10px; padding: 10px 12px; border: 0; background: transparent;
+      border-radius: 6px; font-size: 13px; font-weight: 500; color: #566154; cursor: pointer; text-align: left; transition: all 0.15s ease;
+    }
+    .side-nav-button:hover { background: #f0f3eb; color: var(--text); }
+    .side-nav-button.active { background: var(--lime); color: var(--lime-text); font-weight: 600; }
+    .sidebar-footer { margin-top: auto; padding-top: 18px; border-top: 1px solid var(--line); font-size: 11px; color: var(--muted); line-height: 1.5; }
+    .main-stage { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+    .topbar {
+      height: 60px; background: var(--surface); border-bottom: 1px solid var(--line);
+      padding: 0 32px; display: flex; align-items: center; justify-content: space-between;
+    }
+    .topbar-left { font-size: 12px; color: var(--muted); font-family: 'DM Mono', monospace; }
+    .topbar-right { display: flex; align-items: center; gap: 14px; }
+    .btn {
+      display: inline-flex; align-items: center; gap: 6px; padding: 7px 12px; border-radius: 6px;
+      font-size: 12px; font-weight: 500; cursor: pointer; transition: all 0.15s; border: 1px solid var(--line); background: var(--surface); color: var(--text);
+    }
+    .btn:hover { background: #f6f8f3; border-color: #cbcfc5; }
+    .btn-primary { background: var(--accent); color: #fff; border-color: var(--accent); }
+    .btn-primary:hover { background: #3b4e38; }
+    .content { padding: 32px; max-width: 1280px; width: 100%; margin: 0 auto; }
+    .page-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 28px; }
+    .eyebrow { font-size: 11px; font-family: 'DM Mono', monospace; color: var(--lime-text); font-weight: 700; text-transform: uppercase; margin-bottom: 4px; }
+    .page-title { font-size: 24px; font-weight: 700; letter-spacing: -0.03em; color: var(--text); }
+    .page-desc { font-size: 13px; color: var(--muted); margin-top: 4px; }
+    
+    .metric-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 24px; }
+    .metric-card {
+      background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 18px 20px;
+      display: flex; flex-direction: column; gap: 8px;
+    }
+    .metric-card.accent { background: #f8faee; border-color: #dce7ba; }
+    .metric-label { font-size: 11px; color: var(--muted); font-family: 'DM Mono', monospace; }
+    .metric-value { font-size: 32px; font-weight: 700; font-family: 'DM Mono', monospace; color: var(--text); letter-spacing: -0.04em; }
+    .metric-footer { display: flex; justify-content: space-between; font-size: 11px; color: var(--muted); }
+    .trend { font-family: 'DM Mono', monospace; font-weight: 600; color: #5a7d0e; }
+    .trend.down { color: #cf6835; }
+
+    .panel { background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 22px; margin-bottom: 24px; }
+    .panel-heading { display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px; }
+    .panel-title { font-size: 15px; font-weight: 600; }
+    .section-kicker { font-size: 10px; font-family: 'DM Mono', monospace; color: var(--muted); letter-spacing: 0.05em; display: block; margin-bottom: 2px; }
+
+    .funnel-row { display: flex; flex-direction: column; gap: 12px; margin-top: 14px; }
+    .funnel-step { display: grid; grid-template-columns: 100px 1fr 60px 70px; align-items: center; gap: 16px; font-size: 12px; }
+    .funnel-bar-bg { height: 12px; background: #eef1ea; border-radius: 6px; overflow: hidden; }
+    .funnel-bar-fill { height: 100%; background: #a4be3b; border-radius: 6px; transition: width 0.3s ease; }
+    .funnel-count { font-family: 'DM Mono', monospace; text-align: right; color: var(--muted); }
+    .funnel-rate { font-family: 'DM Mono', monospace; font-weight: 600; text-align: right; color: var(--lime-text); }
+
+    /* Tables */
+    table { width: 100%; border-collapse: collapse; text-align: left; font-size: 12px; }
+    th { padding: 12px 14px; border-bottom: 1px solid var(--line); color: var(--muted); font-family: 'DM Mono', monospace; font-weight: 500; font-size: 11px; }
+    td { padding: 14px; border-bottom: 1px solid #edf0eb; vertical-align: middle; }
+    tr:hover td { background: #fafbf8; }
+    .status-badge { display: inline-block; padding: 3px 7px; border-radius: 4px; font-size: 10px; font-family: 'DM Mono', monospace; font-weight: 500; }
+    .status-active { background: #eef5dc; color: #627909; }
+    .status-flagged { background: #fdf0e6; color: #b6612d; }
+    .status-inactive { background: #edf0eb; color: #7f8a7e; }
+
+    /* Feedback list */
+    .feedback-grid { display: grid; gap: 14px; }
+    .feedback-card { background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 18px 22px; }
+    .feedback-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+    .severity-tag { padding: 3px 6px; border-radius: 4px; font-size: 10px; font-family: 'DM Mono', monospace; font-weight: 600; }
+    .sev-高 { background: #fdeee6; color: #ba5723; }
+    .sev-中 { background: #fef7da; color: #9c7711; }
+    .sev-低 { background: #eef6dd; color: #60790b; }
+    .feedback-title { font-size: 15px; font-weight: 600; margin-bottom: 8px; }
+    .feedback-quote { margin: 10px 0; padding-left: 12px; border-left: 2px solid #d4e3a4; color: #4e5a4d; font-size: 13px; line-height: 1.6; }
+    .feedback-meta { display: flex; gap: 12px; font-size: 11px; color: var(--muted); font-family: 'DM Mono', monospace; margin-top: 12px; }
+    .feedback-actions { display: flex; justify-content: flex-end; align-items: center; gap: 12px; margin-top: 14px; }
+    .status-select { padding: 5px 8px; border: 1px solid var(--line); border-radius: 5px; background: #fafbf9; font-size: 11px; }
+
+    /* Drawer Modal */
+    .drawer-overlay {
+      position: fixed; inset: 0; background: rgba(18, 25, 17, 0.4); backdrop-filter: blur(2px);
+      display: none; justify-content: flex-end; z-index: 100;
+    }
+    .drawer-overlay.open { display: flex; }
+    .drawer { width: 540px; height: 100%; background: #ffffff; border-left: 1px solid var(--line); padding: 32px; overflow-y: auto; display: flex; flex-direction: column; gap: 20px; box-shadow: -10px 0 30px rgba(0,0,0,0.1); }
+    .drawer-nav { display: flex; gap: 16px; border-bottom: 1px solid var(--line); padding-bottom: 12px; }
+    .drawer-nav button { border: 0; background: transparent; font-size: 12px; color: var(--muted); cursor: pointer; padding-bottom: 4px; }
+    .drawer-nav button.active { color: var(--lime-text); font-weight: 700; border-bottom: 2px solid #879f16; }
+
+    /* Toast */
+    .toast {
+      position: fixed; right: 24px; bottom: 24px; padding: 12px 18px; border-radius: 8px;
+      background: #eff6dd; border: 1px solid #c9da9b; color: #586c0c; font-size: 12px; font-weight: 500;
+      box-shadow: 0 6px 20px rgba(0,0,0,0.08); display: none; z-index: 200;
+    }
+  </style>
+</head>
+<body>
+  <div class="admin-shell">
+    <aside class="sidebar">
+      <div class="brand-lockup">
+        <div class="brand-mark">A</div>
+        <div>
+          <div class="brand-title">EVA Signal Room</div>
+          <div class="brand-subtitle">ADMIN INTELLIGENCE</div>
+        </div>
+      </div>
+
+      <div class="mode-chip">
+        <span class="mode-dot"></span>
+        <span id="data-mode-label">MOCK DATA MODE</span>
+      </div>
+
+      <nav class="side-nav">
+        <button class="side-nav-button active" onclick="switchTab('overview')">📊 01 概览 (Overview)</button>
+        <button class="side-nav-button" onclick="switchTab('users')">👥 02 用户 (User 360)</button>
+        <button class="side-nav-button" onclick="switchTab('feedback')">📬 03 反馈 (Feedback)</button>
+        <button class="side-nav-button" onclick="switchTab('quality')">🧪 04 质量 (Quality Lab)</button>
+      </nav>
+
+      <div class="sidebar-footer">
+        <div><strong>隔离测试环境</strong></div>
+        <div style="margin-top: 4px;">本页面直接加载 EVA 核心数据模型与脱敏指标。</div>
+      </div>
+    </aside>
+
+    <main class="main-stage">
+      <header class="topbar">
+        <div class="topbar-left" id="last-sync-time">最后同步：加载中...</div>
+        <div class="topbar-right">
+          <button class="btn" onclick="fetchSnapshot()">🔄 刷新数据 (Refresh)</button>
+          <button class="btn btn-primary" onclick="showToast('已导出脱敏数据副本')">📥 导出快照</button>
+        </div>
+      </header>
+
+      <div class="content">
+        <!-- TAB 01: OVERVIEW -->
+        <section id="tab-overview">
+          <div class="page-header">
+            <div>
+              <div class="eyebrow">01 / Overview</div>
+              <h1 class="page-title">产品态势与转化漏斗</h1>
+              <div class="page-desc">实时追踪注册转化、测评漏斗完成率与用户留存指标。</div>
+            </div>
+          </div>
+
+          <div class="metric-grid">
+            <div class="metric-card accent">
+              <span class="metric-label">注册用户总数</span>
+              <span class="metric-value" id="m-registrations">1,284</span>
+              <div class="metric-footer"><span>全量历史注册</span><span class="trend">+12.4%</span></div>
+            </div>
+            <div class="metric-card">
+              <span class="metric-label">活跃用户数 (7D)</span>
+              <span class="metric-value" id="m-active">732</span>
+              <div class="metric-footer"><span>最近 7 天活跃</span><span class="trend">+8.1%</span></div>
+            </div>
+            <div class="metric-card">
+              <span class="metric-label">测评完成率</span>
+              <span class="metric-value" id="m-rate">64%</span>
+              <div class="metric-footer"><span>基线完成 / 注册</span><span class="trend">+3.2%</span></div>
+            </div>
+            <div class="metric-card">
+              <span class="metric-label">待处理用户反馈</span>
+              <span class="metric-value" id="m-feedback">5</span>
+              <div class="metric-footer"><span>高优先级 2 条</span><span class="trend down">需关注</span></div>
+            </div>
+          </div>
+
+          <div class="panel">
+            <div class="panel-heading">
+              <div>
+                <span class="section-kicker">CONVERSION FUNNEL</span>
+                <div class="panel-title">用户主流程转化漏斗</div>
+              </div>
+            </div>
+            <div class="funnel-row" id="funnel-container">
+              <!-- Rendered via JS -->
+            </div>
+          </div>
+        </section>
+
+        <!-- TAB 02: USERS -->
+        <section id="tab-users" style="display: none;">
+          <div class="page-header">
+            <div>
+              <div class="eyebrow">02 / User Directory</div>
+              <h1 class="page-title">用户目录与 360° 档案</h1>
+              <div class="page-desc">展示用户脱敏信息、测评轮次、纠错行为及画像可信度。点击单行查看详情。</div>
+            </div>
+          </div>
+
+          <div class="panel" style="padding: 0; overflow: hidden;">
+            <table>
+              <thead>
+                <tr>
+                  <th>用户标识 (ID)</th>
+                  <th>脱敏邮箱 (Email)</th>
+                  <th>注册日期</th>
+                  <th>测评轮次</th>
+                  <th>纠错次数</th>
+                  <th>画像置信度</th>
+                  <th>当前状态</th>
+                  <th>操作</th>
+                </tr>
+              </thead>
+              <tbody id="user-table-body">
+                <!-- Rendered via JS -->
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <!-- TAB 03: FEEDBACK -->
+        <section id="tab-feedback" style="display: none;">
+          <div class="page-header">
+            <div>
+              <div class="eyebrow">03 / Feedback Inbox</div>
+              <h1 class="page-title">用户原话与反馈中心</h1>
+              <div class="page-desc">保留用户真实原话反馈，支持直接调整处理状态与责任人跟踪。</div>
+            </div>
+          </div>
+
+          <div class="feedback-grid" id="feedback-container">
+            <!-- Rendered via JS -->
+          </div>
+        </section>
+
+        <!-- TAB 04: QUALITY -->
+        <section id="tab-quality" style="display: none;">
+          <div class="page-header">
+            <div>
+              <div class="eyebrow">04 / Quality Lab</div>
+              <h1 class="page-title">测评与画像质量实验室</h1>
+              <div class="page-desc">关注用户是否反驳、纠错生效率，以及题库版本对比。</div>
+            </div>
+          </div>
+
+          <div class="metric-grid">
+            <div class="metric-card accent">
+              <span class="metric-label">画像确认率</span>
+              <span class="metric-value">58.0%</span>
+              <div class="metric-footer"><span>过去 30 天</span><span class="trend">+6.1%</span></div>
+            </div>
+            <div class="metric-card">
+              <span class="metric-label">用户反驳率</span>
+              <span class="metric-value">14.0%</span>
+              <div class="metric-footer"><span>需持续压降</span><span class="trend down">-2.4%</span></div>
+            </div>
+            <div class="metric-card">
+              <span class="metric-label">证据充足画像数</span>
+              <span class="metric-value">421</span>
+              <div class="metric-footer"><span>有效画像 57.5%</span><span class="trend">正常</span></div>
+            </div>
+            <div class="metric-card">
+              <span class="metric-label">纠错生效率</span>
+              <span class="metric-value">82.0%</span>
+              <div class="metric-footer"><span>纠错后可见变更</span><span class="trend">+5.0%</span></div>
+            </div>
+          </div>
+        </section>
+      </div>
+    </main>
+  </div>
+
+  <!-- User 360 Drawer -->
+  <div class="drawer-overlay" id="user-drawer" onclick="closeDrawer(event)">
+    <div class="drawer" onclick="event.stopPropagation()">
+      <div style="display: flex; justify-content: space-between; align-items: center;">
+        <div>
+          <div class="eyebrow" id="d-user-id">USER DETAIL</div>
+          <h2 style="font-size: 20px;" id="d-user-email">li***@gmail.com</h2>
+        </div>
+        <button class="btn" onclick="closeDrawer()">✕ 关闭</button>
+      </div>
+
+      <div class="drawer-nav">
+        <button class="active">基础档案</button>
+        <button>测评历程</button>
+        <button>证据链</button>
+        <button>授权审计</button>
+      </div>
+
+      <div id="drawer-content" style="display: flex; flex-direction: column; gap: 14px; font-size: 13px;">
+        <div style="display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #edf0eb;">
+          <span style="color: var(--muted);">注册时间</span>
+          <strong id="d-registered">-</strong>
+        </div>
+        <div style="display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #edf0eb;">
+          <span style="color: var(--muted);">最近活跃</span>
+          <strong id="d-active">-</strong>
+        </div>
+        <div style="display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #edf0eb;">
+          <span style="color: var(--muted);">登录次数</span>
+          <strong id="d-logins">-</strong>
+        </div>
+        <div style="display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #edf0eb;">
+          <span style="color: var(--muted);">测评轮数</span>
+          <strong id="d-rounds">-</strong>
+        </div>
+        <div style="display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #edf0eb;">
+          <span style="color: var(--muted);">纠错次数</span>
+          <strong id="d-corrections">-</strong>
+        </div>
+        <div style="display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #edf0eb;">
+          <span style="color: var(--muted);">常用设备 / 地点</span>
+          <strong id="d-device-loc">-</strong>
+        </div>
+
+        <div style="margin-top: 20px; padding: 16px; border-radius: 8px; background: #f7faf0; border: 1px solid #dce7ba;">
+          <div style="font-weight: 600; color: #5f750c; margin-bottom: 6px;">🛡️ 隐私与脱敏防护</div>
+          <div style="color: #6d7b67; font-size: 12px; line-height: 1.5;">当前为最小权限视图。真实明文凭据与私密日志未下发至前端。</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast-el">操作成功</div>
+
+  <script>
+    const mockData = {
+      overview: {
+        metrics: { registrations: 1284, activeUsers: 732, completionRate: 64, pendingFeedback: 5 },
+        activity: [{ day: '08/22', users: 42 }, { day: '08/23', users: 57 }, { day: '08/24', users: 51 }, { day: '08/25', users: 74 }, { day: '08/26', users: 68 }, { day: '08/27', users: 89 }, { day: '08/28', users: 96 }],
+        funnel: [
+          { label: '注册用户', value: 100, count: 1284 },
+          { label: '开始测评', value: 82, count: 1053 },
+          { label: '完成测评', value: 64, count: 822 },
+          { label: '查看画像', value: 57, count: 732 },
+          { label: '首次校准', value: 31, count: 398 }
+        ],
+        updatedAt: new Date().toISOString()
+      },
+      users: [
+        { id: 'usr_7F29A', maskedEmail: 'li***@gmail.com', registeredAt: '2026-08-26', lastActiveAt: '今天 09:42', maskedLastIp: '203.0.xxx.xxx', loginCount: 18, assessmentRoundCount: 3, feedbackCount: 2, correctionCount: 4, portraitConfidence: 78, status: 'active', stage: '持续校准', device: 'Chrome · macOS', location: '上海, CN' },
+        { id: 'usr_4C81D', maskedEmail: 'an***@outlook.com', registeredAt: '2026-08-24', lastActiveAt: '昨天 21:08', maskedLastIp: '198.51.xxx.xxx', loginCount: 9, assessmentRoundCount: 1, feedbackCount: 1, correctionCount: 0, portraitConfidence: 54, status: 'flagged', stage: '完成基线', device: 'Safari · iPhone', location: '北京, CN' },
+        { id: 'usr_9B13K', maskedEmail: 'mo***@hey.com', registeredAt: '2026-08-21', lastActiveAt: '2026-08-27', maskedLastIp: '192.0.xxx.xxx', loginCount: 5, assessmentRoundCount: 1, feedbackCount: 0, correctionCount: 1, portraitConfidence: 61, status: 'inactive', stage: '完成测评', device: 'Chrome · Windows', location: 'Toronto, CA' },
+        { id: 'usr_2E64P', maskedEmail: 'ya***@qq.com', registeredAt: '2026-08-19', lastActiveAt: '今天 11:16', maskedLastIp: '203.0.xxx.xxx', loginCount: 27, assessmentRoundCount: 5, feedbackCount: 3, correctionCount: 8, portraitConfidence: 86, status: 'active', stage: '持续校准', device: 'Chrome · Windows', location: '杭州, CN' },
+        { id: 'usr_5A42Q', maskedEmail: 'so***@icloud.com', registeredAt: '2026-08-18', lastActiveAt: null, maskedLastIp: '198.51.xxx.xxx', loginCount: 2, assessmentRoundCount: 0, feedbackCount: 1, correctionCount: 0, portraitConfidence: null, status: 'inactive', stage: '已注册', device: 'Safari · iPhone', location: '大阪, JP' },
+        { id: 'usr_8D02M', maskedEmail: 'ka***@proton.me', registeredAt: '2026-08-15', lastActiveAt: '2026-08-25', maskedLastIp: '192.0.xxx.xxx', loginCount: 12, assessmentRoundCount: 2, feedbackCount: 0, correctionCount: 2, portraitConfidence: 69, status: 'active', stage: '现实记录', device: 'Firefox · Linux', location: 'Berlin, DE' }
+      ],
+      feedback: [
+        { id: 'fb_1042', title: '画像里的“边界感”描述与我的原话不一致', original: '我说的是这一次工作场景，不是我平时都这样。希望可以看到它用了哪些证据。', category: '画像准确性', page: 'Profile', impact: 24, severity: '高', owner: 'Ethan', status: '审核中', age: '24 分钟前' },
+        { id: 'fb_1039', title: '微沙盒完成后不知道下一步去哪里', original: '做完选择后页面停住了，我以为还在加载。', category: '流程问题', page: 'Micro-sandbox', impact: 18, severity: '中', owner: '—', status: '新反馈', age: '2 小时前' },
+        { id: 'fb_1033', title: '希望可以删除一条现实记录', original: '有些内容只是当时的情绪，我不希望它一直影响画像。', category: '隐私与控制', page: 'Daily Mirror', impact: 31, severity: '高', owner: 'Mia', status: '计划改进', age: '昨天' },
+        { id: 'fb_1027', title: '测评题目在手机上阅读很舒服', original: '选项比一般心理测试更像现实里的选择。', category: '体验反馈', page: 'Assessment', impact: 12, severity: '低', owner: '—', status: '已确认', age: '2 天前' },
+        { id: 'fb_1018', title: '登录验证码等待时间太长', original: '第一次登录等了快一分钟，不确定有没有发送成功。', category: '登录异常', page: 'Auth', impact: 9, severity: '中', owner: 'Leo', status: '已解决', age: '4 天前' }
+      ]
+    };
+
+    let currentSnapshot = mockData;
+
+    function renderOverview(data) {
+      document.getElementById('m-registrations').innerText = Number(data.overview.metrics.registrations).toLocaleString();
+      document.getElementById('m-active').innerText = Number(data.overview.metrics.activeUsers).toLocaleString();
+      document.getElementById('m-rate').innerText = data.overview.metrics.completionRate + '%';
+      document.getElementById('m-feedback').innerText = data.overview.metrics.pendingFeedback;
+
+      const funnelHtml = (data.overview.funnel || []).map(step => `
+        <div class="funnel-step">
+          <strong>${step.label}</strong>
+          <div class="funnel-bar-bg"><div class="funnel-bar-fill" style="width: ${step.value}%"></div></div>
+          <span class="funnel-count">${step.count} 人</span>
+          <span class="funnel-rate">${step.value}%</span>
+        </div>
+      `).join('');
+      document.getElementById('funnel-container').innerHTML = funnelHtml;
+    }
+
+    function renderUsers(users) {
+      const rowsHtml = users.map(u => `
+        <tr onclick="openUserDrawer('${u.id}')" style="cursor: pointer;">
+          <td style="font-family: 'DM Mono', monospace; font-weight: 600;">${u.id}</td>
+          <td>${u.maskedEmail}</td>
+          <td style="color: var(--muted); font-family: 'DM Mono', monospace;">${u.registeredAt}</td>
+          <td style="font-family: 'DM Mono', monospace;">${u.assessmentRoundCount} 轮</td>
+          <td style="font-family: 'DM Mono', monospace;">${u.correctionCount} 次</td>
+          <td style="font-family: 'DM Mono', monospace;">${u.portraitConfidence ? u.portraitConfidence + '%' : '—'}</td>
+          <td><span class="status-badge status-${u.status}">${u.status === 'active' ? '活跃' : u.status === 'flagged' ? '待关注' : '未激活'}</span></td>
+          <td><button class="btn" style="padding: 3px 8px; font-size: 11px;">查看 360°</button></td>
+        </tr>
+      `).join('');
+      document.getElementById('user-table-body').innerHTML = rowsHtml;
+    }
+
+    function renderFeedback(feedback) {
+      const fbHtml = feedback.map(item => `
+        <div class="feedback-card">
+          <div class="feedback-header">
+            <span class="severity-tag sev-${item.severity}">${item.severity} 优先级</span>
+            <span style="font-size: 11px; color: var(--muted); font-family: 'DM Mono', monospace;">${item.id} · ${item.age}</span>
+          </div>
+          <div class="feedback-title">${item.title}</div>
+          <div class="feedback-quote">“${item.original}”</div>
+          <div class="feedback-meta">
+            <span>🏷️ ${item.category}</span>
+            <span>📄 ${item.page}</span>
+            <span>👥 影响约 ${item.impact} 人</span>
+            <span>👤 负责人：${item.owner}</span>
+          </div>
+          <div class="feedback-actions">
+            <span style="font-size: 11px; color: var(--muted);">状态处理：</span>
+            <select class="status-select" onchange="updateFeedbackStatus('${item.id}', this.value)">
+              <option value="新反馈" ${item.status === '新反馈' ? 'selected' : ''}>新反馈</option>
+              <option value="审核中" ${item.status === '审核中' ? 'selected' : ''}>审核中</option>
+              <option value="已确认" ${item.status === '已确认' ? 'selected' : ''}>已确认</option>
+              <option value="计划改进" ${item.status === '计划改进' ? 'selected' : ''}>计划改进</option>
+              <option value="已解决" ${item.status === '已解决' ? 'selected' : ''}>已解决</option>
+            </select>
+          </div>
+        </div>
+      `).join('');
+      document.getElementById('feedback-container').innerHTML = fbHtml;
+    }
+
+    function switchTab(tabName) {
+      ['overview', 'users', 'feedback', 'quality'].forEach(name => {
+        document.getElementById('tab-' + name).style.display = (name === tabName) ? 'block' : 'none';
+      });
+      document.querySelectorAll('.side-nav-button').forEach((btn, idx) => {
+        btn.classList.toggle('active', ['overview', 'users', 'feedback', 'quality'][idx] === tabName);
+      });
+    }
+
+    function openUserDrawer(userId) {
+      const u = currentSnapshot.users.find(x => x.id === userId);
+      if (!u) return;
+      document.getElementById('d-user-id').innerText = u.id;
+      document.getElementById('d-user-email').innerText = u.maskedEmail;
+      document.getElementById('d-registered').innerText = u.registeredAt;
+      document.getElementById('d-active').innerText = u.lastActiveAt || '暂无';
+      document.getElementById('d-logins').innerText = u.loginCount + ' 次';
+      document.getElementById('d-rounds').innerText = u.assessmentRoundCount + ' 轮';
+      document.getElementById('d-corrections').innerText = u.correctionCount + ' 次';
+      document.getElementById('d-device-loc').innerText = `${u.device} · ${u.location}`;
+      document.getElementById('user-drawer').classList.add('open');
+    }
+
+    function closeDrawer() {
+      document.getElementById('user-drawer').classList.remove('open');
+    }
+
+    function showToast(msg) {
+      const el = document.getElementById('toast-el');
+      el.innerText = msg;
+      el.style.display = 'block';
+      setTimeout(() => { el.style.display = 'none'; }, 2500);
+    }
+
+    function updateFeedbackStatus(id, newStatus) {
+      const fb = currentSnapshot.feedback.find(x => x.id === id);
+      if (fb) fb.status = newStatus;
+      showToast(`反馈 ${id} 状态已更新为：${newStatus}`);
+    }
+
+    async function fetchSnapshot() {
+      try {
+        const res = await fetch('/api/snapshot');
+        if (res.ok) {
+          const data = await res.json();
+          currentSnapshot = data;
+          document.getElementById('data-mode-label').innerText = 'LIVE API MODE';
+        }
+      } catch {
+        // Fallback to mock
+      }
+      renderOverview(currentSnapshot);
+      renderUsers(currentSnapshot.users);
+      renderFeedback(currentSnapshot.feedback);
+      document.getElementById('last-sync-time').innerText = '最后同步：' + new Date().toLocaleTimeString();
+      showToast('数据快照已刷新');
+    }
+
+    // Initialize
+    fetchSnapshot();
+  </script>
+</body>
+</html>

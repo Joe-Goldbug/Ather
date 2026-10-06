@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.eva.sync</string>
+    
+    <key>ProgramArguments</key>
+    <array>
+        <string>/bin/bash</string>
+        <string>/Users/ethan/Library/Mobile Documents/com~apple~CloudDocs/Downloads/Eva-web3/scripts/sync-to-github.sh</string>
+    </array>
+    
+    <key>WorkingDirectory</key>
+    <string>/Users/ethan/Library/Mobile Documents/com~apple~CloudDocs/Downloads/Eva-web3</string>
+    
+    <key>StandardOutPath</key>
+    <string>/tmp/eva-sync.log</string>
+    
+    <key>StandardErrorPath</key>
+    <string>/tmp/eva-sync-error.log</string>
+    
+    <key>StartInterval</key>
+    <integer>1800</integer>
+    
+    <key>RunAtLoad</key>
+    <true/>
+</dict>
+</plist>

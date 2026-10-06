@@ -62,7 +62,6 @@ function LocaleProvider({ children, initialLocale }: LocaleProviderProps) {
     setLocaleState(l);
     document.documentElement.lang = l;
     document.cookie = `eva_locale=${l}; path=/; max-age=${60 * 60 * 24 * 365}; SameSite=Lax`;
-    document.cookie = `ather_locale=${l}; path=/; max-age=${60 * 60 * 24 * 365}; SameSite=Lax`;
   };
 
   const t = (key: string, vars?: Record<string, string | number>) => {

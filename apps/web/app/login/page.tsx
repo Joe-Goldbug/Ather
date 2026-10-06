@@ -35,24 +35,41 @@ export default function LoginPage() {
   }, []);
 
   async function handleDevLogin() {
+    const loadingStartedAt = Date.now();
+    const controller = new AbortController();
+    const timeoutId = window.setTimeout(() => controller.abort(), 15_000);
+    let loginError: string | null = null;
     setDevLoginLoading(true);
     setDevLoginError(null);
     try {
-      await authApi.devLogin();
-      // [fix 2026-07-01] Force-bypass the useSession cache here. The page mount
-      // probes /auth/me before the user clicks the button, so when there's no
-      // cookie yet, fetchSession caches a null result. Without { force: true },
-      // the post-login refresh returns that stale null, the redirect useEffect
-      // never fires, and the button stays stuck on "登录中…".
-      await refresh({ force: true });
+      await authApi.devLogin(controller.signal);
+      // Force a fresh /auth/me request after the dev-login cookie is set.
+      const authenticatedUser = await refresh({ force: true, signal: controller.signal });
+      if (!authenticatedUser) {
+        throw new Error(t('login.dev_session_missing'));
+      }
     } catch (err: any) {
-      setDevLoginError(err?.message ?? 'Dev login failed');
+      loginError =
+        controller.signal.aborted
+          ? t('login.dev_timeout')
+          : err?.message ?? t('login.dev_failed');
+    } finally {
+      window.clearTimeout(timeoutId);
+      // Keep the loading feedback visible long enough to register even when
+      // the local API responds immediately.
+      const remaining = 1500 - (Date.now() - loadingStartedAt);
+      if (remaining > 0) {
+        await new Promise((resolve) => window.setTimeout(resolve, remaining));
+      }
+      if (loginError) {
+        setDevLoginError(loginError);
+      }
       setDevLoginLoading(false);
     }
   }
 
   useEffect(() => {
-    if (loading || !user) return;
+    if (loading || !user || devLoginLoading) return;
     if (redirectedRef.current) return;
     redirectedRef.current = true;
     setRedirecting(true);
@@ -60,13 +77,15 @@ export default function LoginPage() {
     // from a clean server render instead of racing client-side RSC redirects.
     const target = returnTo ?? resolveAssessmentEntryPath(user);
     window.location.replace(target);
-  }, [loading, returnTo, user]);
+  }, [devLoginLoading, loading, returnTo, user]);
 
-  if (!loading && user) {
+  if (!devLoginLoading && !loading && user) {
     return (
-      <main className="login-page">
-        <div className="login-card">
-          <div>{t('login.btn_entering')}</div>
+      <main className="login-page" aria-busy="true">
+        <div className="dev-login-progress" role="status" aria-live="polite">
+          <span className="dev-login-spinner" aria-hidden="true" />
+          <h1>{t('login.btn_entering')}</h1>
+          <p>{t('login.entering_hint')}</p>
         </div>
       </main>
     );
@@ -105,19 +124,23 @@ export default function LoginPage() {
         {isLocalhost && (
           <div className="dev-login-block">
             <div className="dev-login-divider">
-              <span>本地开发</span>
+              <span>{t('login.dev_label')}</span>
             </div>
             <button
               type="button"
               className="dev-login-btn"
+              aria-busy={devLoginLoading}
               disabled={devLoginLoading}
               onClick={handleDevLogin}
             >
-              {devLoginLoading ? '登录中…' : '⚡ 一键登录（跳过邮箱）'}
+              {devLoginLoading && <span className="dev-login-spinner" aria-hidden="true" />}
+              <span aria-live="polite" role={devLoginLoading ? 'status' : undefined}>
+                {devLoginLoading ? t('login.btn_entering') : t('login.dev_button')}
+              </span>
             </button>
             {devLoginError && <p className="dev-login-error">{devLoginError}</p>}
             <p className="dev-login-hint">
-              仅在 localhost 可见。生产环境由后端拦截。
+              {t('login.dev_hint')}
             </p>
           </div>
         )}

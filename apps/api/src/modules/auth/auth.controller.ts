@@ -80,15 +80,13 @@ export class AuthController {
 
     const forwardedProto = (req.headers['x-forwarded-proto'] ?? '').toString();
     const isHttps = req.secure || forwardedProto === 'https';
-    const cookieOpts = {
+    res.cookie('eva_session', result.token, {
       httpOnly: true,
       secure: isHttps,
-      sameSite: isHttps ? 'none' as const : 'lax' as const,
+      sameSite: isHttps ? 'none' : 'lax',
       path: '/',
       maxAge: 30 * 24 * 60 * 60 * 1000,
-    };
-    res.cookie('eva_session', result.token, cookieOpts);
-    res.cookie('ather_session', result.token, cookieOpts);
+    });
 
     return {
       user_id: result.user_id,
@@ -117,15 +115,13 @@ export class AuthController {
       // Set cookie same as verify-code does
       const forwardedProto = (req.headers['x-forwarded-proto'] ?? '').toString();
       const isHttps = req.secure || forwardedProto === 'https';
-      const cookieOpts = {
+      res.cookie('eva_session', result.token, {
         httpOnly: true,
         secure: isHttps,
-        sameSite: isHttps ? 'none' as const : 'lax' as const,
+        sameSite: isHttps ? 'none' : 'lax',
         path: '/',
         maxAge: 30 * 24 * 60 * 60 * 1000,
-      };
-      res.cookie('eva_session', result.token, cookieOpts);
-      res.cookie('ather_session', result.token, cookieOpts);
+      });
 
       return { message: 'OTP sent successfully', dev_auto_login: true, user_id: result.user_id };
     }
@@ -154,15 +150,13 @@ export class AuthController {
     // Set cookie
     const forwardedProto = (req.headers['x-forwarded-proto'] ?? '').toString();
     const isHttps = req.secure || forwardedProto === 'https';
-    const cookieOpts = {
+    res.cookie('eva_session', result.token, {
       httpOnly: true,
       secure: isHttps,
-      sameSite: isHttps ? 'none' as const : 'lax' as const,
+      sameSite: isHttps ? 'none' : 'lax',
       path: '/',
       maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
-    };
-    res.cookie('eva_session', result.token, cookieOpts);
-    res.cookie('ather_session', result.token, cookieOpts);
+    });
 
     return {
       user_id: result.user_id,
@@ -176,7 +170,6 @@ export class AuthController {
   async logout(@Req() req: Request, @Res({ passthrough: true }) res: Response) {
     // Revoke token in DB so Bearer-based clients are also invalidated
     const token = req.cookies?.['eva_session']
-      ?? req.cookies?.['ather_session']
       ?? (req.headers['authorization']?.toString().replace('Bearer ', '') ?? null);
     if (token) {
       await this.auth.revokeToken(token).catch(() => { /* best-effort */ });
@@ -184,14 +177,12 @@ export class AuthController {
 
     const forwardedProto = (req.headers['x-forwarded-proto'] ?? '').toString();
     const isHttps = req.secure || forwardedProto === 'https';
-    const clearOpts = {
+    res.clearCookie('eva_session', {
       httpOnly: true,
       secure: isHttps,
-      sameSite: isHttps ? 'none' as const : 'lax' as const,
+      sameSite: isHttps ? 'none' : 'lax',
       path: '/',
-    };
-    res.clearCookie('eva_session', clearOpts);
-    res.clearCookie('ather_session', clearOpts);
+    });
     return { message: 'Logged out successfully' };
   }
 }

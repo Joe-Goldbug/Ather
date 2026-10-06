@@ -1,19 +1,5 @@
 // apps/web/lib/api.ts
-// Eva Web API 客户端 —— 闭环主链路最小集合
-//
-// 依据 docs/CURRENT-PRODUCT-TRUTH-2026-06-29.md 的正式主链路：
-//   建轮 → 逐题作答 → 完成 → 读结果 → 提交反馈 → 轮次历史
-//
-// 本文件按产品主链路抽取生成，
-// auth / themeAssessment / guest 三段签名与源仓库完全一致。
-// 未迁入：chat / report / evidence / diary / weeklyReview / portrait
-//        / observations / consent（均属非正式路径或 P2 范围）。
-//
-// 浏览器端走相对路径 `/api`（Next rewrites 代理到后端）；
-// SSR 走 NEXT_PUBLIC_API_URL，生产缺失时直接抛错，不静默回落 localhost。
-
-// apps/web/lib/api.ts
-// Eva Web API client
+// EVA Web API client — Phase 6/7
 // All calls go to the NestJS API (apps/api).
 
 // Browser → relative `/api` (Next.js rewrites proxy to backend port).
@@ -27,7 +13,7 @@ function resolveApiBase(): string {
   if (process.env.NODE_ENV === 'production') {
     throw new Error('[api] NEXT_PUBLIC_API_URL is required for SSR in production');
   }
-  return 'http://localhost:3001';
+  return 'http://localhost:3101';
 }
 
 const API_BASE = resolveApiBase();
@@ -65,7 +51,7 @@ export interface AuthUser {
 }
 
 export const authApi = {
-  me: () => request<AuthUser>('/auth/me'),
+  me: (signal?: AbortSignal) => request<AuthUser>('/auth/me', { signal }),
   sendCode: (email: string) =>
     request<{ success?: boolean; message: string; dev_auto_login?: boolean; user_id?: string }>(
       '/auth/send-code',
@@ -84,10 +70,207 @@ export const authApi = {
       method: 'POST',
     }),
   /** DEV ONLY: skip email/OTP entirely, server returns a session cookie. */
-  devLogin: () =>
+  devLogin: (signal?: AbortSignal) =>
     request<{ user_id: string; email: string; message: string }>('/auth/dev-login', {
       method: 'POST',
+      signal,
     }),
+};
+
+// ── Chat ───────────────────────────────────────────────────────────────────
+export interface NextTestRecommendation {
+  reason: string;
+  target_dimension: string;
+  suggested_format: string;
+  urgency: 'high' | 'medium' | 'low';
+  personalized_intro: string;
+}
+
+export interface ChatResponse {
+  eva_message: string;
+  engine_used: string | null;
+  model: string | null;
+  you_shifted?: {
+    dimension: string;
+    narrative_insight: string;
+    before_quote?: string;
+    after_quote?: string;
+    magnitude?: 'subtle' | 'moderate' | 'profound';
+    comparison_type?: 'recent' | 'longterm' | 'both';
+  };
+  dialogue_state?: Record<string, unknown>;
+  diary_update?: unknown;
+  correction_signal?: {
+    source_type: 'chat_claim';
+    source_id: string;
+    dimension: string;
+    original_text: string;
+    corrected_text: string;
+    explanation: string;
+  } | null;
+  next_test_recommendation?: NextTestRecommendation | null;
+}
+
+export interface ChatHistoryTurn {
+  id: string;
+  role: 'user' | 'eva';
+  content: string;
+  timestamp: number;
+  engine_triggered?: string | null;
+  topic_tags?: string[] | null;
+}
+
+export interface ChatHistoryResponse {
+  user_id: string;
+  conversation_history: ChatHistoryTurn[];
+  active_conversation_id: string | null;
+  total_turns: number;
+  last_active: number;
+}
+
+export const chatApi = {
+  send: (message: string, locale?: string) =>
+    request<ChatResponse>('/chat/send', {
+      method: 'POST',
+      body: JSON.stringify({ message, ...(locale ? { locale } : {}) }),
+    }),
+  history: () => request<ChatHistoryResponse>('/chat/history'),
+  getDialogueState: () => request<Record<string, unknown> | null>('/chat/dialogue-state'),
+};
+
+// ── Portrait history / legacy report transport ─────────────────────────────
+// `reportApi` is kept for backend compatibility. In current product terms this
+// powers portrait snapshots and portrait history, not a standalone report page.
+export interface ReportStatus {
+  report_id: string;
+  status: 'generating' | 'completed' | 'failed';
+  error_message: string | null;
+  record_kind?: 'historical';
+  current_evidence_status?: 'not_revalidated' | 'sources_changed';
+}
+
+export const reportApi = {
+  trigger: (conversationId: string) =>
+    request<{ job_id: string; status: string }>(`/report/trigger/${conversationId}`, {
+      method: 'POST',
+    }),
+  get: (reportId: string) => request<Record<string, unknown>>(`/report/${reportId}`),
+  getStatus: (reportId: string) => request<ReportStatus>(`/report/status/${reportId}`),
+  getSnapshots: (limit = 10) =>
+    request<Record<string, unknown>[]>('/report/snapshots?limit=' + limit),
+  getHistory: (limit = 5) => request<Record<string, unknown>[]>('/report/history?limit=' + limit),
+};
+
+// ── Evidence ─────────────────────────────────────────────────────────────────
+export const evidenceApi = {
+  getByDimension: () => request<Record<string, unknown>[]>('/evidence/by-dimension'),
+  getAll: (limit = 30) => request<Record<string, unknown>[]>('/evidence?limit=' + limit),
+};
+
+// ── Legacy diary archive transport ──────────────────────────────────────────
+// `diaryApi` is retained because old diary_entries still exist as read-only
+// archive data inside current Record / Weekly Review flows.
+export interface DiaryEntry {
+  id: string;
+  entry_date: string;
+  content: Record<string, string>;
+  timezone?: string;
+  created_at: string;
+}
+
+export const diaryApi = {
+  submit: (entry: { date: string; answers: Record<string, string>; timezone?: string }) =>
+    request<DiaryEntry>('/diary', { method: 'POST', body: JSON.stringify(entry) }),
+  recent: (limit?: number, offset = 0) => request<DiaryEntry[]>(
+    limit === undefined ? '/diary/recent' : `/diary/recent?limit=${limit}&offset=${offset}`,
+  ),
+};
+
+// ── Weekly Review ────────────────────────────────────────────────────────────
+export interface WeeklyReview {
+  id?: string;
+  week_start?: string;
+  week_end?: string;
+  summary: string | null;
+  eva_message?: string | null;
+  dominant_emotion?: string | null;
+  mood_trend?: string;
+  status?: 'not_generated';
+  content?: {
+    suggested_experiment?: WeeklyExperimentSuggestion | null;
+    [key: string]: unknown;
+  };
+  created_at?: string;
+}
+
+export interface WeeklyExperimentSuggestion {
+  action_text: string;
+  trigger_context: string;
+}
+
+export type WeeklyExperimentOutcome = 'done' | 'partly_done' | 'no_opportunity' | 'paused';
+
+export interface WeeklyExperiment {
+  id: string;
+  user_id: string;
+  weekly_review_id: string;
+  action_text: string;
+  trigger_context: string;
+  review_on: string;
+  state: 'active' | 'completed' | 'paused';
+  created_at: string;
+  updated_at: string;
+}
+
+export const weeklyReviewApi = {
+  current: () => request<WeeklyReview>('/weekly-review/current'),
+  trigger: () =>
+    request<{ job_id: string; week_start: string; week_end: string }>('/weekly-review/trigger', {
+      method: 'POST',
+    }),
+  history: (limit = 8) => request<WeeklyReview[]>('/weekly-review/history?limit=' + limit),
+  createExperiment: (reviewId: string) =>
+    request<{ experiment: WeeklyExperiment; created: boolean }>(`/weekly-review/${reviewId}/experiments`, {
+      method: 'POST',
+    }),
+};
+
+export type ConsentType = 'memory_retention' | 'evidence_collection' | 'report_storage' |
+  'third_party_sharing' | 'weekly_review_analysis' | 'report_generation' | 'chat_history_use';
+
+export const consentApi = {
+  status: () => request<Record<ConsentType, boolean>>('/consent/status'),
+  exportData: () => request<Record<string, unknown[]>>('/consent/export'),
+  grant: (consentType: ConsentType) => request<{ granted: boolean }>('/consent/grant', {
+    method: 'POST',
+    body: JSON.stringify({ consent_type: consentType }),
+  }),
+  revoke: (consentType: ConsentType) => request<{ revoked: boolean }>('/consent/revoke', {
+    method: 'POST',
+    body: JSON.stringify({ consent_type: consentType }),
+  }),
+};
+
+export const weeklyExperimentsApi = {
+  checkIn: (experimentId: string, body: { outcome: WeeklyExperimentOutcome; note: string | null }) =>
+    request<{ experiment: WeeklyExperiment; checkin: { id: string; outcome: WeeklyExperimentOutcome; note: string | null; created_at: string } }>(
+      `/weekly-experiments/${experimentId}/checkins`,
+      { method: 'POST', body: JSON.stringify(body) },
+    ),
+};
+
+// ── Retired assessment history (read-only compatibility) ────────────────────
+export interface AssessmentRunRecord {
+  id: string;
+  locale: string;
+  script_version: string;
+  scenario_set: string;
+  result: Record<string, unknown>;
+  completed_at: string;
+}
+
+export const assessmentApi = {
+  latest: () => request<AssessmentRunRecord | null>('/assessment/latest'),
 };
 
 // ── Theme assessment rounds (Track A: current-round observations only) ──────
@@ -260,13 +443,280 @@ export const themeAssessmentApi = {
     ),
 };
 
-// ── Telemetry（埋点；后端 product-events 属 P2 范围，失败仅告警）─────────
-export const telemetryApi = {
-  async emitEvent(event: Partial<Record<string, unknown>>): Promise<void> {
-    await request('/product-events', {
+export interface EvolutionDimension {
+  key: string;
+  baseline: number;
+  current: number;
+  delta_7d: number;
+  confidence: number;
+  evidence_count_7d: number;
+  correction_count_30d: number;
+  last_evidence_at: string | null;
+}
+
+export interface ProfileEvolutionResponse {
+  dimensions: EvolutionDimension[];
+  baseline_vector: Record<string, number>;
+  current_vector: Record<string, number>;
+  delta_7d: Record<string, number>;
+  confidence_by_dim: Record<string, number>;
+  last_updated_at: string;
+}
+
+export interface ProfileCurrentVectorResponse {
+  baseline_vector: Record<string, number>;
+  current_vector: Record<string, number>;
+  delta_vector: Record<string, number>;
+  confidence_vector: Record<string, number>;
+  evidence_counts_7d: Record<string, number>;
+  correction_counts_30d: Record<string, number>;
+  last_updated_at: string;
+}
+
+export interface PortraitEvidenceItem {
+  id: string;
+  sourceType: string;
+  evidenceKind: string;
+  quote: string | null;
+  explanation: string;
+  createdAt: string;
+}
+
+export interface PortraitObservation {
+  id: string;
+  dimension: string;
+  status: 'insufficient_evidence';
+  evidence: PortraitEvidenceItem[];
+  limitation: '目前无法判断长期模式。';
+}
+
+/** Response shape for GET /profile/portrait */
+export interface ProfilePortraitResponse {
+  modelStatus: 'legacy';
+  deprecated: true;
+  observations: PortraitObservation[];
+  overallLimitation: '目前无法判断长期模式。';
+}
+
+export interface PortraitV1Response {
+  model_status: 'unknown' | 'available';
+  portrait_id: string | null;
+  revision_id: string | null;
+  portrait_state: 'unknown' | 'active' | 'quarantined';
+  dimensions: Array<{
+    dimension_key: string;
+    layer: 'tendency' | 'state' | 'situational';
+    status: 'unknown' | 'insufficient_evidence' | 'non_comparable' | 'available';
+    context_key: Record<string, unknown>;
+    limitation_codes: string[];
+  }>;
+  limitations: string[];
+}
+
+export interface PublishedObservationV1 {
+  observation_id: string;
+  revision_id: string;
+  text: string | null;
+  published_at: string | null;
+  feedback_state: 'uncontested' | 'needs_follow_up';
+}
+
+export type ObservationResponseAction = 'confirm' | 'partial' | 'refute' | 'clarify';
+
+export interface ObservationResponseV1 {
+  response_id: string;
+  correction_id: string | null;
+  state: 'recorded' | 'confirmed' | 'pending_validation';
+  replayed: boolean;
+}
+
+export const profileApi = {
+  evolution: () => request<ProfileEvolutionResponse>('/profile/evolution'),
+  currentVector: () => request<ProfileCurrentVectorResponse>('/profile/current-vector'),
+  getPortrait: () => request<ProfilePortraitResponse>('/profile/portrait'),
+};
+
+export const portraitV1Api = {
+  current: () => request<PortraitV1Response>('/v1/portrait/current'),
+};
+
+// ── Evidence source（2-A3 片段定位：点开原文并高亮触发句）──────────────────
+export interface EvidenceSourceFragment {
+  field: string;
+  start: number;
+  end: number;
+  locator: string;
+}
+
+export interface EvidenceSourceResponse {
+  evidence_id: string;
+  source_type: string;
+  source_id: string | null;
+  /** 还原后的字段原文；偏移失效或非 diary 源时为 null */
+  content_text: string | null;
+  fragment: EvidenceSourceFragment | null;
+}
+
+export async function fetchEvidenceSource(evidenceId: string): Promise<EvidenceSourceResponse> {
+  return request<EvidenceSourceResponse>(
+    `/profile/evidence/${encodeURIComponent(evidenceId)}/source`,
+  );
+}
+
+// ── 1-2b：按证据驳回（用户第一纠偏权，Portrait 弹层内直达）────────────────
+export interface WithdrawEvidenceResponse {
+  evidence_id: string;
+  dimension: string;
+  portrait_status: string;
+  recomputed: { dimension: string; confidence: number; value: number } | null;
+  already_withdrawn: boolean;
+}
+
+export async function withdrawEvidence(evidenceId: string): Promise<WithdrawEvidenceResponse> {
+  return request<WithdrawEvidenceResponse>(
+    `/profile/evidence/${encodeURIComponent(evidenceId)}/withdraw`,
+    { method: 'POST' },
+  );
+}
+
+
+export const observationsV1Api = {
+  list: () => request<PublishedObservationV1[]>('/v1/observations'),
+  respond: (
+    observationId: string,
+    revisionId: string,
+    command: { operation_id: string; action: ObservationResponseAction; explanation?: string }
+  ) =>
+    request<ObservationResponseV1>(
+      `/v1/observations/${observationId}/revisions/${revisionId}/responses`,
+      {
+        method: 'POST',
+        body: JSON.stringify(command),
+      }
+    ),
+};
+
+// ── Captures ─────────────────────────────────────────────────────────────────
+export type CaptureEntryType = 'quick_fragment' | 'emotion_log' | 'decision_log';
+export type CaptureProcessMode = 'save_only' | 'organize' | 'analyze';
+export type CaptureModality = 'text' | 'voice_transcript' | 'image';
+
+export interface CreateCaptureDto {
+  entry_type: CaptureEntryType;
+  process_mode: CaptureProcessMode;
+  modality: CaptureModality;
+  raw_text: string;
+  mood_label?: string;
+  mood_intensity?: number; // 1-5
+  local_date?: string; // YYYY-MM-DD
+  timezone?: string;
+  allow_weekly_review?: boolean;
+}
+
+export interface CaptureInterpretation {
+  id: string;
+  dimension: string;
+  ai_explanation: string;
+  proposed_delta: number | null;
+  status: 'pending' | 'confirmed' | 'refuted';
+  support_count: number;
+}
+
+export interface CaptureRecord {
+  id: string;
+  entry_type: CaptureEntryType;
+  process_mode: CaptureProcessMode;
+  allow_weekly_review: boolean;
+  modality: CaptureModality;
+  raw_text: string;
+  mood_label?: string | null;
+  mood_intensity?: number | null;
+  local_date: string;
+  captured_at: string;
+  summary?: string | null;
+  interpretations?: CaptureInterpretation[];
+}
+
+type RawCaptureRecord = {
+  id: string;
+  entry_type: CaptureEntryType;
+  process_mode: CaptureProcessMode;
+  allow_weekly_review: boolean;
+  modality: CaptureModality;
+  raw_text: string;
+  mood_label?: string | null;
+  mood_intensity?: number | null;
+  local_date: string;
+  captured_at: string;
+  interpretations?: CaptureInterpretation[];
+  summary?: string | null;
+};
+
+type RawCaptureCreateResponse = {
+  capture: RawCaptureRecord;
+  interpretations?: CaptureInterpretation[];
+  summary?: string | null;
+};
+
+type RawCaptureListResponse = {
+  captures: RawCaptureRecord[];
+};
+
+function normalizeCaptureRecord(
+  capture: RawCaptureRecord,
+  interpretations?: CaptureInterpretation[],
+  summary?: string | null
+): CaptureRecord {
+  return {
+    id: capture.id,
+    entry_type: capture.entry_type,
+    process_mode: capture.process_mode,
+    allow_weekly_review: capture.allow_weekly_review ?? false,
+    modality: capture.modality,
+    raw_text: capture.raw_text,
+    mood_label: capture.mood_label ?? null,
+    mood_intensity: capture.mood_intensity ?? null,
+    local_date: capture.local_date,
+    captured_at: capture.captured_at,
+    summary: summary ?? capture.summary ?? null,
+    interpretations: interpretations ?? capture.interpretations ?? [],
+  };
+}
+
+export const capturesApi = {
+  create: async (body: CreateCaptureDto) => {
+    const raw = await request<RawCaptureCreateResponse>('/captures', {
       method: 'POST',
-      body: JSON.stringify(event),
-    }).catch((e) => console.warn('Telemetry event failed:', e));
+      body: JSON.stringify(body),
+    });
+    return normalizeCaptureRecord(raw.capture, raw.interpretations, raw.summary);
+  },
+  list: async (limit = 30, offset = 0) => {
+    const raw = await request<RawCaptureListResponse>(`/captures?limit=${limit}${offset ? `&offset=${offset}` : ''}`);
+    return raw.captures.map((capture) => normalizeCaptureRecord(capture));
+  },
+  setWeeklyReviewPermission: async (captureId: string, allowed: boolean) => {
+    const raw = await request<RawCaptureRecord>(`/captures/${captureId}/weekly-review-permission`, {
+      method: 'PATCH',
+      body: JSON.stringify({ allowed }),
+    });
+    return normalizeCaptureRecord(raw);
+  },
+  confirmInterpretation: async (captureId: string, interpretationId: string) => {
+    await request<Record<string, unknown>>(
+      `/captures/${captureId}/interpretations/${interpretationId}/confirm`,
+      {
+        method: 'POST',
+      }
+    );
+    return { success: true };
+  },
+  refuteInterpretation: async (captureId: string, interpretationId: string) => {
+    await request<Record<string, unknown>>(
+      `/captures/${captureId}/interpretations/${interpretationId}/refute`,
+      { method: 'POST' },
+    );
+    return { success: true };
   },
 };
 
@@ -330,3 +780,19 @@ export const guestAssessmentApi = {
     }),
 };
 
+// --- TELEMETRY & FEEDBACK (same-origin API routes) ---
+export const telemetryApi = {
+  async emitEvent(event: Partial<Record<string, any>>): Promise<void> {
+    await request('/product-events', {
+      method: 'POST',
+      body: JSON.stringify(event),
+    }).catch(e => console.warn('Telemetry event failed:', e));
+  },
+  
+  async submitFeedback(payload: { category: string; content: string; sourcePage: string; severity?: string }): Promise<void> {
+    await request('/product-feedback', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    });
+  }
+};

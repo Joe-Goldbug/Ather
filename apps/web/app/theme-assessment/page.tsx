@@ -8,7 +8,6 @@ import {
   telemetryApi,
   type ThemeCoverageResponse,
   type ThemeLens,
-  type ThemeRoundHistoryItem,
   type ThemeRoundNext,
   type ThemeRoundResultResponse,
 } from '@/lib/api';
@@ -22,6 +21,15 @@ const THEME_DESCRIPTIONS: Record<ThemeLens, string> = {
   workplace: '看你如何面对反馈、分歧、协作和压力。',
   self_evaluation: '看你如何要求自己、看待失败与面对不确定。',
 };
+
+const MIN_ACTION_FEEDBACK_MS = 700;
+
+async function keepActionFeedbackVisible(startedAt: number) {
+  const remainingMs = MIN_ACTION_FEEDBACK_MS - (Date.now() - startedAt);
+  if (remainingMs > 0) {
+    await new Promise((resolve) => window.setTimeout(resolve, remainingMs));
+  }
+}
 
 function operationId() {
   return typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function'
@@ -62,13 +70,13 @@ export default function ThemeAssessmentPage() {
   const [freeText, setFreeText] = useState('');
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
+  const [pendingTheme, setPendingTheme] = useState<ThemeLens | 'default' | null>(null);
+  const [pendingChoiceId, setPendingChoiceId] = useState<'A' | 'B' | 'C' | 'D' | null>(null);
+  const [pendingFeedbackTarget, setPendingFeedbackTarget] = useState<string | 'whole' | null>(null);
   const [error, setError] = useState('');
   const [feedbackStatus, setFeedbackStatus] = useState('');
   const [showSupplement, setShowSupplement] = useState(false);
   const [supplementText, setSupplementText] = useState('');
-  // 历史轮次：与 coverage 并行拉取，供选择页展示（对齐 /profile 的历史区块）
-  const [rounds, setRounds] = useState<ThemeRoundHistoryItem[]>([]);
-  const [showHistory, setShowHistory] = useState(false);
 
   useEffect(() => {
     if (sessionLoading) return;
@@ -79,14 +87,12 @@ export default function ThemeAssessmentPage() {
     let cancelled = false;
     async function load() {
       try {
-        // 历史与 coverage 并行拉取；历史失败不影响主流程
-        const [coverage, history] = await Promise.all([
-          themeAssessmentApi.coverage(),
-          themeAssessmentApi.history().catch(() => [] as ThemeRoundHistoryItem[]),
-        ]);
+        const coverage = await themeAssessmentApi.coverage();
         if (cancelled) return;
+        if (!coverage || !Array.isArray(coverage.themes)) {
+          throw new Error('主题测试服务返回的数据不完整，请确认 Web 正连接 EVA API。');
+        }
         setCoverage(coverage);
-        setRounds(history);
         const savedRoundId = new URLSearchParams(window.location.search).get('roundId');
         if (savedRoundId) {
           const savedNext = await themeAssessmentApi.next(savedRoundId);
@@ -113,10 +119,13 @@ export default function ThemeAssessmentPage() {
   }, [router, sessionLoading, userId]);
 
   async function start(theme?: ThemeLens) {
+    const startedAt = Date.now();
     setSubmitting(true);
+    setPendingTheme(theme ?? 'default');
     setError('');
     try {
       const started = await themeAssessmentApi.start({ theme, locale });
+      await keepActionFeedbackVisible(startedAt);
       setVisibleRoundId(started.round.id);
       setRoundId(started.round.id);
       setNext(started.next);
@@ -134,15 +143,19 @@ export default function ThemeAssessmentPage() {
         contentVersion: '1.0'
       });
     } catch (err) {
+      await keepActionFeedbackVisible(startedAt);
       setError(err instanceof Error ? err.message : '无法开始这一轮测试。');
     } finally {
+      setPendingTheme(null);
       setSubmitting(false);
     }
   }
 
   async function answer(choiceId: 'A' | 'B' | 'C' | 'D') {
     if (!roundId || !next?.item_id || submitting) return;
+    const startedAt = Date.now();
     setSubmitting(true);
+    setPendingChoiceId(choiceId);
     setError('');
     try {
       const opId = operationId();
@@ -162,8 +175,9 @@ export default function ThemeAssessmentPage() {
         contentVersion: '1.0'
       });
 
+      await keepActionFeedbackVisible(startedAt);
+
       setFreeText('');
-      setNext(following);
       if (following.state === 'ready') {
         const completedResult = await themeAssessmentApi.complete(roundId);
         setVisibleRoundId(roundId);
@@ -176,10 +190,14 @@ export default function ThemeAssessmentPage() {
           occurredAt: new Date().toISOString(),
           contentVersion: '1.0'
         });
+      } else {
+        setNext(following);
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : '保存这次选择时出现问题。');
     } finally {
+      await keepActionFeedbackVisible(startedAt);
+      setPendingChoiceId(null);
       setSubmitting(false);
     }
   }
@@ -192,7 +210,11 @@ export default function ThemeAssessmentPage() {
     if (!roundId || submitting) return;
     const normalizedExplanation = explanation?.trim();
     if (action === 'clarify' && !normalizedExplanation) return;
+    const startedAt = Date.now();
     setSubmitting(true);
+    setPendingFeedbackTarget(observationQuestionId ?? 'whole');
+    setPendingTheme(null);
+    setPendingChoiceId(null);
     setError('');
     try {
       const response = await themeAssessmentApi.respond(roundId, {
@@ -251,13 +273,16 @@ export default function ThemeAssessmentPage() {
     } catch (err) {
       setError(err instanceof Error ? err.message : '保存反馈失败。');
     } finally {
+      await keepActionFeedbackVisible(startedAt);
+      setPendingFeedbackTarget(null);
       setSubmitting(false);
     }
   }
 
   if (sessionLoading || loading)
     return (
-      <main className="report-loading">
+      <main className="report-loading" role="status" aria-live="polite">
+        <span className="action-loading-spinner" aria-hidden="true" />
         <p>正在准备你的主题测试…</p>
       </main>
     );
@@ -265,14 +290,6 @@ export default function ThemeAssessmentPage() {
 
   if (result) {
     const portrait = result.result;
-    // 整报告级反馈的当前选择：用于按钮选中态。latest_feedback 只在整报告级反馈
-    // （observation_question_id 为空）时代表用户对整份结果的选择。
-    const wholeChoice: 'confirm' | 'partial' | 'refute' | null =
-      result.latest_feedback && !result.latest_feedback.observation_question_id
-        ? result.latest_feedback.action === 'clarify'
-          ? null
-          : result.latest_feedback.action
-        : null;
     return (
       <main className="report-container theme-assessment-page">
         <header className="report-header">
@@ -307,24 +324,23 @@ export default function ThemeAssessmentPage() {
                     {observationFeedback.state === 'needs_follow_up' && ' 这条先作为有争议的记录保留。'}
                   </p>
                 )}
-                <div className="report-actions report-actions--per-observation" role="group" aria-label={`对「${observation.focus}」这条观察的反馈`}>
-                  {([
-                    { action: 'confirm', label: '这条符合' },
-                    { action: 'partial', label: '部分符合' },
-                    { action: 'refute', label: '不太符合' },
-                  ] as const).map(({ action, label }) => (
-                    <button
-                      key={action}
-                      type="button"
-                      className={observationFeedback?.action === action ? 'is-selected' : undefined}
-                      aria-pressed={observationFeedback?.action === action}
-                      disabled={submitting}
-                      onClick={() => respond(action, observation.evidence_question_id)}
-                    >
-                      {label}
-                    </button>
-                  ))}
+                <div className="report-actions report-actions--per-observation">
+                  <button type="button" disabled={submitting} onClick={() => respond('confirm', observation.evidence_question_id)}>
+                    这条符合
+                  </button>
+                  <button type="button" disabled={submitting} onClick={() => respond('partial', observation.evidence_question_id)}>
+                    部分符合
+                  </button>
+                  <button type="button" disabled={submitting} onClick={() => respond('refute', observation.evidence_question_id)}>
+                    不太符合
+                  </button>
                 </div>
+                {submitting && pendingFeedbackTarget === observation.evidence_question_id && (
+                  <p className="action-loading" role="status" aria-live="polite">
+                    <span className="action-loading-spinner" aria-hidden="true" />
+                    正在保存这条观察的反馈…
+                  </p>
+                )}
               </article>
             );
           })}
@@ -347,28 +363,20 @@ export default function ThemeAssessmentPage() {
         </div>
         <section className="report-section">
           <h2>这和你真实吗？</h2>
-          <div className="report-actions" role="group" aria-label="对整份结果的反馈">
-            {([
-              { action: 'confirm', label: '大致符合' },
-              { action: 'partial', label: '部分符合' },
-              { action: 'refute', label: '不太符合' },
-            ] as const).map(({ action, label }) => (
-              <button
-                key={action}
-                type="button"
-                className={wholeChoice === action ? 'is-selected' : undefined}
-                aria-pressed={wholeChoice === action}
-                disabled={submitting}
-                onClick={() => respond(action)}
-              >
-                {submitting && wholeChoice === action ? '正在保存…' : label}
-              </button>
-            ))}
+          <div className="report-actions">
+            <button type="button" disabled={submitting} onClick={() => respond('confirm')}>
+              大致符合
+            </button>
+            <button type="button" disabled={submitting} onClick={() => respond('partial')}>
+              部分符合
+            </button>
+            <button type="button" disabled={submitting} onClick={() => respond('refute')}>
+              不太符合
+            </button>
             <button
               type="button"
-              className={showSupplement ? 'is-selected' : undefined}
-              aria-expanded={showSupplement}
               disabled={submitting}
+              aria-expanded={showSupplement}
               onClick={() => {
                 setShowSupplement(true);
                 setFeedbackStatus('');
@@ -378,6 +386,12 @@ export default function ThemeAssessmentPage() {
               我想补充
             </button>
           </div>
+          {submitting && pendingFeedbackTarget === 'whole' && (
+            <p className="action-loading" role="status" aria-live="polite">
+              <span className="action-loading-spinner" aria-hidden="true" />
+              正在保存反馈…
+            </p>
+          )}
           {showSupplement && (
             <div className="supplement-input-area">
               <label className="supplement-input-label" htmlFor="theme-result-supplement">
@@ -399,6 +413,7 @@ export default function ThemeAssessmentPage() {
                   disabled={submitting || !supplementText.trim()}
                   onClick={() => respond('clarify', undefined, supplementText)}
                 >
+                  {submitting && <span className="action-loading-spinner" aria-hidden="true" />}
                   {submitting ? '正在提交…' : '提交补充'}
                 </button>
                 <button
@@ -416,20 +431,12 @@ export default function ThemeAssessmentPage() {
           )}
           {(feedbackStatus || result.latest_feedback) && (
             <p role="status" className="feedback-restored">
-              <span className="feedback-restored-mark" aria-hidden="true">✓</span>
-              <span>
-                {feedbackStatus ? (
-                  <>
-                    <strong>已记录你的选择。</strong> {feedbackStatus}
-                  </>
-                ) : (
-                  <>
-                    <strong>已记录你的选择。</strong>{' '}
-                    {result.latest_feedback && feedbackSummary(result.latest_feedback.action, Boolean(result.latest_feedback.observation_question_id))}
-                    {result.latest_feedback?.explanation && ` ${result.latest_feedback.explanation}`}
-                  </>
-                )}
-              </span>
+              {feedbackStatus || (
+                <>
+                  {result.latest_feedback && feedbackSummary(result.latest_feedback.action, Boolean(result.latest_feedback.observation_question_id))}
+                  {result.latest_feedback?.explanation && ` ${result.latest_feedback.explanation}`}
+                </>
+              )}
             </p>
           )}
           {error && (
@@ -450,8 +457,15 @@ export default function ThemeAssessmentPage() {
           </p>
         )}
         <div className="report-actions">
-          <button type="button" className="btn-primary" onClick={() => start()}>
-            继续下一轮
+          <button
+            type="button"
+            className="btn-primary"
+            disabled={submitting}
+            aria-busy={submitting && pendingTheme === 'default'}
+            onClick={() => start()}
+          >
+            {submitting && pendingTheme === 'default' && <span className="action-loading-spinner" aria-hidden="true" />}
+            {submitting && pendingTheme === 'default' ? '正在准备下一轮…' : '继续下一轮'}
           </button>
           <Link href="/profile" className="btn-secondary">
             查看多轮观察总览
@@ -501,13 +515,21 @@ export default function ThemeAssessmentPage() {
                 key={option.id}
                 type="button"
                 disabled={submitting}
+                aria-busy={pendingChoiceId === option.id}
                 onClick={() => answer(option.id)}
               >
                 <strong className="choice-key">{option.id}.</strong>
                 <span className="choice-text">{option.text}</span>
+                {pendingChoiceId === option.id && <span className="action-loading-spinner" aria-hidden="true" />}
               </button>
             ))}
           </div>
+          {submitting && (
+            <p className="action-loading" role="status" aria-live="polite">
+              <span className="action-loading-spinner" aria-hidden="true" />
+              正在记录选择并载入下一题…
+            </p>
+          )}
           <label className="report-detail" htmlFor="theme-round-context">
             如果愿意，可以说说你为什么会这样选，或当时发生了什么。细节越具体，接下来的问题就越贴近你的真实情况。
           </label>
@@ -545,114 +567,19 @@ export default function ThemeAssessmentPage() {
               <h2>{theme.title}</h2>
               <p>{THEME_DESCRIPTIONS[theme.theme_lens]}</p>
               <p className="report-detail">已完成 {theme.completed_rounds} 轮</p>
-              <button type="button" disabled={submitting} onClick={() => start(theme.theme_lens)}>
-                从这个主题开始
+              <button
+                type="button"
+                disabled={submitting}
+                aria-busy={submitting && pendingTheme === theme.theme_lens}
+                onClick={() => start(theme.theme_lens)}
+              >
+                {submitting && pendingTheme === theme.theme_lens && <span className="action-loading-spinner" aria-hidden="true" />}
+                {submitting && pendingTheme === theme.theme_lens ? '正在准备题目…' : '从这个主题开始'}
               </button>
             </article>
           ))}
         </div>
       </section>
-
-      {/* ── 历史轮次 ──────────────────────────────────────────────
-          数据源 GET /v1/assessment-rounds（与 /profile 的
-          themeRounds 区块同源同字段）。三个状态分支对齐原项目设计：
-          needs_follow_up / whole_result_refuted / recorded。*/}
-      {rounds.length > 0 && (
-        <section className="report-section">
-          <div className="theme-round-history-header">
-            <h2>历史轮次</h2>
-            <button
-              type="button"
-              className="theme-round-history-toggle"
-              onClick={() => setShowHistory((v) => !v)}
-              aria-expanded={showHistory}
-            >
-              {showHistory ? '收起' : `展开全部 ${rounds.length} 轮`}
-            </button>
-          </div>
-
-          <div className="evidence-nodes theme-round-history-list">
-            {(showHistory ? rounds : rounds.slice(0, 3)).map((round) => {
-            const inProgress =
-              round.status === 'in_progress' || round.status === 'ready_to_complete';
-            return (
-              <article key={round.id} className="evidence-node theme-round-history-item">
-                <div className="evidence-node-meta">
-                  <span className="evidence-node-source">{round.theme_title}</span>
-                  <span>
-                    {round.completed_at
-                      ? new Date(round.completed_at).toLocaleDateString(locale)
-                      : '进行中'}
-                  </span>
-                </div>
-
-                {round.feedback_state === 'needs_follow_up' && (
-                  <p className="report-detail theme-round-feedback">
-                    {t('theme_round.historical_dispute_notice')}
-                  </p>
-                )}
-
-                <p className="theme-round-headline">
-                  {round.whole_result_refuted
-                    ? t('theme_round.whole_refuted_heading')
-                    : (round.headline ?? '本轮尚未完成。')}
-                </p>
-
-                <div
-                  role={round.whole_result_refuted ? 'group' : undefined}
-                  aria-label={
-                    round.whole_result_refuted
-                      ? t('theme_round.historical_result_label')
-                      : undefined
-                  }
-                >
-                  {round.whole_result_refuted && round.headline && (
-                    <p className="report-detail">
-                      {t('theme_round.historical_conclusion_label')}：{round.headline}
-                    </p>
-                  )}
-                  {round.boundary && (
-                    <p className="report-detail theme-round-boundary">{round.boundary}</p>
-                  )}
-                </div>
-
-                {round.feedback_state === 'recorded' && (
-                  <p className="report-detail theme-round-feedback">
-                    {t('theme_round.feedback_recorded')}
-                  </p>
-                )}
-                {round.feedback_state === 'needs_follow_up' && round.latest_feedback_action && (
-                  <p className="report-detail theme-round-feedback">
-                    {t('theme_round.feedback_follow_up')}
-                  </p>
-                )}
-
-                {round.headline && (
-                  <Link
-                    href={`/theme-assessment?roundId=${encodeURIComponent(round.id)}`}
-                    className="evidence-node-link"
-                  >
-                    查看本轮结果和反馈
-                  </Link>
-                )}
-                {inProgress && (
-                  <Link
-                    href={`/theme-assessment?roundId=${encodeURIComponent(round.id)}`}
-                    className="evidence-node-link"
-                  >
-                    继续未完成主题轮
-                  </Link>
-                )}
-              </article>
-            );
-          })}
-          </div>
-
-          {showHistory && rounds.length > 3 && (
-            <p className="report-detail">仅显示最近 30 轮。</p>
-          )}
-        </section>
-      )}
     </main>
   );
 }

@@ -72,9 +72,9 @@ export class AuthService {
     const html = await render(VerificationEmail({ validationCode: otp }));
 
     const { error } = await this.resend.emails.send({
-      from: 'Eva <noreply@eva.live>',
+      from: 'EVA <noreply@eva.live>',
       to: email,
-      subject: 'Eva 登录验证码',
+      subject: 'EVA 登录验证码',
       html,
     });
 

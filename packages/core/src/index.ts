@@ -1,8 +1,15 @@
 // packages/core/src/index.ts
-// Public API surface for core
-// Eva-Solana 闭环最小导出面：assessment（测评）+ memory + evidence + shared（类型契约）
+// Public API surface for @eva/core
 
 export * from './assessment/index.js';
-export * from './memory/memory.js';
-export * from './evidence/confidence-decay.js';
+export * from './dialogue/index.js';
+export * from './memory/index.js';
+export * from './evidence/index.js';
+export * from './report/index.js';
+export * from './diary/index.js';
+export * from './correction/index.js';
+export * from './snapshot/index.js';
+export * from './safety/index.js';
 export * from './shared/index.js';
+export * from './progression/index.js';
+export * from './reflection/index.js';

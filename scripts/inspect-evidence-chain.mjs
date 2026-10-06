@@ -7,7 +7,7 @@ const c = new Client({
   connectionTimeoutMillis: 20000,
 });
 await c.connect();
-const schema = process.env.DATABASE_SCHEMA || process.env.EVA_DATABASE_SCHEMA || 'ather_solana';
+const schema = process.env.DATABASE_SCHEMA || process.env.EVA_DATABASE_SCHEMA || 'eva_web3';
 await c.query(`SET search_path TO ${schema}`);
 const p = (s) => process.stdout.write(`${s}\n`);
 

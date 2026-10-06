@@ -1,0 +1,5 @@
+{
+  "installCommand": "cd ../.. && bun install --frozen-lockfile --ignore-scripts",
+  "buildCommand": "cd ../.. && bun run build:core && bun run build:web",
+  "framework": "nextjs"
+}

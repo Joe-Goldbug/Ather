@@ -16,7 +16,7 @@ export class AuthGuard implements CanActivate {
     const req = ctx.switchToHttp().getRequest<Request>();
 
     // Priority: Cookie -> Authorization header
-    let token = req.cookies?.['eva_session'] ?? req.cookies?.['ather_session'];
+    let token = req.cookies?.['eva_session'];
 
     if (!token) {
       const authHeader = req.headers['authorization'];

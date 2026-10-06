@@ -110,39 +110,67 @@ by `sha256(guest_run_id:node_id:option_id)`, so the order is:
 - **stable within a run** — a refresh mid-chapter never reorders under you
 - **different across runs** — you cannot memorise "always pick A"
 
-## Relationship to the original
+## 核心体系与产品架构 (Architecture & Capabilities)
 
-Code was extracted from the earlier prototype branch and trimmed. What was removed:
+Eva 是一个以增强人类智能（IA，Intelligence Augmentation）为终极目标的个人认知系统与 Web3 自主凭证平台：
 
-| Removed | Why |
+1. **赛道与产品定位**：
+   - **核心赛道**：`AI Platforms / Agents`（AI 智能体与推理平台，帮助人理解问题、检验假设、制定行动）。
+   - **产品形态**：`Consumer Apps`（面向个人的日常应用，融入真实生活）。
+   - **Web3 支撑**：`Identity & Privacy`（去中心化身份、可撤销授权、链下验签与选择性披露）。
+
+2. **创新经济模型：Compute Vault (美债 RWA 算力金库)**：
+   - 用户在智能合约存入 USDC（如 $500 USDC）。
+   - 合约自动申购链上合规美债 RWA（如 Ondo USDY，年化 ~5%）。
+   - 年化产生的利息收益自动转换为 Eva 的 AI 对话与高级推理算力额度。
+   - 用户“零成本”持续使用 Eva，且在任何时候均可 100% 全额赎回本金，实现“无损使用，零沉没成本”。
+
+3. **五环认知飞轮 (The 5-Loop Engine)**：
+   - **Play (情境探索)**：固定第一章《雨停之前》+ 主题决策轮 + 动态微沙盒推演。
+   - **Record (现实自述)**：现实决策与情绪瞬间记录（Captures 原文）。
+   - **Observe (有限观察)**：有来源、有情境、有边界的模式揭穿与观察（绝不贴固定人格标签）。
+   - **Correct (用户纠偏)**：用户拥有一票否决权（确认、部分符合、反驳、补充、撤回）。
+   - **Action (现实行动)**：发起现实生活小实验，闭环复盘。
+
+## Monorepo 模块布局
+
+| 目录 | 职责与技术栈 |
 |---|---|
-| `auth` module, `AuthGuard`, session interceptor | No accounts in this repository |
-| `theme-assessment.controller.ts` (authenticated) | Served the DB-backed theme-round flow |
-| `ThemeFollowupGeneratorService` | LLM copy polishing; not needed to close the loop |
-| `theme-assessment.service.ts` claim + all write methods | Required a database and a user id |
-| portrait / evidence / diary / captures / corrections / chat | A separate product surface |
-| `script-*` assessment modules (3,357 lines) | Belonged to the retired dynamic-script flow |
-| `middleware.ts` | Only did locale detection, no auth |
+| `packages/core` | 领域契约、证据准入 v2、题库、剧本引擎与国际化算法 (Bun / TypeScript) |
+| `packages/database` | PostgreSQL 核心 Schema、35+ 迁移版本与 RLS 权限治理 |
+| `apps/api` | NestJS 10 后端服务、认证、主题评估、微沙盒生成与队列接口 |
+| `apps/web` | Next.js 14/16 前端用户界面、Play、白皮书、主题测试与多语言 |
+| `docs/` | 完整的技术方案、公链选型、MVP 规程与桌面交接文档 (`docs/handover/`) |
+| `scripts/` | 自动化迁移、冒烟自检、合规验证与同步脚本 |
 
-The service keeps the HMAC claim token from the original. That is the natural
-integration point for a future wallet signature — swapping `signGuestClaim` for
-`signMessage` verification is a same-shaped change.
+## 快速构建与验证 (Build & Test)
 
-### Fixed during extraction
+```bash
+# 安装依赖
+bun install
 
-Two real defects, both confirmed by test:
+# 构建所有工作区包
+bun run build:core
+bun run build:api
+bun run build:web
 
-1. The original `/play` result page read `theme_title`, `headline`, `strength`,
-   `watchout`, `counterevidence` and `boundary` from the completion result. None
-   of those fields exist on `GuestChapterRecord`, so the page rendered
-   `undefined` for every insight. This repository uses the actual fields
-   (`episode_title`, `summary`, `pattern`, `benefits`, `costs`, `exceptions`,
-   `unknowns`).
+# 一键全局构建
+bun run build
 
-2. `lib/api.ts` resolved the API base URL at module load. Because `next build`
-   prerenders every page on the server, the build failed whenever
-   `NEXT_PUBLIC_API_URL` was unset. Resolution is now lazy, per call.
+# 运行测试
+bun run test:core     # Core 领域算法与契约单测 (378 项测试)
+bun run dev:api       # 启动开发 API 服务 (:3101)
+bun run dev:web       # 启动开发前端服务 (:3000)
+```
 
-## Licence
+## 权限与数据边界原则
 
-UNLICENSED. Private repository.
+- **无固定人格标签**：不输出 MBTI 式永久人格分类或心理学诊断。
+- **模拟与自述隔离**：游戏选择标记为 `simulation_choice`，用户回忆标记为自述，不冒充外部核验证据。
+- **用户裁决权优先**：用户随时可反驳、撤回、导出及删除数据。
+- **隐私保护**：未获明确授权不读取原文，真实数据与向量不默认公开上链。
+
+## License
+
+UNLICENSED. Private repository. All rights reserved.
+

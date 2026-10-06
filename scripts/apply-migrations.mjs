@@ -24,7 +24,7 @@ if (!databaseUrl) {
   process.exit(1);
 }
 
-const SCHEMA = process.argv[2] || 'ather_solana';
+const SCHEMA = process.argv[2] || 'eva_web3';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const migrationsDir = join(here, '..', 'packages/database/src/migrations');

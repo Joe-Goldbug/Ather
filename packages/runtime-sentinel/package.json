@@ -1,0 +1,32 @@
+{
+  "name": "runtime-sentinel",
+  "version": "0.2.0",
+  "description": "Project-agnostic runtime smoke + drift detector. Drop-in: copy this folder to any project, write .sentinel/probes.ts, run `sentinel`.",
+  "type": "module",
+  "license": "MIT",
+  "engines": {
+    "node": ">=18"
+  },
+  "bin": {
+    "sentinel": "bin/sentinel.ts",
+    "sentinel-quick": "bin/sentinel-quick.ts"
+  },
+  "exports": {
+    ".": "./src/index.ts",
+    "./helpers": "./src/helpers/index.ts",
+    "./preflight": "./src/preflight.ts",
+    "./retry": "./src/retry.ts",
+    "./error-classifier": "./src/error-classifier.ts"
+  },
+  "scripts": {
+    "selfcheck": "bun bin/sentinel.ts --help",
+    "quick": "bun bin/sentinel-quick.ts"
+  },
+  "peerDependencies": {
+    "ioredis": "^5.3.2"
+  },
+  "peerDependenciesMeta": {
+    "ioredis": { "optional": true }
+  },
+  "keywords": ["smoke-test", "synthetic-monitoring", "runtime-check", "drift-detection"]
+}

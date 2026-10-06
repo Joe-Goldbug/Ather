@@ -14,19 +14,62 @@
       "import": "./dist/src/assessment/index.js",
       "types": "./dist/src/assessment/index.d.ts"
     },
+    "./dialogue": {
+      "import": "./dist/src/dialogue/index.js",
+      "types": "./dist/src/dialogue/index.d.ts"
+    },
+    "./memory": {
+      "import": "./dist/src/memory/index.js",
+      "types": "./dist/src/memory/index.d.ts"
+    },
+    "./evidence": {
+      "import": "./dist/src/evidence/index.js",
+      "types": "./dist/src/evidence/index.d.ts"
+    },
+    "./report": {
+      "import": "./dist/src/report/index.js",
+      "types": "./dist/src/report/index.d.ts"
+    },
+    "./diary": {
+      "import": "./dist/src/diary/index.js",
+      "types": "./dist/src/diary/index.d.ts"
+    },
+    "./correction": {
+      "import": "./dist/src/correction/index.js",
+      "types": "./dist/src/correction/index.d.ts"
+    },
+    "./snapshot": {
+      "import": "./dist/src/snapshot/index.js",
+      "types": "./dist/src/snapshot/index.d.ts"
+    },
+    "./safety": {
+      "import": "./dist/src/safety/index.js",
+      "types": "./dist/src/safety/index.d.ts"
+    },
     "./shared": {
       "import": "./dist/src/shared/index.js",
       "types": "./dist/src/shared/index.d.ts"
     },
+    "./progression": {
+      "import": "./dist/src/progression/index.js",
+      "types": "./dist/src/progression/index.d.ts"
+    },
     "./shared/locales": {
       "import": "./dist/src/shared/locales.js",
       "types": "./dist/src/shared/locales.d.ts"
+    },
+    "./reflection": {
+      "import": "./dist/src/reflection/index.js",
+      "types": "./dist/src/reflection/index.d.ts"
     }
   },
   "scripts": {
-    "build": "tsc"
+    "build": "tsc && node ../../scripts/fix-core-esm-imports.mjs",
+    "test": "tsx test.mjs && bun test src/assessment/scenario-contracts.test.ts"
   },
   "devDependencies": {
+    "fast-check": "^4.8.0",
+    "tsx": "^4.21.0",
     "typescript": "^5.9.3"
   }
 }

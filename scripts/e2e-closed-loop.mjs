@@ -12,11 +12,11 @@ const COOKIE_FILE = '.tmp/cookies.txt';
 let cookie = '';
 try {
   const raw = readFileSync(COOKIE_FILE, 'utf8');
-  const line = raw.split('\n').find((l) => l.includes('eva_session') || l.includes('ather_session'));
+  const line = raw.split('\n').find((l) => l.includes('eva_session') || l.includes('eva_session'));
   if (line) {
     const parts = line.trim().split('\t');
     const val = parts[parts.length - 1];
-    cookie = val.includes('=') ? val : (line.includes('eva_session') ? `eva_session=${val}` : `ather_session=${val}`);
+    cookie = val.includes('=') ? val : (line.includes('eva_session') ? `eva_session=${val}` : `eva_session=${val}`);
   }
 } catch {
   /* 首次运行无 cookie */

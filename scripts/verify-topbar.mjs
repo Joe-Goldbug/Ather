@@ -31,7 +31,7 @@ const login = await fetch(`${WEB}/api/auth/dev-login`, { method: 'POST' });
 const cookie = (login.headers.getSetCookie?.() ?? [])
   .map((c) => c.split(';')[0])
   .join('; ');
-check('dev-login 成功', login.status === 200 && (cookie.includes('eva_session') || cookie.includes('ather_session')), `status=${login.status}`);
+check('dev-login 成功', login.status === 200 && (cookie.includes('eva_session') || cookie.includes('eva_session')), `status=${login.status}`);
 
 if (cookie) {
   // 用带 cookie 的请求拿 SSR HTML 不现实（fetch 不会带 cookie 到 SSR），

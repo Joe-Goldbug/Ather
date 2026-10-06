@@ -18,10 +18,10 @@ export default function VerificationEmail({ validationCode }: VerificationEmailP
   return (
     <Html>
       <Head />
-      <Preview>Eva 登录验证码</Preview>
+      <Preview>EVA 登录验证码</Preview>
       <Body style={main}>
         <Container style={container}>
-          <Heading style={heading}>Eva</Heading>
+          <Heading style={heading}>EVA</Heading>
           <Section style={section}>
             <Text style={text}>
               您的登录验证码是：

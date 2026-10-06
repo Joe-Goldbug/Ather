@@ -1,6 +1,6 @@
 // apps/api/src/common/llm-funnel.ts
 //
-// Eva LLM Funnel — three-layer normalization around any LLM call.
+// EVA LLM Funnel — three-layer normalization around any LLM call.
 //
 // Layer 1 · ADAPTER     : identify model family (gpt / qwen / claude / gemini / unknown)
 //                        and emit the request shape each family is happiest with.
@@ -24,10 +24,10 @@
 //                        - detect "model going off the rails" patterns and emit a
 //                          controlled fallback so the user never sees a broken response.
 //
-// Why this exists (Eva funnel doctrine):
+// Why this exists (EVA funnel doctrine):
 //   Different models "say different things" given the same prompt. The funnel
 //   doesn't fight the model — it just guarantees the *outer contract* is stable,
-//   so the rest of Eva (engines, evidence, you_shifted, diary) can rely on
+//   so the rest of EVA (engines, evidence, you_shifted, diary) can rely on
 //   `eva_message` being a clean, bounded, on-rails string regardless of
 //   which underlying LLM the deployment is currently configured to use.
 

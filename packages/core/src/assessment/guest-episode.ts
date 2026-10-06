@@ -201,6 +201,6 @@ export function buildGuestEpisodeResult(answers: GuestEpisodeAnswer[]): GuestEpi
     exceptions: exceptionNodes.length > 0
       ? `${exceptionNodes.join('、')}中的选择与本章较常出现的做法不同，说明情境可能影响你的决定。`
       : '六个节点出现了相同方向的做法；仍需要不同关系和压力条件下的新证据来寻找例外。',
-    unknowns: 'Eva 目前只有一个模拟章节，无法判断这些做法是否会出现在现实生活、其他关系或不同压力下。',
+    unknowns: 'EVA 目前只有一个模拟章节，无法判断这些做法是否会出现在现实生活、其他关系或不同压力下。',
   };
 }

@@ -10,7 +10,7 @@ const login = await fetch(`${BASE}/auth/dev-login`, {
   body: '{}',
 });
 const cookie = (login.headers.getSetCookie?.() ?? []).map((c) => c.split(';')[0]).join('; ');
-if (!cookie.includes('eva_session') && !cookie.includes('ather_session')) {
+if (!cookie.includes('eva_session') && !cookie.includes('eva_session')) {
   log(`无法登录，跳过压测: ${login.status}`);
   process.exit(1);
 }

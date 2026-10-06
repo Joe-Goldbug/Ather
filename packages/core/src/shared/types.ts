@@ -1,5 +1,5 @@
 // ================================================================
-// Eva Engine - Type Definitions
+// EVA Engine - Type Definitions
 // All interfaces for script, memory, chat, and LLM integration
 // ================================================================
 
@@ -33,13 +33,13 @@ export interface VectorDimension<T = number> {
 }
 
 /**
- * One instance of user refuting (or confirming) Eva's personality claim.
+ * One instance of user refuting (or confirming) EVA's personality claim.
  */
 export interface RefutationEntry {
   id: string;
   timestamp: number;
   dimension: string;                  // e.g. 'conflict_style'
-  ather_claim: string;                // what Ather stated
+  eva_claim: string;                // what EVA stated
   user_response: RefutationResponse;  // agree / disagree / partial
   user_nuance?: string;               // user's elaboration text
   confidence_delta: number;           // net confidence change applied
@@ -184,17 +184,17 @@ export interface ScriptResult {
   evidence_log: ScriptEvidence[];
   // Evidence-based narrative (no labels, just observations citing their choices)
   narrative: string;
-  // One Eva-style insight (punchy, slightly challenging)
+  // One EVA-style insight (punchy, slightly challenging)
   key_insight: string;
-  // Eva's first message entering chat (bridges script → chat)
-  ather_opening: string;
+  // EVA's first message entering chat (bridges script → chat)
+  eva_opening: string;
   share_card: ScriptResultShareCard;
   /** Slug-based archetype id (e.g. "boundary_guard") for frontend bucketing. */
   archetype_id: string;
   /** Legacy compatibility: optional reality inputs supplied with a scored run. */
   free_text_answers?: Record<string, string>;
   /** Legacy compatibility: deterministic prompts for reviewing supplied reality inputs. */
-  ather_wants_to_confirm?: string[];
+  eva_wants_to_confirm?: string[];
 }
 
 export interface ScriptRunState {
@@ -346,7 +346,7 @@ export interface EventEntity {
 
 export interface ConversationTurn {
   id: string;
-  role: 'user' | 'ather';
+  role: 'user' | 'eva';
   content: string;
   timestamp: number;
   engine_triggered?: ChatEngineType;
@@ -370,7 +370,7 @@ export interface WeeklySummary {
   pattern_discoveries: string[];
   key_events: EventEntity[];
   vector_drift: Partial<PersonalityVector>;
-  ather_message: string;          // Eva's weekly review message
+  eva_message: string;          // EVA's weekly review message
   generated_at: number;
 }
 
@@ -480,13 +480,13 @@ export interface NextTestRecommendation {
 }
 
 export interface ChatResponse {
-  ather_message: string;
+  eva_message: string;
   engine_used: ChatEngineType | null;
   updated_memory: Memory;
   diary_update?: DiaryEntry;
   /** Fired when RCI > 1.96 on any dimension — signals a statistically significant shift */
   you_shifted?: YouShifted;
-  /** Auto-generated when user explicitly refutes Eva's claim in chat. */
+  /** Auto-generated when user explicitly refutes EVA's claim in chat. */
   correction_signal?: ChatCorrectionSignal;
   /** Dialogue state after this turn — null if state unchanged */
   updated_state?: DialogueState;
@@ -499,7 +499,7 @@ export interface ChatResponse {
 // ---------------------------------------------------------------
 
 export type DialoguePhase =
-  | 'probing'      // Active measurement — Eva is probing for evidence
+  | 'probing'      // Active measurement — EVA is probing for evidence
   | 'insufficient' // Not enough evidence yet — keep going
   | 'enough'       // Sufficient evidence — start soft-guiding toward close
   | 'closing'      // Soft-closing: guiding conversation toward natural end (turns 4-6)
@@ -521,7 +521,7 @@ export interface DialogueState {
   max_turns: number;
   /** Whether micro-test was triggered this turn */
   micro_test_pending: boolean;
-  /** Eva's last probe hint (for context continuity) */
+  /** EVA's last probe hint (for context continuity) */
   last_probe_hint: string;
 }
 
