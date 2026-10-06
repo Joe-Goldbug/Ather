@@ -3,6 +3,22 @@
 > **项目仓库**：[https://github.com/EthanLau1/Eva-web3](https://github.com/EthanLau1/Eva-web3)  
 > **核心定位**：IA（Intelligence Augmentation，增强人类智能）与 Web3 自主认知凭证平台。
 
+## GitHub 仓库与协作方式
+
+核对日期：2026-10-06
+
+用户口头称呼对应关系：
+
+- **“我的 Eva 私人仓”**：EthanLau1/Eva-web3，用户自己的私人仓。
+- **“我的 Eva 协助仓”**：Joe-Goldbug/Eva，用户与协作小伙伴共用的仓库。
+
+| 仓库 | 用途 | 当前可见性 | 本地远端 |
+|---|---|---|---|
+| [EthanLau1/Eva-web3](https://github.com/EthanLau1/Eva-web3) | 用户的个人项目仓 | Private | origin |
+| [Joe-Goldbug/Eva](https://github.com/Joe-Goldbug/Eva) | 用户与协作者共同使用的协作仓；用户有时会把项目内容同步到这里 | Public | upstream |
+
+这两个仓库用途不同。协作仓是共享工作空间，不是用户的个人私人仓。本地目录当前位于 master 分支并跟踪 origin/master。用户说“有时会同步”表示存在按需同步的工作方式；每次具体同步仍应依据当次明确指示确认目标分支、内容范围和同步动作。
+
 ## 架构与设计规范 (Docs)
 
 本项目关于 IA 目标、Web2/Web3 边界、公链选型与 V1 MVP 规划的设计文档已归档于 `docs/`：
