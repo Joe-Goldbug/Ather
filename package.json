@@ -2,6 +2,8 @@
   "name": "eva-web3",
   "version": "0.1.0",
   "private": true,
+  "author": "Ethan & Whitepeace",
+  "license": "UNLICENSED",
   "type": "module",
   "packageManager": "bun",
   "workspaces": [

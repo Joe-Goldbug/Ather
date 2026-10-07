@@ -1,7 +1,32 @@
 # Eva (Eva-web3)
 
-> **项目仓库**：[https://github.com/EthanLau1/Eva-web3](https://github.com/EthanLau1/Eva-web3)  
-> **核心定位**：IA（Intelligence Augmentation，增强人类智能）与 Web3 自主认知凭证平台。
+> **项目仓库 / Repository**：[https://github.com/EthanLau1/Eva-web3](https://github.com/EthanLau1/Eva-web3)  
+> **核心定位 / Core Positioning**：IA（Intelligence Augmentation，增强人类智能）与 Web3 自主认知凭证平台。
+
+## 商业项目声明与知识产权归属 | Commercial Project & Ownership Notice
+
+> ### ⚠️ 重要法律与商业声明 / IMPORTANT LEGAL & COMMERCIAL NOTICE
+>
+> **本项目为严肃商业专有项目，受严格知识产权法律及商业秘密保护。**  
+> **This repository and its entire codebase represent a proprietary commercial project subject to strict intellectual property protections and commercial confidentiality.**
+>
+> ---
+>
+> #### 1. 创始团队与排他性所有权 / Founding Team & Exclusive Ownership
+> - **中文**：本项目由创始团队 **Ethan** 与 **Whitepeace** 两人共同创立，享有对本项目全部资产与权益的唯一、完全且排他的所有权。
+> - **English**: This project was founded and is exclusively owned by its two co-founders: **Ethan** and **Whitepeace**. They hold sole and full ownership over all project assets and rights.
+>
+> #### 2. 团队协作与分工声明 / Executive Structure & Division of Labor
+> - **中文**：创始团队实行整体共治，对外**不陈述亦不拆分个人具体分工**。
+> - **English**: The founding team operates under joint executive responsibility; **no breakdown of individual internal division of labor, specific roles, or departmental assignments is represented or disclosed**.
+>
+> #### 3. 独立创作与排他性（无任何第三方参与）/ Sole Authorship & Strict Exclusivity
+> - **中文**：本项目的全部构想、业务逻辑、系统架构、算法设计、工程代码、交互界面、技术文档及衍生知识产权，**完全且仅由创始团队 Ethan 与 Whitepeace 两人独立设计、研发与构建**。**截至目前，不存在任何其他个人、机构、顾问、外包团队或第三方实体参与过本项目的构想、开发或设计，没有任何第三方做出过任何形式的贡献，亦无任何第三方对本项目享有任何权利、主张或权益**。
+> - **English**: All strategic concepts, business logic, system architectures, algorithmic models, software codebases, interfaces, technical documentation, and derivative intellectual properties were created and engineered **solely and exclusively by the founding team (Ethan & Whitepeace)**. **To date, no other individuals, external entities, consultants, contractors, agencies, or third parties have ever participated in, contributed to, or held any interest, claim, or title in this project or codebase**.
+>
+> #### 4. 严苛权利保留与侵权追责 / Strict Reservation of Rights & Prohibitions
+> - **中文**：本项目**非开源项目**。未经创始团队正式书面明确授权，严禁任何实体或个人以任何形式进行复制、分发、镜像抓取、派生（fork/mirror）、反向工程、衍生开发、商业使用或向第三方披露。创始团队保留追究一切法律责任的权利。
+> - **English**: This project is **strictly NOT open-source**. Any unauthorized reproduction, modification, distribution, mirroring, forking, decompilation, reverse engineering, commercial exploitation, or public disclosure, in whole or in part, without prior explicit written authorization from the founding team is strictly prohibited and legally actionable. All rights reserved.
 
 ## 架构与设计规范 (Docs)
 
@@ -170,7 +195,12 @@ bun run dev:web       # 启动开发前端服务 (:3000)
 - **用户裁决权优先**：用户随时可反驳、撤回、导出及删除数据。
 - **隐私保护**：未获明确授权不读取原文，真实数据与向量不默认公开上链。
 
-## License
+## 知识产权与版权许可 | License & Copyright
 
-UNLICENSED. Private repository. All rights reserved.
+**PROPRIETARY & CONFIDENTIAL. UNLICENSED.**  
+Copyright © 2026 Ethan & Whitepeace. All Rights Reserved.  
+
+- **商业专有项目**：未授予任何公开使用、修改或分发许可。未经创始团队正式书面许可，严禁以任何方式使用、复制、分发或反向编译。
+- **Commercial & Proprietary**: No public license is granted. Unauthorized use, copying, reproduction, distribution, or decompilation is strictly prohibited.
+
 
