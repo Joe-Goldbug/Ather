@@ -13,10 +13,11 @@ import type { Locale } from '@/lib/i18n';
 // Source: docs/Ather_内部总纲白皮书_2026-04-25.md
 const WHITEPAPER_MD = `# EVA 内部纲领
 
-> 历史归档说明（2026-06-29）：
-> 本文写于 EVA 仍把“长期记忆 + 结构化对话 + 持续陪伴式 chat”当作主产品定义的阶段。
-> 当前正式产品已收敛为 \`14 题基线测评 -> 画像 -> 现实记录 -> 单题测试 -> 用户纠正\`。
-> 本文仅保留作早期定位演化参考，不作为当前产品、页面、部署或研发口径。
+> 当前项目简述 / Current Project Pitch（2026-10-07）：
+> 中文：Eva 是一面用于反映人内在真实自我的计算化心智镜像（Computational Mind Mirror）。它通过 AI 引导的情境互动，帮助用户理解思考模式、探索性格特质、人格底色与情绪性情；用户可补充或纠正系统观察。
+> English: Eva is a computational mind mirror designed to reflect a person’s inner self. Through AI-guided situational interactions, it helps users understand their thinking patterns and explore their character, temperament, and personality traits. Users can add context to or correct the system’s observations.
+> Web3 方向 / Web3 direction：通过可验证凭证和用户自主授权分享，让用户更好掌控认知记录。私密心智与对话原文不公开写入区块链。 / Verifiable credentials and user-authorized sharing give users greater control over cognitive records. Private reflections and raw conversations are not published on a blockchain.
+> 下文其余纲领内容属于早期历史资料，不代表当前定位或已上线功能。 / The remaining charter below is historical material and does not represent current positioning or shipped features.
 
 内部版本 v1.0
 日期：2026-04-25
@@ -31,21 +32,13 @@ const WHITEPAPER_MD = `# EVA 内部纲领
 
 ---
 
-## 2. EVA 的最新定义
+## 2. 当前项目简述 / Current Project Pitch
 
+**Eva 是一面用于反映人内在真实自我的计算化心智镜像（Computational Mind Mirror）。它不以刻板标签定义用户，也不靠虚假奉承取悦用户，而是通过 AI 引导的情境互动帮助用户理解思考模式、探索性格特质、人格底色与情绪性情。**
 
-**EVA 是一个以长期记忆、结构化对话、日常追踪和变化检测为核心的“计算化自我探索系统”，目标是成为最懂用户的 AI 伴侣。**
+**Eva is a computational mind mirror designed to reflect a person’s inner self. Rather than defining users with rigid labels or superficial flattery, it uses AI-guided situational interactions to help users understand their thinking patterns and explore their character, temperament, and personality traits.**
 
-它是一个持续更新的自我模型。
-
-
-它更接近：
-
-**帮助人类持续看见自己、理解自己。**
-
-这也是 EVA 能从“产品”走向 “IA，Intelligence Amplification” 的起点。
-
----
+互动中的观察是供用户理解、补充和纠正的线索，不是临床诊断或不可更改的事实。 / Observations from interactions are prompts for users to understand, add context to, and correct; they are not clinical diagnoses or unchangeable facts.
 
 ## 3. EVA 不是什么
 

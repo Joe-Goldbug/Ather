@@ -1,16 +1,6 @@
 # Eva：IA 与 Web3 探讨 / Eva: IA and Web3 Discussion
 
-当前项目定义见 [项目定位 / Project positioning](PROJECT-POSITIONING.md)。
-
-**中文**：Eva 是一个增强人类智能（IA）的平台，通过 AI 引导的互动体验，帮助用户理解自己的思考模式、了解用户自身人格性格，其 Web3 方向通过可验证凭证与用户自主授权分享，让用户更好地掌控自己的认知记录。
-
-**English**: Eva is an intelligence augmentation (IA) platform that uses AI-guided interactive experiences to help users understand their thinking patterns and explore their personality traits. Its Web3 direction uses verifiable credentials and user-authorized sharing to give users greater control over their cognitive records.
-
-## 当前方向 / Current Direction
-
-AI 引导的互动体验帮助用户理解自己的思考模式与人格性格；用户可以确认、补充或纠正对自己的描述。Web3 方向围绕认知记录的可验证凭证与用户自主授权分享展开。 / AI-guided interactive experiences help users understand their thinking patterns and personality traits. Users can confirm, add to, or correct descriptions of themselves. The Web3 direction focuses on verifiable credentials for cognitive records and user-authorized sharing.
-
-此前关于判断训练、行动复盘的 Demo 建议已被本次定位取代，不作为 Eva 的产品定义或已批准需求。以下技术和费用研究仍是探索材料，不代表已实现功能。 / Earlier proposals for judgment training and action reviews have been superseded and are not Eva's product definition or approved requirements. The technical and cost research below remains exploratory and does not describe completed features.
+当前项目简述与完整中英文对照见 [Eva 项目简述 / Project Pitch](PROJECT-POSITIONING.md)。以下 Web2/Web3 和资产机制内容属于技术探索，不能替代当前项目定位或视为已上线功能。 / See [Eva Project Pitch](PROJECT-POSITIONING.md) for the current bilingual project description. The Web2/Web3 and asset-mechanism material below is technical exploration, not a replacement for the current positioning or a claim of shipped features.
 
 ## 4. Web2 与 Web3 的分工
 

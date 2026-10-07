@@ -80,15 +80,15 @@ RWA 可以是以后的一项能力。考虑过利息补贴 AI 费用，不足以
 | Climate / Green Tech | 气候／绿色科技。解决能源效率、排放核算、环境监测和绿色资源协调等问题。 | 当前没有直接对应的核心场景。 |
 | Supply Chain & Logistics | 供应链与物流。追踪商品来源、生产、库存、运输和交付，改善多方协作。 | 当前与 IA 核心方向无直接关系。 |
 
-## 7. Eva 当前项目陈述 / Current Eva Description
+## 7. Eva 项目陈述 / Eva Project Pitch
 
-**中文**：Eva 是一个增强人类智能（IA）的平台，通过 AI 引导的互动体验，帮助用户理解自己的思考模式、了解用户自身人格性格，其 Web3 方向通过可验证凭证与用户自主授权分享，让用户更好地掌控自己的认知记录。
+Eva 是一面用于反映人内在真实自我的计算化心智镜像（Computational Mind Mirror）。它不以刻板性格标签定义用户，也不靠虚假奉承取悦用户，而是通过 AI 引导的情境互动，帮助用户理解自己的思考模式，探索其性格特质、人格底色与情绪性情。 / Eva is a computational mind mirror designed to reflect a person’s inner self. Rather than defining users with rigid personality labels or superficial flattery, Eva uses AI-guided situational interactions to help users understand their thinking patterns and explore their character, temperament, and personality traits.
 
-**English**: Eva is an intelligence augmentation (IA) platform that uses AI-guided interactive experiences to help users understand their thinking patterns and explore their personality traits. Its Web3 direction uses verifiable credentials and user-authorized sharing to give users greater control over their cognitive records.
+## 8. 互动方式与价值 / Interaction and Value
 
-## 8. 产品方向与类别 / Direction and Categories
+Eva 通过情境互动帮助用户探索自己的思考模式、性格特质与情绪性情。系统呈现基于互动的观察，由用户理解、补充或纠正；这些观察不作为临床诊断或不可更改的人格结论。 / Eva uses situational interactions to help users explore their thinking patterns, character traits, and temperament. It presents observations based on interactions for users to understand, add context to, or correct; these observations are not clinical diagnoses or fixed personality conclusions.
 
-AI Platforms / Agents 对应 AI 引导的互动体验；Consumer Apps 对应个人自我理解；Identity & Privacy 对应可验证凭证及用户自主授权分享认知记录。 / AI Platforms / Agents covers AI-guided interactive experiences; Consumer Apps covers personal self-understanding; Identity & Privacy covers verifiable credentials and user-authorized sharing of cognitive records.
+Web3 方向以可验证凭证支持用户核验其选择的认知记录，并由用户授权分享。私密对话原文不公开写入区块链。 / The Web3 direction uses verifiable credentials to help users verify selected cognitive records and share them with their authorization. Private raw conversations are not published on a blockchain.
 
 ## 9. 尚未确认与实施边界
 
