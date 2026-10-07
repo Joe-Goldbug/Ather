@@ -300,10 +300,10 @@ export const en = {
     low_confidence: 'I\'m still getting to know you here — keep going and it\'ll get sharper',
     dialogue_turn: '{phase} rounds',
     request_failed: 'Request failed: {message}',
-    welcome_default: '"I am EVA. Bring me your workplace resistance, interpersonal friction, or hard choices today. We do not do emotional venting; we dissect the logic and strategy behind them."',
+    welcome_default: 'I am Eva. Through interactive experiences, we can explore your thinking patterns and personality traits. You can add to or correct my understanding of you at any time.',
     role_you: 'You',
     thinking: 'Thinking...',
-    placeholder_default: 'Describe a conflict of interest or a difficult scenario you faced today...',
+    placeholder_default: 'Share an experience or a pattern you would like to understand about yourself...',
     btn_send: 'Send',
     error_unknown: 'Unknown error',
     dismiss: 'Dismiss',
@@ -497,7 +497,7 @@ export const en = {
   },
 
   landing: {
-    tagline: '',
+    tagline: 'Eva is an intelligence augmentation (IA) platform that uses AI-guided interactive experiences to help users understand their thinking patterns and explore their personality traits. Its Web3 direction uses verifiable credentials and user-authorized sharing to give users greater control over their cognitive records.',
     auth_link: 'Login / Register',
     cta_start: 'Play',
     cta_baseline: 'Know Yourself',

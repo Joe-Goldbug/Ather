@@ -425,10 +425,10 @@ export const zhCN = {
     low_confidence: '这方面我还不够了解你，继续聊会更准',
     dialogue_turn: '{phase}轮',
     request_failed: '请求失败：{message}',
-    welcome_default: '“你刚做完测试，EVA 对你有了初步了解。聊聊你最近的事——工作、关系、或纠结的决定，都行。”',
+    welcome_default: '我是 Eva。我们可以通过互动体验，一起了解你的思考模式与人格性格。你可以随时补充或纠正我对你的理解。',
     role_you: '你',
     thinking: '思考中...',
-    placeholder_default: '说说你今天遇到的难题或纠结的事...',
+    placeholder_default: '分享一段经历，或你想了解的自身思考模式...',
     btn_send: '发送',
     error_unknown: '未知错误',
     dismiss: '关闭',
@@ -622,7 +622,7 @@ export const zhCN = {
   },
 
   landing: {
-    tagline: '',
+    tagline: 'Eva 是一个增强人类智能（IA）的平台，通过 AI 引导的互动体验，帮助用户理解自己的思考模式、了解用户自身人格性格，其 Web3 方向通过可验证凭证与用户自主授权分享，让用户更好地掌控自己的认知记录。',
     auth_link: '登录 / 注册',
     cta_start: '开始了解自己',
     cta_baseline: '我想更懂自己',

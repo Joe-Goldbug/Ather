@@ -12,7 +12,7 @@
 - 可以多选：优先 AI Platforms / Agents、Consumer Apps。
 - Identity & Privacy：只有当 Demo 真正实现用户控制数据、授权或独立验证，并有相应使用需求时再加入。
 
-Eva 的终极目标是 **IA——增强人类智能**：帮助用户更好地理解问题、形成判断、学习与行动。Self OS、记忆、Agent 和 Web3 都可以是实现方式。分类应围绕用户得到的核心价值选择。
+当前项目定义见 [项目定位](PROJECT-POSITIONING.md)。Eva 是一个增强人类智能（IA）的平台，通过 AI 引导的互动体验，帮助用户理解自己的思考模式、了解用户自身人格性格，其 Web3 方向通过可验证凭证与用户自主授权分享，让用户更好地掌控自己的认知记录。
 
 截图里的类别混合了技术领域、产品形态和商业模式，彼此有交叉。七张截图去重后共 **33 个类别**。以下按行业常见含义解释；截图没有提供赛事对各分类的特殊定义。
 
@@ -21,9 +21,9 @@ Eva 的终极目标是 **IA——增强人类智能**：帮助用户更好地理
 | Category | 中文解释：具体做什么 | 与 Eva 的关系 |
 | --- | --- | --- |
 | AI / ML Models | 人工智能／机器学习模型。研发、训练、优化模型，例如语言模型、预测模型和训练方法；核心交付物是模型及其能力。 | 目前无需作为主分类。调用或组合现有模型做产品通常归 AI 平台／智能体；以后研发自己的核心模型时可以涉及。 |
-| AI Platforms / Agents | AI 平台／智能体。把模型、记忆、工具和工作流程组织成可使用的系统，帮助用户分析问题、制定计划、执行任务。 | 最适合的主分类。Eva 可以做持续理解用户、帮助用户思考与行动的个人 IA 系统。 |
+| AI Platforms / Agents | AI 平台／智能体。把模型、记忆、工具和工作流程组织成可使用的系统，帮助用户分析问题、制定计划、执行任务。 | 最适合的主分类。Eva 通过 AI 引导的互动体验，帮助用户理解思考模式与自身人格性格。 |
 | Consumer Apps | 面向个人的应用。直接服务普通用户日常需求，例如个人助理、创作、生活管理和娱乐；Consumer 不只指购物。 | 最适合的第二分类。说明 Eva 为谁服务、以什么形式进入生活。 |
-| Data & Analytics | 数据与分析。收集、整理、检索和分析数据，帮助理解现状与变化，例如链上数据分析和数据面板。 | 可用于整理个人经历、判断和行动结果；单纯分析数据不足以表达完整 IA 目标。 |
+| Data & Analytics | 数据与分析。收集、整理、检索和分析数据，帮助理解现状与变化，例如链上数据分析和数据面板。 | 可用于整理个人经历、互动记录与用户反馈；单纯分析数据不足以表达完整 IA 目标。 |
 | EdTech | 教育科技。帮助学习、练习、教学、评估和知识掌握；包含个人自学工具，不限于学校。 | 学习增强可作为一个场景；主分类容易把 Eva 限定为学习产品，不符合当前完整定位。 |
 | Enterprise SaaS | 企业软件服务。向企业提供订阅软件，例如团队知识库、财务、协作和运营系统。 | 有企业版时才相关；目前面向个人的 Eva 不以它为主。 |
 | Healthcare Tech | 医疗与健康科技。帮助健康管理、医疗服务、临床流程或患者照护。 | 明确做健康用途时才适合；自我理解、反思和思维辅助本身不等于医疗产品。 |
@@ -67,7 +67,7 @@ RWA 可以是以后的一项能力。考虑过利息补贴 AI 费用，不足以
 | Gaming | 游戏。通过规则、挑战、互动和反馈形成游戏体验，可以使用链上资产或部分链上逻辑。 | 第一版主要体验和留存来自游戏玩法时可以选；只有剧情或关卡不足以成为游戏项目。 |
 | Gaming Infrastructure | 游戏基础设施。给游戏开发者提供资产系统、链上游戏引擎、账户、交易和开发工具。 | 做互动体验不代表在做游戏基础设施。 |
 | Social / SocialFi | 社交／社交金融。围绕关系、内容和社区互动构建产品；SocialFi 进一步加入经济激励或资产机制。 | 未来核心价值来自人与人交流、协作和内容网络时相关；个人 IA 初版无需以它为主。 |
-| Governance & DAOs | 治理与去中心化自治组织。帮助群体提案、投票、管理共同资金和执行集体决策。 | 个人决策辅助与组织治理是不同层次；以后可支持群体决策，现在不必做 DAO。 |
+| Governance & DAOs | 治理与去中心化自治组织。帮助群体提案、投票、管理共同资金和执行集体决策。 | 组织治理不属于当前的个人自我理解与认知记录方向。 |
 | Marketplace Platforms | 交易撮合平台。连接供需双方，帮助发现、购买和交付服务或商品，例如 Agent、数据或算力市场。 | 与用户当前明确要求的方向不符，不作为 Eva 第一步。 |
 
 ## 6. 硬件、物理网络与行业应用类
@@ -80,32 +80,15 @@ RWA 可以是以后的一项能力。考虑过利息补贴 AI 费用，不足以
 | Climate / Green Tech | 气候／绿色科技。解决能源效率、排放核算、环境监测和绿色资源协调等问题。 | 当前没有直接对应的核心场景。 |
 | Supply Chain & Logistics | 供应链与物流。追踪商品来源、生产、库存、运输和交付，改善多方协作。 | 当前与 IA 核心方向无直接关系。 |
 
-## 7. Eva 的项目陈述与类别对应
+## 7. Eva 当前项目陈述 / Current Eva Description
 
-> Eva 是面向个人的 IA 应用，帮助用户结合自身经历和可靠信息，理解问题、检验判断、采取行动并复盘结果。用户能够管理和迁移自己的长期记录，并选择对哪些记录进行独立验证。
+**中文**：Eva 是一个增强人类智能（IA）的平台，通过 AI 引导的互动体验，帮助用户理解自己的思考模式、了解用户自身人格性格，其 Web3 方向通过可验证凭证与用户自主授权分享，让用户更好地掌控自己的认知记录。
 
-这是建议的产品陈述，功能是否成立需要实际实现和用户验证。
+**English**: Eva is an intelligence augmentation (IA) platform that uses AI-guided interactive experiences to help users understand their thinking patterns and explore their personality traits. Its Web3 direction uses verifiable credentials and user-authorized sharing to give users greater control over their cognitive records.
 
-| 层次 | 要交付什么 | 对应 category |
-| --- | --- | --- |
-| 核心能力 | 帮人思考、判断、学习与行动，利用历史反馈改善辅助方式 | AI Platforms / Agents |
-| 产品形态 | 普通人可以直接使用的个人应用 | Consumer Apps |
-| Web3 能力 | 有实际需求时，让特定记录或授权可独立验证，降低对单个平台声明的依赖 | Identity & Privacy |
+## 8. 产品方向与类别 / Direction and Categories
 
-官方生态资料也把 AI 与区块链结合扩展到工具调用、身份和应用等方向，不要求所有 AI 产品都以交易或发币为核心。
-
-参考：[Solana 官方：AI](https://solana.com/solutions/ai)、[以太坊官方：AI Agents](https://ethereum.org/ai-agents/)。这些资料用于支持技术方向的背景，不是赛事分类认定或 Eva 用户需求的证据。
-
-## 8. 轻量 Demo 的具体用户旅程
-
-1. **带来真实问题。** 用户输入一个问题，例如“我应该先验证哪个产品方向”，写下目标、约束和初步判断。
-2. **拆解与检验。** Eva 帮助识别事实、假设、缺少的证据及低成本验证方式；用户确认或纠正 Eva 的理解。
-3. **行动与复盘。** 用户选择下一步行动，之后记录结果；Eva 对照之前的判断，帮助认识哪些依据有效、哪里需要改变。
-4. **保留与选择验证。** 用户保留完整私人记录并可导出；有历史版本核验需求时，选择生成链上证明。证明用于核验版本，不被包装为智力或人格认证。
-
-Web2 承担实际 IA 交互、推理、私人记录、导出和访问控制。Web3 仅承担已经被验证有用的独立核验或授权记录能力。
-
-如果链上证明对目标用户尚无实际用途，目前最成立的分类就是 AI Platforms / Agents + Consumer Apps。Identity & Privacy 应靠可用功能与用户需求成立。分类选择不替代核心产品效果的验证。
+AI Platforms / Agents 对应 AI 引导的互动体验；Consumer Apps 对应个人自我理解；Identity & Privacy 对应可验证凭证及用户自主授权分享认知记录。 / AI Platforms / Agents covers AI-guided interactive experiences; Consumer Apps covers personal self-understanding; Identity & Privacy covers verifiable credentials and user-authorized sharing of cognitive records.
 
 ## 9. 尚未确认与实施边界
 

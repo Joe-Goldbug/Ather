@@ -1,5 +1,7 @@
 # Eva Web3 行业案例借鉴与避坑指南
 
+> 当前项目定义见 [项目定位](PROJECT-POSITIONING.md)。下文为早期技术探索，不作为当前产品定位或已批准功能范围。 / See [project positioning](PROJECT-POSITIONING.md) for the current definition. The material below is earlier technical exploration, not current positioning or an approved feature scope.
+
 > **分析背景**：深度解剖“人格数据代币化”及相关 AI Agent 赛道实践（以 Twin3、Vana、Itheum、Synelar 为样本），为 Eva 提炼可复用的工程范式与必须规避的商业陷阱。
 
 ---

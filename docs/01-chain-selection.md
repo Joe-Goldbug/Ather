@@ -1,5 +1,7 @@
 # Eva Web3 基础设施选型：公链深度评估报告
 
+> 当前项目定义见 [项目定位](PROJECT-POSITIONING.md)。下文为早期技术探索，不作为当前产品定位或已批准功能范围。 / See [project positioning](PROJECT-POSITIONING.md) for the current definition. The material below is earlier technical exploration, not current positioning or an approved feature scope.
+
 > **项目**：Eva Web3  
 > **编制日期**：2026-10-05  
 > **适用范围**：Eva V1 最小可行 Demo (MVP) 及长期网络演进

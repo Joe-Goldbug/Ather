@@ -1,5 +1,7 @@
 # EVA 完整项目交接文档
 
+> 当前产品定位见 [Eva 项目定位](../PROJECT-POSITIONING.md)。本交接文档中的旧定位和产品建议已被取代；历史代码盘点保留为实现记录。 / See [Eva project positioning](../PROJECT-POSITIONING.md) for the current definition. Earlier positioning and product proposals in this handover are superseded; historical code inventories remain implementation records.
+
 日期：2026-10-06。源码基准：EVA / 6a02a10337057bc5cb8cb93b92edc3037995e535。
 
 本文件合并全部八份交接文档，适合整体阅读或交给新项目。分别编辑时请以 docs/ 下各章节为准；此总文档是交付时的合并版本。源码与验收清单另见 README.md。
@@ -54,7 +56,7 @@
 
 ### 3.1 目标与实现层级
 
-目标是改善人的理解、学习、推理、判断、创造与行动能力，并由人保有最后选择。自我模型、记忆、数字分身、Self OS、Agent、Web3 都是候选机制，不是目标本身，也不要求全部建设。
+当前目标是通过 AI 引导的互动体验帮助用户理解自己的思考模式、探索自身人格性格。自我模型、记忆、数字分身、Self OS、Agent、Web3 都是候选机制，不是目标本身，也不要求全部建设。
 
 权威依据：`source-reference/eva-current/docs/CURRENT-PRODUCT-TRUTH-2026-06-29.md:9`；README 的使命解释见 `source-reference/eva-current/README.zh-CN.md:39`。
 

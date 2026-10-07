@@ -1,5 +1,7 @@
 # Eva Web2 与 Web3 边界架构与系统设计
 
+> 当前项目定义见 [项目定位](PROJECT-POSITIONING.md)。下文为早期技术探索，不作为当前产品定位或已批准功能范围。 / See [project positioning](PROJECT-POSITIONING.md) for the current definition. The material below is earlier technical exploration, not current positioning or an approved feature scope.
+
 > **基本铁律**：Web2 负责心智计算与沉浸交互，Web3 负责资产收益与凭证主权。
 
 ---
