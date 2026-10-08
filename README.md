@@ -33,17 +33,9 @@
 >
 > ---
 >
-> #### 1. 创始团队与排他性所有权 / Founding Team & Exclusive Ownership
-> - **中文**：本项目由创始团队 **Ethan** 与 **Whitepeace** 两人共同创立，享有对本项目全部资产与权益的唯一、完全且排他的所有权。
-> - **English**: This project was founded and is exclusively owned by its two co-founders: **Ethan** and **Whitepeace**. They hold sole and full ownership over all project assets and rights.
->
-> #### 2. 团队协作与分工声明 / Executive Structure & Division of Labor
-> - **中文**：创始团队实行整体共治，对外**不陈述亦不拆分个人具体分工**。
-> - **English**: The founding team operates under joint executive responsibility; **no breakdown of individual internal division of labor, specific roles, or departmental assignments is represented or disclosed**.
->
-> #### 3. 独立创作与排他性（无任何第三方参与）/ Sole Authorship & Strict Exclusivity
-> - **中文**：本项目的全部构想、业务逻辑、系统架构、算法设计、工程代码、交互界面、技术文档及衍生知识产权，**完全且仅由创始团队 Ethan 与 Whitepeace 两人独立设计、研发与构建**。**截至目前，不存在任何其他个人、机构、顾问、外包团队或第三方实体参与过本项目的构想、开发或设计，没有任何第三方做出过任何形式的贡献，亦无任何第三方对本项目享有任何权利、主张或权益**。
-> - **English**: All strategic concepts, business logic, system architectures, algorithmic models, software codebases, interfaces, technical documentation, and derivative intellectual properties were created and engineered **solely and exclusively by the founding team (Ethan & Whitepeace)**. **To date, no other individuals, external entities, consultants, contractors, agencies, or third parties have ever participated in, contributed to, or held any interest, claim, or title in this project or codebase**.
+> #### 项目团队与支持 / Team & Project Support
+> - **中文**：Eva 目前由 **Ethan 与 Whitepeace 两人**共同推进。两人都在持续为项目作出贡献，项目不对外陈述个人分工。目前没有其他个人或组织参与项目，也没有其他资金或外部资源投入。
+> - **English**: Eva is currently developed by **Ethan and Whitepeace**. Both contribute to its ongoing development, and no individual role breakdown is stated publicly. No other people or organizations are involved, and no other funding or external resources have supported the project.
 >
 > #### 4. 严苛权利保留与侵权追责 / Strict Reservation of Rights & Prohibitions
 > - **中文**：本项目**非开源项目**。未经创始团队正式书面明确授权，严禁任何实体或个人以任何形式进行复制、分发、镜像抓取、派生（fork/mirror）、反向工程、衍生开发、商业使用或向第三方披露。创始团队保留追究一切法律责任的权利。
