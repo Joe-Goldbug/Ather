@@ -2,6 +2,8 @@
 
 > 当前项目定义见 [项目定位](PROJECT-POSITIONING.md)。下文为早期技术探索，不作为当前产品定位或已批准功能范围。 / See [project positioning](PROJECT-POSITIONING.md) for the current definition. The material below is earlier technical exploration, not current positioning or an approved feature scope.
 
+> **历史方案已被更新（2026-10-09）**：当前架构与第一版实施顺序以 [Web2＋Web3 架构方案](02-architecture-and-boundary.md) 为准。下文的 RWA 金库、保本／固定收益、永久免费算力、公开性格指标、默认 SBT 与强制钱包接入均是早期探索，不属于当前第一版范围，也不是已验证能力或对用户的承诺。 / **Superseded historical proposal (2026-10-09)**: The [Web2 + Web3 architecture plan](02-architecture-and-boundary.md) defines the current direction and implementation sequence. The vault, principal/yield guarantees, permanently free compute, public personality metrics, default SBTs, and mandatory wallet integration below are earlier proposals, not current V1 scope, verified capabilities, or user commitments.
+
 > **设计原则**：必须有理有据，真实有效，给用户带来立竿见影的直接利益。
 
 ---

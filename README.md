@@ -24,6 +24,20 @@
 > 以上描述项目方向；情境观察和人格性格解读不等同于临床诊断或经验证的心理测量结论。具体功能以实际实现为准。 / This describes Eva’s direction. Situational observations and personality interpretations are not clinical diagnoses or scientifically validated psychological assessments. Available features depend on what has actually been implemented.
 
 
+## 4. 架构方向：Web2＋Web3 / Architecture: Web2 + Web3
+
+**中文**：Eva 采用渐进式 Web3 架构。情境互动、AI 理解、私密记录与用户纠正由应用及链下服务承载；用户需要导出、独立查验或授权分享时，再选择可验证凭证、钱包绑定及必要的链上功能。用户可直接体验 Eva，钱包不是日常互动的使用前提。
+
+**English**: Eva follows a progressive Web3 architecture. The application and offchain services support situational interactions, AI understanding, private records, and user corrections. Users can opt into verifiable credentials, wallet linking, and relevant onchain features when they need to export, independently verify, or authorize sharing of selected records. A wallet is not required for everyday interaction.
+
+- **私密内容留在链下 / Keep private content offchain**：原始对话、情绪与完整画像不公开写入公链或公共 IPFS；权限、加密与 AI 处理授权需要分别验证。 / Raw conversations, emotions, and complete profiles are not published on public chains or public IPFS. Access control, encryption, and authorization for AI processing require separate validation.
+- **凭证验证来源与完整性 / Verify provenance and integrity**：凭证支持查验选定记录的签发者、版本及状态，不证明人格解读或心理结论的准确性。 / Credentials support verification of the issuer, version, and status of selected records; they do not establish the accuracy of personality interpretations or psychological conclusions.
+- **实施顺序 / Implementation sequence**：统一工程环境 → 验证隐私隔离 → 可携带签名凭证 → 可选钱包绑定 → 单链测试验证。 / Align the engineering environment → validate privacy isolation → portable signed credentials → optional wallet linking → validation on one test network.
+
+> **状态 / Status**：这是项目架构方向及实施路线。当前已有链下业务、记录与授权基础；钱包绑定、公开可验证记录凭证和链交易处理尚未交付。 / This is the architecture direction and implementation roadmap. Offchain business logic, records, and authorization foundations exist; wallet linking, publicly verifiable record credentials, and chain transaction processing have not yet been delivered.
+
+完整设计、源码审核问题与验收条件见 [Web2＋Web3 架构方案](docs/02-architecture-and-boundary.md)。 / See the [Web2 + Web3 architecture plan](docs/02-architecture-and-boundary.md) for the design, source audit findings, and acceptance criteria.
+
 ## 商业项目声明与知识产权归属 | Commercial Project & Ownership Notice
 
 > ### ⚠️ 重要法律与商业声明 / IMPORTANT LEGAL & COMMERCIAL NOTICE
@@ -46,7 +60,7 @@
 - [项目定位 / Project positioning](docs/PROJECT-POSITIONING.md)：当前项目定义。 / The current project definition.
 - [IA 与 Web3 探讨 / IA and Web3 discussion](docs/00-eva-ia-web3-discussion.md)：产品方向与技术探索。 / Product direction and technical exploration.
 - [公链选型 / Chain evaluation](docs/01-chain-selection.md)：基础设施候选方案。 / Infrastructure candidates.
-- [架构边界 / Architecture boundaries](docs/02-architecture-and-boundary.md)：Web2 与 Web3 分工研究。 / Research into Web2 and Web3 responsibilities.
+- [架构边界 / Architecture boundaries](docs/02-architecture-and-boundary.md)：当前混合架构方向、实施阶段与验收条件。 / Current hybrid architecture direction, implementation stages, and acceptance criteria.
 - [MVP 探索 / MVP exploration](docs/03-v1-mvp-spec.md)：早期功能方案，以当前项目定位为准。 / Earlier feature proposals, subject to the current project positioning.
 - [行业参考 / Industry references](docs/04-industry-insights-and-pitfalls.md)：行业案例与待验证事项。 / Industry examples and open validation questions.
 
