@@ -32,9 +32,10 @@
 
 - **私密内容留在链下 / Keep private content offchain**：原始对话、情绪与完整画像不公开写入公链或公共 IPFS；权限、加密与 AI 处理授权需要分别验证。 / Raw conversations, emotions, and complete profiles are not published on public chains or public IPFS. Access control, encryption, and authorization for AI processing require separate validation.
 - **凭证验证来源与完整性 / Verify provenance and integrity**：凭证支持查验选定记录的签发者、版本及状态，不证明人格解读或心理结论的准确性。 / Credentials support verification of the issuer, version, and status of selected records; they do not establish the accuracy of personality interpretations or psychological conclusions.
-- **实施顺序 / Implementation sequence**：统一工程环境 → 验证隐私隔离 → 可携带签名凭证 → 可选钱包绑定 → 单链测试验证。 / Align the engineering environment → validate privacy isolation → portable signed credentials → optional wallet linking → validation on one test network.
+- **首阶段链 / First-stage chain**：已确认使用 **Base**。开发和 Demo 验收使用 **Base Sepolia（chain ID 84532）**；Base 主网须通过合约、安全、隐私、密钥与运行验收后再评估启用。 / **Base** is selected for the first Web3 phase. Development and demo acceptance target **Base Sepolia (chain ID 84532)**; Base mainnet requires contract, security, privacy, key-management, and operational validation.
+- **实施顺序 / Implementation sequence**：统一工程环境 → 验证隐私隔离 → 可携带签名凭证 → 可选钱包绑定 → Base Sepolia 真实合约与交易验证。 / Align the engineering environment → validate privacy isolation → portable signed credentials → optional wallet linking → verify a real contract and transactions on Base Sepolia.
 
-> **状态 / Status**：这是项目架构方向及实施路线。当前已有链下业务、记录与授权基础；钱包绑定、公开可验证记录凭证和链交易处理尚未交付。 / This is the architecture direction and implementation roadmap. Offchain business logic, records, and authorization foundations exist; wallet linking, publicly verifiable record credentials, and chain transaction processing have not yet been delivered.
+> **状态 / Status**：代码已包含 EIP-712 钱包挑战与绑定接口、Ed25519 记录凭证签发/核验，以及 Base 锚定任务框架。当前 Base 默认配置指向 Sepolia；锚定提交仍生成占位交易哈希，没有真实合约广播，不应宣称链上存证已上线。 / The code includes EIP-712 wallet challenges and binding endpoints, Ed25519 record credential issuance/verification, and a Base anchoring job scaffold. The default Base configuration targets Sepolia; anchor submission still returns a placeholder transaction hash and does not broadcast to a real contract. Onchain anchoring is not live.
 
 完整设计、源码审核问题与验收条件见 [Web2＋Web3 架构方案](docs/02-architecture-and-boundary.md)。 / See the [Web2 + Web3 architecture plan](docs/02-architecture-and-boundary.md) for the design, source audit findings, and acceptance criteria.
 
@@ -59,7 +60,7 @@
 
 - [项目定位 / Project positioning](docs/PROJECT-POSITIONING.md)：当前项目定义。 / The current project definition.
 - [IA 与 Web3 探讨 / IA and Web3 discussion](docs/00-eva-ia-web3-discussion.md)：产品方向与技术探索。 / Product direction and technical exploration.
-- [公链选型 / Chain evaluation](docs/01-chain-selection.md)：基础设施候选方案。 / Infrastructure candidates.
+- [链选择 / Chain decision](docs/01-chain-selection.md)：已确认首阶段使用 Base，含网络范围与当前实现状态。 / Base is selected for the first phase, with network scope and implementation status.
 - [架构边界 / Architecture boundaries](docs/02-architecture-and-boundary.md)：当前混合架构方向、实施阶段与验收条件。 / Current hybrid architecture direction, implementation stages, and acceptance criteria.
 - [MVP 探索 / MVP exploration](docs/03-v1-mvp-spec.md)：早期功能方案，以当前项目定位为准。 / Earlier feature proposals, subject to the current project positioning.
 - [行业参考 / Industry references](docs/04-industry-insights-and-pitfalls.md)：行业案例与待验证事项。 / Industry examples and open validation questions.

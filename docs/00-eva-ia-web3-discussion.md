@@ -20,9 +20,9 @@
 
 ### 首版链选择状态
 
-此前讨论过 Solana、Ethereum、Base、Arbitrum、Robinhood Chain、Hyperliquid 和 Tempo，问题背景包括深圳 Solana 活动、认知记录证明以及未来可能的 RWA。**当前没有选定 Eva 主链，也没有批准代币或 RWA 部署。**
+此前比较过 Solana、Ethereum、Base、Arbitrum、Robinhood Chain、Hyperliquid 和 Tempo。**2026-10-09 已确认 Eva 首阶段使用 Base；开发和 Demo 验收目标为 Base Sepolia（chain ID 84532）。**这不等于 Base 主网已经部署，也不批准发行代币或接入 RWA。
 
-第一 Demo 的功能应该先定，再根据证明服务、钱包体验、费用、目标用户和实际部署支持选择网络。如果做 EAS/SAS 时间戳锚定原型，可以先选一条支持该服务且最适合参赛/测试的链；这只决定一个 Demo 的实现，不等于 Eva 永久主链决策。EVM 技术栈与现有 TypeScript 一致，本身不能证明 Base/Arbitrum 比 Solana 对用户更有用。
+选择 Base 是首阶段工程决策：当前项目采用 TypeScript，仓库已有 Viem/EIP-712 与 Base Sepolia 配置和流程代码，集中在一条 EVM 网络上完成真实验证。Base 仅用于需要用户自主核验的记录承诺/状态；情境互动、AI 理解和私密内容仍由链下应用承载。具体实现状态和主网门槛见 [Base 链选择](01-chain-selection.md) 与 [Web2＋Web3 架构边界](02-architecture-and-boundary.md)。
 
 ## 5. 对 Compute Vault / RWA 算力基金方案的核算
 

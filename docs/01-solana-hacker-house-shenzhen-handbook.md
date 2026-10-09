@@ -2,7 +2,8 @@
 
 > 来源飞书文档：`https://my.feishu.cn/wiki/CMS7wa31RiZsyJk2PrYcl39bnbc`  
 > 归档时间：2026-10-09  
-> 参赛项目：**EVA**（AI 认知镜像与算力金库 / AI Agent + Solana Cognitive SBT + DePIN Compute Vault）
+> 参赛项目：Eva（增强人类智能 IA 的计算化心智镜像；首阶段链选择为 Base，Demo 网络为 Base Sepolia）。
+> **赛事提示**：本手册记录 Solana 主题活动资料，活动技术示例不改变 Eva 的 Base 链决策。若赛事规则要求 Solana 部署，需单独确认项目是否适配；不得把旧 Compute Vault、DePIN 或 SBT 构想当作当前产品范围。
 
 ---
 

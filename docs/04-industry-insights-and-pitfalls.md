@@ -2,7 +2,8 @@
 
 > 当前项目定义见 [项目定位](PROJECT-POSITIONING.md)。下文为早期技术探索，不作为当前产品定位或已批准功能范围。 / See [project positioning](PROJECT-POSITIONING.md) for the current definition. The material below is earlier technical exploration, not current positioning or an approved feature scope.
 
-> **分析背景**：深度解剖“人格数据代币化”及相关 AI Agent 赛道实践（以 Twin3、Vana、Itheum、Synelar 为样本），为 Eva 提炼可复用的工程范式与必须规避的商业陷阱。
+> **分析背景**：本文保存早期对“人格数据代币化”和 AI Agent 项目的探索。
+> **更新（2026-10-09）**：文中将 RWA 收益用于免算力费、将人格数据驱动 Agent 作为 V1 路线的结论不再采纳；首阶段链已确定为 Base，开发/Demo 使用 Base Sepolia。当前产品与实现方向以 [Web2＋Web3 架构](02-architecture-and-boundary.md) 和 [Base 链选择](01-chain-selection.md) 为准。
 
 ---
 
