@@ -96,6 +96,64 @@ bun run dev:web
 
 环境配置请参考 `.env.example`；测试说明见 `TESTING.md`。 / Refer to `.env.example` for environment configuration and `TESTING.md` for testing instructions.
 
+## Base 本地技术准备 / Base Local Development Setup
+
+本节记录 Eva 在 Base 上进行合约开发、前端集成和测试网验证所需的本地技术准备。首阶段使用 Base Sepolia；Base 主网配置另行验收后再启用。
+
+### 1. 安装 Foundry / Install Foundry
+
+Foundry 提供 `forge`（构建与测试）、`cast`（读取和发送链上请求）及 `anvil`（本地 EVM 测试节点）。按官方安装说明安装：
+
+```bash
+curl -L https://getfoundry.sh/install | bash
+foundryup
+forge --version
+cast --version
+anvil --version
+```
+
+如果当前终端找不到命令，重新打开终端，或在 zsh 中运行 `source ~/.zshrc`。参见 [Foundry 官方安装说明](https://getfoundry.sh/introduction/installation/)。
+
+### 2. 本地测试：Anvil / Local testing with Anvil
+
+运行本地开发链：
+
+```bash
+anvil
+```
+
+默认 RPC 地址为 `http://127.0.0.1:8545`，本地 chain ID 为 `31337`。Anvil 提供的预置账户和余额只存在于本地开发链，私钥是公开的测试值，不能用于真实资产或连接公共网络。
+
+Anvil 是本地 EVM 测试节点，不是 Base 网络节点；在上面执行的交易不会广播到 Base。需要测试 Base Sepolia 上已有合约状态时，可通过 RPC 启动本地分叉：
+
+```bash
+anvil --fork-url "$BASE_SEPOLIA_RPC_URL" --chain-id 31337
+```
+
+分叉启动时需要访问 Base Sepolia RPC；分叉上的写入仍只改变本地测试状态。Base 专有预编译合约只有在确实使用时才需安装 [Base 的 base-anvil 工具](https://docs.base.org/sdks/base-anvil)。
+
+### 3. Base Sepolia 测试网 / Base Sepolia testnet
+
+Eva 首阶段的测试网络为 Base Sepolia，chain ID 为 `84532`；Base 主网 chain ID 为 `8453`。连接真实测试网时，钱包必须切换到 Base Sepolia，部署或发送交易需要该网络的测试 ETH。可从 [Coinbase Developer Platform 测试币水龙头](https://www.coinbase.com/developer-platform/products/faucet)领取；领取额度和资格以水龙头当前规则为准。
+
+测试网资产没有主网价值。开发、演示和测试不得使用主网私钥或真实资金。网络 ID 以 [Base 官方说明](https://docs.base.org/base-chain/api-reference/ethereum-json-rpc-api/eth_chainId)为准。
+
+### 4. Eva 前端与 RPC 配置 / Eva frontend and RPC setup
+
+Eva 使用 Bun workspace。依赖应在相应 workspace 的 `package.json` 中声明，并与根目录锁文件一起提交；从仓库根目录执行 `bun install`。不要在现场临时安装一套与仓库清单不一致的依赖。
+
+钱包连接采用 `wagmi`、`viem` 与 `@tanstack/react-query`。Base 当前文档说明 OnchainKit 已停止维护，并提供迁移到 wagmi/viem 的指引，因此本准备清单不要求安装 `@coinbase/onchainkit`。[Base 迁移说明](https://docs.base.org/onchainkit/wallet/wallet-dropdown-disconnect)
+
+共享测试或部署环境建议使用专属 Base Sepolia RPC 地址。将 RPC 地址或密钥保存在本机未提交的环境变量文件中；不要把私钥、助记词或 RPC 密钥提交到 GitHub。公共 RPC 可能有限流或可用性限制。
+
+### 5. 准备完成的检查 / Readiness checks
+
+- `forge --version`、`cast --version` 和 `anvil --version` 均能输出版本。
+- `anvil` 启动后，本地应用可连接 `http://127.0.0.1:8545`，并明确显示为本地测试网络。
+- 连接 Base Sepolia 时，钱包和 RPC 都报告 chain ID `84532`；本地 Anvil 与 Base Sepolia 不混用。
+- 测试网交易使用 Base Sepolia 测试 ETH；没有把本地 Anvil 测试账户当作真实钱包。
+- 智能合约目录建立后，再运行该目录对应的 `forge build` 和 `forge test`；合约测试通过不代表已经部署或写入 Base。
+
 ## 记录与隐私 / Records and Privacy
 
 认知记录由用户自主授权分享；可验证凭证不等同于人格结论或心理诊断已获验证。原始私密内容不应默认公开上链。 / Users authorize sharing of their cognitive records. Verifiable credentials do not validate personality conclusions or psychological diagnoses. Private source content should not be public on-chain by default.
