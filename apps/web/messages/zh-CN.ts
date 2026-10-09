@@ -39,10 +39,11 @@ export const zhCN = {
 
   nav: {
     home: '首页',
-    assessment: '短测',
+    dashboard: '我的记录',
+    assessment: '进去情景',
     chat: '对话',
     micro_sandbox: '章节记录',
-    diary: '记录',
+    diary: '我的笔记',
     report: '画像',
     profile: '我的画像',
     weekly_review: '周回顾',
@@ -425,7 +426,7 @@ export const zhCN = {
     low_confidence: '这方面我还不够了解你，继续聊会更准',
     dialogue_turn: '{phase}轮',
     request_failed: '请求失败：{message}',
-    welcome_default: "我是 Eva，一面帮助你理解思考模式、探索自身性格与情绪性情的心智镜像。你可以补充或纠正我对你的观察。",
+    welcome_default: "我是 Eva，帮助你理解思考模式、探索自身性格与情绪性情。你可以补充或纠正我对你的观察。",
     role_you: '你',
     thinking: '思考中...',
     placeholder_default: "分享一段经历，或你想了解的自身思考模式...",
@@ -622,7 +623,8 @@ export const zhCN = {
   },
 
   landing: {
-    tagline: "Eva 是一面用于反映人内在真实自我的计算化心智镜像（Computational Mind Mirror）。它不以刻板性格标签定义用户，也不靠虚假奉承取悦用户，而是通过 AI 引导的情境互动，帮助用户理解自己的思考模式，探索其性格特质、人格底色与情绪性情。",
+    hero_description: '通过情境互动反映内在真实自我，理解你的思考模式与性格底色。',
+    tagline: "Eva 用于反映人内在真实自我。它不以刻板性格标签定义用户，也不靠虚假奉承取悦用户，而是通过 AI 引导的情境互动，帮助用户理解自己的思考模式，探索其性格特质、人格底色与情绪性情。",
     auth_link: '登录 / 注册',
     cta_start: '开始了解自己',
     cta_baseline: '我想更懂自己',

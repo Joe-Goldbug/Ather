@@ -178,9 +178,30 @@ export function buildGuestEpisodeResult(answers: GuestEpisodeAnswer[]): GuestEpi
   );
   const highestCount = counts[ranked[0]!];
   const repeated = ranked.filter((approach) => counts[approach] === highestCount && highestCount >= 2);
+  const pairKey = repeated.length === 2 ? [...repeated].sort().join('+') : '';
+  const pairSummaries: Record<string, string> = {
+    'analyze+withdraw': '你在突发压力中兼具理性核查与抽离避险，习惯先退后半步理清全貌再做决断。',
+    'approach+protect': '你在协作中兼具推动意愿与边界意识，愿意主动担当但坚持权责清晰。',
+    'analyze+approach': '你在协作分歧中兼具主动性与事实导向，善于用客观依据推进共同行动。',
+    'analyze+protect': '你在复杂局面中展现出严谨的防御姿态，依靠规则边界与理性核查应对风险。',
+    'protect+withdraw': '你在外部压力下注重自我保护与低能耗应对，优先守住核心阵地与节奏。',
+    'approach+withdraw': '你在冲突与协作中根据局势灵活进退，在主动介入与果断止损间切换。',
+  };
+  const singleSummaries: Record<RoundApproach, string> = {
+    approach: '你在人际与任务突发状况中倾向于主动破局，优先通过沟通与协同建立解决路径。',
+    protect: '你在高压协作中优先厘清权责与边界，防止自身与任务陷入被动与失控。',
+    analyze: '你在面对不确定与分歧时优先核对事实依据，以理智审慎作为第一防线。',
+    withdraw: '你在压力与冲突峰值时倾向于先暂缓抽离，避免情绪升级并保存心力。',
+  };
+
+  const summary = repeated.length === 1
+    ? singleSummaries[repeated[0]!]
+    : (pairSummaries[pairKey] || '你在多重压力情境中展现出平衡且灵活的应对策略。');
+
   const pattern = repeated.length === 1
-    ? `这一章里，你多次选择${descriptions[repeated[0]!].action}。这只是模拟情境中的重复做法，不代表你在所有关系中都会如此。`
-    : `这一章里，你在${repeated.map((approach) => descriptions[approach].action).join('和')}之间切换，没有出现单一、压倒性的做法。`;
+    ? `这一章里，你主要采取“${descriptions[repeated[0]!].action}”的方式，展现出连贯的应对姿态。`
+    : `这一章里，你在“${descriptions[repeated[0]!].action}”与“${descriptions[repeated[1]!].action}”之间灵活切换，展现出复合的应对节奏。`;
+
   const selectedBenefits = repeated.map((approach) => descriptions[approach].benefit);
   const selectedCosts = repeated.map((approach) => descriptions[approach].cost);
   const exceptionNodes = RAIN_BEFORE_STOP_NODES.filter(
@@ -194,13 +215,13 @@ export function buildGuestEpisodeResult(answers: GuestEpisodeAnswer[]): GuestEpi
     evidence_kind: 'simulation',
     science_status: 'candidate_only',
     source_independence_group: `simulation:${GUEST_EPISODE_ID}:${GUEST_EPISODE_VERSION}`,
-    summary: '你在信息缺失、责任增加、公开分歧、信任受损和再次合作时留下了六次具体选择。',
+    summary,
     pattern,
-    benefits: selectedBenefits.join('；') || '这章没有出现足够重复的做法，暂时不概括共同收益。',
-    costs: selectedCosts.join('；') || '这章没有出现足够重复的做法，暂时不概括共同代价。',
+    benefits: selectedBenefits.join('；') || '本章应对方式较为分散，未呈现单一突出的收益侧重。',
+    costs: selectedCosts.join('；') || '本章应对方式较为分散，未呈现单一突出的潜在代价。',
     exceptions: exceptionNodes.length > 0
-      ? `${exceptionNodes.join('、')}中的选择与本章较常出现的做法不同，说明情境可能影响你的决定。`
-      : '六个节点出现了相同方向的做法；仍需要不同关系和压力条件下的新证据来寻找例外。',
-    unknowns: 'EVA 目前只有一个模拟章节，无法判断这些做法是否会出现在现实生活、其他关系或不同压力下。',
+      ? `${exceptionNodes.join('、')}中的选择与主要惯性不同，表明当触及特定人际变数时，你的决策策略会发生针对性调整。`
+      : '六个节点均保持了一致的应对姿态；在不同关系和压力条件下，可能还会浮现出更丰富的侧面。',
+    unknowns: '本章仅折射出你在特定模拟情境下的决策倾向；真实心智随情境演变，不被单一剧本所限定。',
   };
 }

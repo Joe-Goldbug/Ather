@@ -39,10 +39,11 @@ export const es = {
 
   nav: {
     home: 'Inicio',
-    assessment: 'Evaluación',
+    dashboard: 'Mis Registros',
+    assessment: 'Escenarios',
     chat: 'Chat',
     micro_sandbox: 'Chequeo',
-    diary: 'Registro',
+    diary: 'Mis Notas',
     report: 'Informe',
     profile: 'Retrato',
     weekly_review: 'Revisión Semanal',
@@ -552,6 +553,7 @@ export const es = {
   },
 
   landing: {
+    hero_description: 'Refleja tu verdadero yo a través de interacciones situacionales para comprender tus patrones de pensamiento y personalidad.',
     tagline: '',
     auth_link: 'Iniciar sesión / Registrarse',
     cta_start: 'Comenzar Evaluación',

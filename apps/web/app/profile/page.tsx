@@ -170,31 +170,15 @@ export default function ProfilePage() {
 
   return (
     <main className="page-container-minimal theme-profile-page">
-      {/* Minimal Header */}
-      <header className="minimal-header">
-        <div className="minimal-brand">
-          EVA
-        </div>
+      {/* User Toolbar */}
+      <div className="minimal-header" style={{ justifyContent: 'flex-end', marginBottom: '24px' }}>
         <div className="minimal-user-badge">
           <span>{user.email}</span>
           <button onClick={logout} className="minimal-logout">
             {t('profile.logout')}
           </button>
         </div>
-      </header>
-
-      {/* Minimal Navigation */}
-      <nav className="minimal-nav" aria-label="Main navigation">
-        <Link href="/profile" className="nav-link active">
-          {t('nav.dashboard')}
-        </Link>
-        <Link href="/theme-assessment" className="nav-link">
-          {t('nav.assessment')}
-        </Link>
-        <Link href="/daily-mirror" className="nav-link">
-          {t('nav.diary')}
-        </Link>
-      </nav>
+      </div>
 
       {/* Dashboard Grid */}
       <div className="dashboard-grid-minimal">

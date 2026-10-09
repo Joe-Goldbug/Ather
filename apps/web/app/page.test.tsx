@@ -29,7 +29,7 @@ describe('LandingPage (homepage /)', () => {
     );
 
     expect(markup).toContain('<h1 class="hero-brand">EVA</h1>');
-    expect(markup).toContain(`<a href="/theme-assessment" class="hero-cta">${ctaLabel}</a>`);
+    expect(markup).toContain(`<a href="/play" class="hero-cta">${ctaLabel}</a>`);
     expect(markup).not.toContain('coming-soon');
     expect(markup).not.toContain('href="/whitepaper"');
     expect(markup).not.toMatch(/[\u{1F300}-\u{1FAFF}]|[\u{2600}-\u{27BF}]/u);

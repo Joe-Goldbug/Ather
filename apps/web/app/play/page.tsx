@@ -229,7 +229,7 @@ export default function PlayPage() {
           {saved ? (
             <>
               <h2>本章记录已保存</h2>
-              <Link href="/theme-assessment" className="btn-primary">继续下一章</Link>
+              <Link href="/profile" className="btn-primary">进入个人主页</Link>
             </>
           ) : user ? (
             <>
@@ -254,7 +254,7 @@ export default function PlayPage() {
           ) : (
             <>
               <h2>保存你的记录</h2>
-              <p>登录后可以认领本章，并继续新的探索章节。</p>
+              <p>登录后将本章测试结果关联至个人档案，并进入个人主页。</p>
               <Link href="/login?returnTo=%2Fplay" className="btn-primary">注册或登录并保存</Link>
             </>
           )}

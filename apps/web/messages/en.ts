@@ -39,10 +39,11 @@ export const en = {
 
   nav: {
     home: 'Home',
-    assessment: 'Chapter',
+    dashboard: 'My Records',
+    assessment: 'Scenarios',
     chat: 'Chat',
     micro_sandbox: 'Check-in',
-    diary: 'Record',
+    diary: 'My Notes',
     report: 'Report',
     profile: 'Portrait',
     weekly_review: 'Weekly Review',
@@ -497,7 +498,8 @@ export const en = {
   },
 
   landing: {
-    tagline: "Eva is a computational mind mirror designed to reflect a person’s inner self. Rather than defining users with rigid personality labels or superficial flattery, Eva uses AI-guided situational interactions to help users understand their thinking patterns and explore their character, temperament, and personality traits.",
+    hero_description: 'Reflecting your true inner self through situational interactions to understand thinking patterns and personality traits.',
+    tagline: "Eva is designed to reflect a person’s inner self. Rather than defining users with rigid personality labels or superficial flattery, Eva uses AI-guided situational interactions to help users understand their thinking patterns and explore their character, temperament, and personality traits.",
     auth_link: 'Login / Register',
     cta_start: 'Play',
     cta_baseline: 'Know Yourself',

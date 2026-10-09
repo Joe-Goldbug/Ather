@@ -16,7 +16,7 @@ import type { Locale } from '@/lib/i18n';
 const WHITEPAPER_MD = `# EVA 内部纲领
 
 > 当前项目简述 / Current Project Pitch（2026-10-07）：
-> 中文：Eva 是一面用于反映人内在真实自我的计算化心智镜像（Computational Mind Mirror）。它通过 AI 引导的情境互动，帮助用户理解思考模式、探索性格特质、人格底色与情绪性情；用户可补充或纠正系统观察。
+> 中文：Eva 用于反映人内在真实自我。它通过 AI 引导的情境互动，帮助用户理解思考模式、探索性格特质、人格底色与情绪性情；用户可补充或纠正系统观察。
 > English: Eva is a computational mind mirror designed to reflect a person’s inner self. Through AI-guided situational interactions, it helps users understand their thinking patterns and explore their character, temperament, and personality traits. Users can add context to or correct the system’s observations.
 > Web3 方向 / Web3 direction：通过可验证凭证和用户自主授权分享，让用户更好掌控认知记录。私密心智与对话原文不公开写入区块链。 / Verifiable credentials and user-authorized sharing give users greater control over cognitive records. Private reflections and raw conversations are not published on a blockchain.
 > 下文其余纲领内容属于早期历史资料，不代表当前定位或已上线功能。 / The remaining charter below is historical material and does not represent current positioning or shipped features.
@@ -36,7 +36,7 @@ const WHITEPAPER_MD = `# EVA 内部纲领
 
 ## 2. 当前项目简述 / Current Project Pitch
 
-**Eva 是一面用于反映人内在真实自我的计算化心智镜像（Computational Mind Mirror）。它不以刻板标签定义用户，也不靠虚假奉承取悦用户，而是通过 AI 引导的情境互动帮助用户理解思考模式、探索性格特质、人格底色与情绪性情。**
+**Eva 用于反映人内在真实自我。它不以刻板标签定义用户，也不靠虚假奉承取悦用户，而是通过 AI 引导的情境互动帮助用户理解思考模式、探索性格特质、人格底色与情绪性情。**
 
 **Eva is a computational mind mirror designed to reflect a person’s inner self. Rather than defining users with rigid labels or superficial flattery, it uses AI-guided situational interactions to help users understand their thinking patterns and explore their character, temperament, and personality traits.**
 
@@ -125,10 +125,9 @@ EVA 当前已经比较清晰地形成了四层价值结构。
 
 当前最稳妥、最有战略空间的定位是：
 
-**计算化心智镜像 / 自我探索型 AI 伴侣**
+**自我探索型 AI 伴侣**
 
 英文可对应为：
-- Computational Mind Mirror[计算心智镜像]
 - Self-Discovery Companion[自我探索伙伴]
 - Reflective AI Companion[反思型AI伙伴]
 
@@ -382,7 +381,7 @@ EVA 当前的正确项目陈述可以收束为一句话（内部理解）：
 
 再压缩一层，就是内部共识版：
 
-**EVA 就像是“会越来越懂你的心智镜像系统”。**
+**EVA 就像是“会越来越懂你的系统”。**
 
 这句话【Ather成为理解人类和协助人类的IA】，应该成为当前产品、算法、内容、设计、品牌对齐时的基础判断。
 
@@ -1323,7 +1322,7 @@ EVA 的差异化不在题库、界面风格或某个模型。题目可以被模�
 
 EVA 的终极目标不是生成一份关于人的报告，而是帮助人建立一种更持续、更清晰的自我认识能力。
 
-当系统能够保存证据而不把历史固化成标签，能够提出观察而不夺走人的判断权，能够接受修正并在时间中重新检验，它就不再只是测评工具。它开始成为一种心智镜像：让人看见自己如何思考、如何选择、如何在关系和环境中变化。
+当系统能够保存证据而不把历史固化成标签，能够提出观察而不夺走人的判断权，能够接受修正并在时间中重新检验，它就不再只是测评工具。让人看见自己如何思考、如何选择、如何在关系和环境中变化。
 
 再向前一步，EVA 所追求的是 Intelligence Amplification——不是用人工智能代替人的判断，而是增强人理解自己、发现盲点、辨认变化和作出选择的能力。
 

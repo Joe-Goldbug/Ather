@@ -10,7 +10,8 @@ export default function LandingPage() {
     <main className="container">
       <section className="hero">
         <h1 className="hero-brand">{t('common.brand_name')}</h1>
-        <Link href="/theme-assessment" className="hero-cta">
+        <p className="hero-tagline">{t('landing.hero_description')}</p>
+        <Link href="/play" className="hero-cta">
           {t('landing.cta_assessment')}
         </Link>
       </section>

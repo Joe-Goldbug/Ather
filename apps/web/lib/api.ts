@@ -40,6 +40,9 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
 export interface AuthUser {
   id: string;
   email: string;
+  name?: string;
+  username?: string;
+  display_name?: string;
   created_at?: string;
   baseline_completed?: boolean;
   sandbox_completed_today?: boolean;

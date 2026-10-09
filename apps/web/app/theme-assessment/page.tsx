@@ -643,22 +643,26 @@ export default function ThemeAssessmentPage() {
         </p>
       )}
       <section className="report-section">
-        <p>{coverage?.recommendation}</p>
-        <div className="result-dim-grid">
+        {coverage?.recommendation && <p className="report-detail theme-recommendation-note">{coverage.recommendation}</p>}
+        <div className="result-dim-grid theme-selection-grid">
           {coverage?.themes.map((theme) => (
-            <article key={theme.theme_lens} className="result-dim-card">
-              <h2>{theme.title}</h2>
-              <p>{THEME_DESCRIPTIONS[theme.theme_lens]}</p>
-              <p className="report-detail">已完成 {theme.completed_rounds} 轮</p>
-              <button
-                type="button"
-                disabled={submitting}
-                aria-busy={submitting && pendingTheme === theme.theme_lens}
-                onClick={() => start(theme.theme_lens)}
-              >
-                {submitting && pendingTheme === theme.theme_lens && <span className="action-loading-spinner" aria-hidden="true" />}
-                {submitting && pendingTheme === theme.theme_lens ? '正在准备题目…' : '从这个主题开始'}
-              </button>
+            <article key={theme.theme_lens} className="result-dim-card theme-selection-card">
+              <div className="theme-card-main">
+                <h2>{theme.title}</h2>
+                <p>{THEME_DESCRIPTIONS[theme.theme_lens]}</p>
+              </div>
+              <div className="theme-card-footer">
+                <span className="report-detail theme-card-rounds">已完成 {theme.completed_rounds} 轮</span>
+                <button
+                  type="button"
+                  disabled={submitting}
+                  aria-busy={submitting && pendingTheme === theme.theme_lens}
+                  onClick={() => start(theme.theme_lens)}
+                >
+                  {submitting && pendingTheme === theme.theme_lens && <span className="action-loading-spinner" aria-hidden="true" />}
+                  {submitting && pendingTheme === theme.theme_lens ? '正在准备题目…' : '从这个主题开始'}
+                </button>
+              </div>
             </article>
           ))}
         </div>

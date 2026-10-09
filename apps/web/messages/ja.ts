@@ -39,10 +39,11 @@ export const ja = {
 
   nav: {
     home: 'ホーム',
-    assessment: 'アセスメント',
+    dashboard: '私の記録',
+    assessment: 'シナリオ',
     chat: 'チャット',
     micro_sandbox: '単問チェック',
-    diary: '記録',
+    diary: 'マイノート',
     report: 'レポート',
     profile: 'ポートレート',
     weekly_review: '週次レビュー',
@@ -552,6 +553,7 @@ export const ja = {
   },
 
   landing: {
+    hero_description: '情景的な対話を通じて本当の自分を映し出し、思考パターンと性格の基礎を理解する。',
     tagline: '',
     auth_link: 'ログイン / 登録',
     cta_start: 'アセスメントを始める',
