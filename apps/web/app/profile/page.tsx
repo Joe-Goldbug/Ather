@@ -56,6 +56,9 @@ export default function ProfilePage() {
     async function load() {
       setLoading(true);
       setError('');
+      setPortraitError('');
+      setScopeError('');
+      setScopeSuccess('');
 
       try {
         const me = await authApi.me();
@@ -101,7 +104,7 @@ export default function ProfilePage() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [locale]);
 
   async function logout() {
     try {

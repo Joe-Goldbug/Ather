@@ -26,6 +26,7 @@ describe('ObservationV1Service', () => {
     expect(sql).toContain('AND NOT EXISTS');
     expect(sql).toContain('formal.user_id = o.user_id');
     expect(sql).toContain('observation_responses');
+    expect(sql).toContain('theme_assessment_result_responses');
   });
 
   it('marks a refuted revision as needing follow-up without removing its source text', async () => {

@@ -1,9 +1,11 @@
 import { WalletService } from './wallet.service.js';
 import { BaseService } from './base.service.js';
+import { verifyTypedData } from 'viem';
 import { generatePrivateKey, privateKeyToAccount } from 'viem/accounts';
 import { BadRequestException, NotFoundException } from '@nestjs/common';
 
 describe('WalletService', () => {
+  jest.setTimeout(15000);
   let service: WalletService;
   let baseService: BaseService;
   let mockDb: any;
@@ -89,6 +91,21 @@ describe('WalletService', () => {
     };
 
     baseService = new BaseService();
+    jest.spyOn(baseService, 'getBytecode').mockResolvedValue(undefined);
+    jest.spyOn(baseService, 'verifyWalletSignature').mockImplementation(async (params) => {
+      try {
+        return await verifyTypedData({
+          address: params.address as `0x${string}`,
+          domain: params.domain as any,
+          types: params.types as any,
+          primaryType: params.primaryType,
+          message: params.message as any,
+          signature: params.signature as `0x${string}`,
+        });
+      } catch {
+        return false;
+      }
+    });
     service = new WalletService(mockDb, baseService);
   });
 

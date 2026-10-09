@@ -376,9 +376,20 @@ export class ThemeAssessmentService {
       };
 
       await client.query(
-        `INSERT INTO theme_assessment_result_revisions (round_id, revision_number, result)
-         VALUES ($1, 1, $2::jsonb)`,
-        [roundId, JSON.stringify(adaptedResult)]
+        `WITH user_scope AS (
+           SELECT NOT EXISTS (
+             SELECT 1 FROM consent_grants cg
+             WHERE cg.user_id = $3
+               AND cg.consent_type = 'evidence_collection' AND cg.granted = false
+           ) AS is_allowed
+         )
+         INSERT INTO theme_assessment_result_revisions (round_id, revision_number, result)
+         SELECT $1, 1,
+                CASE WHEN (SELECT is_allowed FROM user_scope) THEN $2::jsonb
+                     ELSE jsonb_set($2::jsonb, '{boundary}', to_jsonb(($2::jsonb->>'boundary') || '（当前处于仅保存模式，此记录仅供个人查阅，不参与画像分析与证据收集）'))
+                END
+         FROM user_scope`,
+        [roundId, JSON.stringify(adaptedResult), userId]
       );
 
       await client.query('COMMIT');
@@ -642,17 +653,28 @@ export class ThemeAssessmentService {
       serializedAnswers
     );
     if (!result) throw new ConflictException({ code: 'result_withheld' });
+
     const saved = await this.db.pool.query<{
       id: string;
       revision_number: number;
       result: ThemeRoundResult;
       published_at: string;
     }>(
-      `WITH next_revision AS (
+      `WITH user_scope AS (
+         SELECT NOT EXISTS (
+           SELECT 1 FROM consent_grants cg
+           WHERE cg.user_id = (SELECT user_id FROM theme_assessment_rounds WHERE id = $1)
+             AND cg.consent_type = 'evidence_collection' AND cg.granted = false
+         ) AS is_allowed
+       ), next_revision AS (
          SELECT COALESCE(MAX(revision_number), 0) + 1 AS number FROM theme_assessment_result_revisions WHERE round_id = $1
        ), inserted AS (
          INSERT INTO theme_assessment_result_revisions (round_id, revision_number, result)
-         SELECT $1, number, $2::jsonb FROM next_revision
+         SELECT $1, number,
+                CASE WHEN (SELECT is_allowed FROM user_scope) THEN $2::jsonb
+                     ELSE jsonb_set($2::jsonb, '{boundary}', to_jsonb(($2::jsonb->>'boundary') || '（当前处于仅保存模式，此记录仅供个人查阅，不参与画像分析与证据收集）'))
+                END
+         FROM next_revision
          RETURNING id, revision_number, result, published_at
        ) SELECT * FROM inserted`,
       [roundId, JSON.stringify(result)]
@@ -943,6 +965,10 @@ export class ThemeAssessmentService {
        WHERE round.user_id = $1 AND round.status = 'completed'
          AND response.action IN ('refute', 'partial', 'clarify')
          AND NOT EXISTS (
+           SELECT 1 FROM consent_grants cg
+           WHERE cg.user_id = $1 AND cg.consent_type = 'evidence_collection' AND cg.granted = false
+         )
+         AND NOT EXISTS (
            SELECT 1 FROM theme_assessment_rounds followup
            WHERE followup.user_id = $1 AND followup.status = 'completed'
              AND followup.selection_decision->'target'->>'response_id' = response.id::text
@@ -1000,6 +1026,10 @@ export class ThemeAssessmentService {
     const latestEvidence = await this.db.pool.query<{ created_at: string }>(
       `SELECT created_at FROM ${FORMAL_EVIDENCE_VIEW}
        WHERE user_id = $1
+         AND NOT EXISTS (
+           SELECT 1 FROM consent_grants cg
+           WHERE cg.user_id = $1 AND cg.consent_type = 'evidence_collection' AND cg.granted = false
+         )
        ORDER BY created_at DESC LIMIT 1`,
       [userId],
     );

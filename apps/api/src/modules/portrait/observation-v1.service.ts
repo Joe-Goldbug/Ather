@@ -20,9 +20,19 @@ export class ObservationV1Service {
        FROM published_observations o
        JOIN published_observation_revisions r ON r.published_observation_id = o.id
        LEFT JOIN LATERAL (
-         SELECT response.action FROM observation_responses response
-         WHERE response.user_id = o.user_id AND response.published_observation_revision_id = r.id
-         ORDER BY response.created_at DESC, response.id DESC LIMIT 1
+         SELECT action FROM (
+           SELECT response.action, response.created_at, 1 AS priority
+           FROM observation_responses response
+           WHERE response.user_id = o.user_id AND response.published_observation_revision_id = r.id
+           UNION ALL
+           SELECT tr.action, tr.created_at, 2 AS priority
+           FROM theme_assessment_result_responses tr
+           WHERE tr.user_id = o.user_id
+             AND r.source_evidence_question_id IS NOT NULL
+             AND tr.evidence_question_id = r.source_evidence_question_id
+         ) combined
+         ORDER BY created_at DESC, priority ASC
+         LIMIT 1
        ) latest_response ON true
        WHERE o.user_id = $1
          AND r.id = o.current_revision_id
@@ -73,9 +83,19 @@ export class ObservationV1Service {
        JOIN observation_candidates candidate ON candidate.id = r.candidate_id
        JOIN observation_claims c ON c.candidate_id = candidate.id
        LEFT JOIN LATERAL (
-         SELECT response.action FROM observation_responses response
-         WHERE response.user_id = o.user_id AND response.published_observation_revision_id = r.id
-         ORDER BY response.created_at DESC, response.id DESC LIMIT 1
+         SELECT action FROM (
+           SELECT response.action, response.created_at, 1 AS priority
+           FROM observation_responses response
+           WHERE response.user_id = o.user_id AND response.published_observation_revision_id = r.id
+           UNION ALL
+           SELECT tr.action, tr.created_at, 2 AS priority
+           FROM theme_assessment_result_responses tr
+           WHERE tr.user_id = o.user_id
+             AND r.source_evidence_question_id IS NOT NULL
+             AND tr.evidence_question_id = r.source_evidence_question_id
+         ) combined
+         ORDER BY created_at DESC, priority ASC
+         LIMIT 1
        ) latest_response ON true
        LEFT JOIN observation_claim_evidence linked ON linked.claim_id = c.id
        LEFT JOIN ${FORMAL_EVIDENCE_VIEW} formal ON formal.id = linked.evidence_event_id AND formal.user_id = o.user_id

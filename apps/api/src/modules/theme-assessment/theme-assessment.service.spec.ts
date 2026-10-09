@@ -518,4 +518,52 @@ describe('ThemeAssessmentService result feedback', () => {
     expect(query.mock.calls[0][0]).toContain('PARTITION BY evidence_question_id');
     expect(query.mock.calls[0][0]).toContain('FILTER (WHERE evidence_question_id IS NULL)');
   });
+
+  it('filters out previous feedback recommendations when evidence_collection is revoked', async () => {
+    const queries: string[] = [];
+    const query = jest.fn().mockImplementation(async (statement: string) => {
+      queries.push(statement);
+      return { rows: [] };
+    });
+    const service = new ThemeAssessmentService({ pool: { query } } as never, {} as never);
+    jest.spyOn(service as any, 'coverageCounts').mockResolvedValue({
+      themes: [],
+      recommended_theme: 'emotion',
+      recommendation: '覆盖不足',
+    });
+
+    await service.recommendNextRound('user-1');
+    expect(queries.some((sql) => sql.includes("cg.consent_type = 'evidence_collection' AND cg.granted = false"))).toBe(true);
+  });
+
+  it('atomically enforces store_only user_scope on theme result completion', async () => {
+    const questions = selectThemeRoundCore('emotion', 0);
+    let revisionInsertSql = '';
+    const query = jest.fn().mockImplementation(async (statement: string) => {
+      if (statement.includes('INSERT INTO theme_assessment_result_revisions')) {
+        revisionInsertSql = statement;
+        return { rows: [{ id: 'rev-1', revision_number: 1, result: {}, published_at: new Date().toISOString() }] };
+      }
+      return { rows: [] };
+    });
+    const service = new ThemeAssessmentService({ pool: { query } } as never, {} as never);
+    jest.spyOn(service as any, 'getRound').mockResolvedValue({
+      id: 'round-1', theme_lens: 'emotion', locale: 'zh-CN', status: 'ready_to_complete',
+      question_bank_version: 'test-v1', completed_at: null,
+    });
+    jest.spyOn(service, 'next').mockResolvedValue({ state: 'ready_to_complete' } as never);
+    jest.spyOn(service as any, 'loadRoundState').mockResolvedValue({
+      items: questions.map((definition, index) => ({ id: `item-${index}`, definition })),
+      answers: questions.map((_, index) => ({
+        item_id: `item-${index}`, choice_id: 'A', free_text: null,
+        answered_at: '2026-09-26T00:00:00.000Z',
+      })),
+    });
+    jest.spyOn(service, 'getResult').mockResolvedValue({ round_id: 'round-1' } as never);
+
+    await service.complete('user-1', 'round-1');
+    expect(revisionInsertSql).toContain('user_scope AS');
+    expect(revisionInsertSql).toContain("cg.consent_type = 'evidence_collection' AND cg.granted = false");
+    expect(revisionInsertSql).toContain('jsonb_set');
+  });
 });
