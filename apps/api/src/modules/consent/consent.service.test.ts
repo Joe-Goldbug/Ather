@@ -191,23 +191,80 @@ describe('consent control', () => {
   });
 
   it('manages 3-level record usage scope (store_only, analyze_permitted, share_permitted)', async () => {
-    let currentScope = 'analyze_permitted';
+    let currentScope: string | null = null;
+    const grants: Record<string, boolean> = {};
+    const calls: string[] = [];
+
     const query = vi.fn(async (sql: string, params?: unknown[]) => {
-      if (sql.includes('INSERT INTO consent_grants') && typeof params?.[1] === 'string' && params[1].startsWith('record_scope:')) {
-        currentScope = params[1].replace('record_scope:', '');
+      calls.push(sql);
+      if (sql.includes('INSERT INTO consent_grants') && typeof params?.[1] === 'string') {
+        const type = params[1];
+        if (type.startsWith('record_scope:')) {
+          currentScope = type.replace('record_scope:', '');
+        } else {
+          grants[type] = true;
+        }
+      }
+      if (sql.includes('SET granted = false') && typeof params?.[1] === 'string') {
+        const type = params[1];
+        if (type.startsWith('record_scope:')) {
+          if (currentScope === type.replace('record_scope:', '')) currentScope = null;
+        } else {
+          grants[type] = false;
+        }
       }
       if (sql.includes("consent_type LIKE 'record_scope:%'")) {
-        return { rows: [{ consent_type: `record_scope:${currentScope}` }] };
+        return { rows: currentScope ? [{ consent_type: `record_scope:${currentScope}` }] : [] };
+      }
+      if (sql.includes('SELECT consent_type, granted FROM consent_grants WHERE user_id = $1')) {
+        return { rows: Object.entries(grants).map(([consent_type, granted]) => ({ consent_type, granted })) };
       }
       return { rows: [] };
     });
-    const service = new ConsentService({ pool: { query } } as never, {} as never, {} as never);
-    expect(await service.getRecordScope('user-1')).toEqual({ scope: 'analyze_permitted' });
 
+    const client = { query, release: vi.fn() };
+    const service = new ConsentService({ pool: { query, connect: vi.fn(async () => client) } } as never, {} as never, {} as never);
+
+    // Initial state: unset
+    expect(await service.getRecordScope('user-1')).toEqual({ scope: 'unset' });
+
+    // Store only: revokes chat_history_use and evidence_collection
     await service.setRecordScope('user-1', 'store_only');
     expect(await service.getRecordScope('user-1')).toEqual({ scope: 'store_only' });
+    expect(grants.chat_history_use).toBe(false);
+    expect(grants.evidence_collection).toBe(false);
+    expect(calls).toContain('BEGIN');
+    expect(calls).toContain('COMMIT');
 
+    // Analyze permitted: grants chat_history_use and evidence_collection
+    await service.setRecordScope('user-1', 'analyze_permitted');
+    expect(await service.getRecordScope('user-1')).toEqual({ scope: 'analyze_permitted' });
+    expect(grants.chat_history_use).toBe(true);
+    expect(grants.evidence_collection).toBe(true);
+    expect(grants.third_party_sharing).toBe(false);
+
+    // Share permitted: grants third_party_sharing
     await service.setRecordScope('user-1', 'share_permitted');
     expect(await service.getRecordScope('user-1')).toEqual({ scope: 'share_permitted' });
+    expect(grants.third_party_sharing).toBe(true);
+  });
+
+  it('rolls back record scope update and releases client on database failure', async () => {
+    const calls: string[] = [];
+    const query = vi.fn(async (sql: string, params?: unknown[]) => {
+      calls.push(sql);
+      if (sql.includes('UPDATE consent_grants') && params?.[1] === 'evidence_collection') {
+        throw new Error('database write failure');
+      }
+      return { rows: [] };
+    });
+    const client = { query, release: vi.fn() };
+    const service = new ConsentService({ pool: { query, connect: vi.fn(async () => client) } } as never, {} as never, {} as never);
+
+    await expect(service.setRecordScope('user-1', 'store_only')).rejects.toThrow('database write failure');
+    expect(calls).toContain('BEGIN');
+    expect(calls).toContain('ROLLBACK');
+    expect(calls).not.toContain('COMMIT');
+    expect(client.release).toHaveBeenCalled();
   });
 });

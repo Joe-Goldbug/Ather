@@ -62,8 +62,9 @@ export class ConsentService {
     private readonly queues: QueueService,
   ) {}
 
-  async grant(userId: string, consentType: ConsentType): Promise<void> {
-    await this.db.pool.query(
+  async grant(userId: string, consentType: ConsentType, client?: { query: (text: string, params?: unknown[]) => Promise<unknown> }): Promise<void> {
+    const runner = client ?? this.db.pool;
+    await runner.query(
       `INSERT INTO consent_grants (user_id, consent_type, granted)
        VALUES ($1, $2, true)
        ON CONFLICT (user_id, consent_type)
@@ -72,8 +73,9 @@ export class ConsentService {
     );
   }
 
-  async revoke(userId: string, consentType: ConsentType): Promise<void> {
-    await this.db.pool.query(
+  async revoke(userId: string, consentType: ConsentType, client?: { query: (text: string, params?: unknown[]) => Promise<unknown> }): Promise<void> {
+    const runner = client ?? this.db.pool;
+    await runner.query(
       `UPDATE consent_grants
        SET granted = false, revoked_at = NOW()
        WHERE user_id = $1 AND consent_type = $2`,
@@ -96,49 +98,64 @@ export class ConsentService {
   }
 
   async setRecordScope(userId: string, scope: RecordUsageScope): Promise<{ scope: RecordUsageScope }> {
-    for (const s of RECORD_USAGE_SCOPES) {
-      if (s !== scope) {
-        await this.db.pool.query(
-          `UPDATE consent_grants SET granted = false, revoked_at = NOW() WHERE user_id = $1 AND consent_type = $2`,
-          [userId, `record_scope:${s}`],
-        );
+    const client = await this.db.pool.connect();
+    try {
+      await client.query('BEGIN');
+      await client.query(`SELECT pg_advisory_xact_lock(hashtext('consent_scope:' || $1))`, [userId]);
+
+      for (const s of RECORD_USAGE_SCOPES) {
+        if (s !== scope) {
+          await client.query(
+            `UPDATE consent_grants SET granted = false, revoked_at = NOW() WHERE user_id = $1 AND consent_type = $2`,
+            [userId, `record_scope:${s}`],
+          );
+        }
       }
-    }
-    await this.db.pool.query(
-      `INSERT INTO consent_grants (user_id, consent_type, granted)
-       VALUES ($1, $2, true)
-       ON CONFLICT (user_id, consent_type)
-       DO UPDATE SET granted = true, granted_at = NOW(), revoked_at = NULL`,
-      [userId, `record_scope:${scope}`],
-    );
+      await client.query(
+        `INSERT INTO consent_grants (user_id, consent_type, granted)
+         VALUES ($1, $2, true)
+         ON CONFLICT (user_id, consent_type)
+         DO UPDATE SET granted = true, granted_at = NOW(), revoked_at = NULL`,
+        [userId, `record_scope:${scope}`],
+      );
 
-    if (scope === 'store_only') {
-      await this.grant(userId, 'memory_retention');
-      await this.grant(userId, 'report_storage');
-      await this.revoke(userId, 'evidence_collection');
-      await this.revoke(userId, 'report_generation');
-      await this.revoke(userId, 'weekly_review_analysis');
-      await this.revoke(userId, 'third_party_sharing');
-    } else if (scope === 'analyze_permitted') {
-      await this.grant(userId, 'memory_retention');
-      await this.grant(userId, 'report_storage');
-      await this.grant(userId, 'evidence_collection');
-      await this.grant(userId, 'report_generation');
-      await this.grant(userId, 'weekly_review_analysis');
-      await this.revoke(userId, 'third_party_sharing');
-    } else if (scope === 'share_permitted') {
-      await this.grant(userId, 'memory_retention');
-      await this.grant(userId, 'report_storage');
-      await this.grant(userId, 'evidence_collection');
-      await this.grant(userId, 'report_generation');
-      await this.grant(userId, 'weekly_review_analysis');
-      await this.grant(userId, 'third_party_sharing');
-    }
+      if (scope === 'store_only') {
+        await this.grant(userId, 'memory_retention', client);
+        await this.grant(userId, 'report_storage', client);
+        await this.revoke(userId, 'evidence_collection', client);
+        await this.revoke(userId, 'report_generation', client);
+        await this.revoke(userId, 'weekly_review_analysis', client);
+        await this.revoke(userId, 'chat_history_use', client);
+        await this.revoke(userId, 'third_party_sharing', client);
+      } else if (scope === 'analyze_permitted') {
+        await this.grant(userId, 'memory_retention', client);
+        await this.grant(userId, 'report_storage', client);
+        await this.grant(userId, 'evidence_collection', client);
+        await this.grant(userId, 'report_generation', client);
+        await this.grant(userId, 'weekly_review_analysis', client);
+        await this.grant(userId, 'chat_history_use', client);
+        await this.revoke(userId, 'third_party_sharing', client);
+      } else if (scope === 'share_permitted') {
+        await this.grant(userId, 'memory_retention', client);
+        await this.grant(userId, 'report_storage', client);
+        await this.grant(userId, 'evidence_collection', client);
+        await this.grant(userId, 'report_generation', client);
+        await this.grant(userId, 'weekly_review_analysis', client);
+        await this.grant(userId, 'chat_history_use', client);
+        await this.grant(userId, 'third_party_sharing', client);
+      }
 
-    return { scope };
+      await client.query('COMMIT');
+      return { scope };
+    } catch (err) {
+      await client.query('ROLLBACK');
+      throw err;
+    } finally {
+      client.release();
+    }
   }
 
-  async getRecordScope(userId: string): Promise<{ scope: RecordUsageScope }> {
+  async getRecordScope(userId: string): Promise<{ scope: RecordUsageScope | 'unset' }> {
     const rows = await this.db.pool.query<{ consent_type: string }>(
       `SELECT consent_type FROM consent_grants WHERE user_id = $1 AND granted = true AND consent_type LIKE 'record_scope:%'`,
       [userId],
@@ -146,10 +163,25 @@ export class ConsentService {
     if (rows.rows.length > 0) {
       const found = rows.rows[0].consent_type.replace('record_scope:', '') as RecordUsageScope;
       if (RECORD_USAGE_SCOPES.includes(found)) {
-        return { scope: found };
+        const status = await this.getStatus(userId);
+        if (found === 'store_only') {
+          const hasActiveAnalysisOrSharing = status.evidence_collection || status.report_generation ||
+            status.weekly_review_analysis || status.chat_history_use || status.third_party_sharing;
+          if (!hasActiveAnalysisOrSharing) {
+            return { scope: 'store_only' };
+          }
+        } else if (found === 'analyze_permitted') {
+          if (!status.third_party_sharing && status.evidence_collection && status.chat_history_use) {
+            return { scope: 'analyze_permitted' };
+          }
+        } else if (found === 'share_permitted') {
+          if (status.third_party_sharing && status.evidence_collection && status.chat_history_use) {
+            return { scope: 'share_permitted' };
+          }
+        }
       }
     }
-    return { scope: 'analyze_permitted' };
+    return { scope: 'unset' };
   }
 
   async createAgentGrant(

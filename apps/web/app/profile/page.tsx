@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useLocale } from '../providers-impl';
@@ -15,6 +15,7 @@ import {
   type PortraitV1Response,
   type PublishedObservationV1,
   type ThemeRoundHistoryItem,
+  type RecordUsageScope,
 } from '@/lib/api';
 import {
   ProfilePortraitView,
@@ -32,6 +33,8 @@ interface EvidenceRow {
 export default function ProfilePage() {
   const { locale, t } = useLocale();
   const router = useRouter();
+  const routerRef = useRef(router);
+  routerRef.current = router;
   const [user, setUser] = useState<AuthUser | null>(null);
   const [portraitEvidence, setPortraitEvidence] = useState<EvidenceRow[]>([]);
   const [portrait, setPortrait] = useState<PortraitV1Response | null>(null);
@@ -42,6 +45,10 @@ export default function ProfilePage() {
   const [portraitError, setPortraitError] = useState('');
   const [exporting, setExporting] = useState(false);
   const [exportError, setExportError] = useState(false);
+  const [recordScope, setRecordScopeState] = useState<RecordUsageScope | 'unset'>('unset');
+  const [scopeSaving, setScopeSaving] = useState(false);
+  const [scopeError, setScopeError] = useState('');
+  const [scopeSuccess, setScopeSuccess] = useState('');
 
   useEffect(() => {
     let cancelled = false;
@@ -59,12 +66,12 @@ export default function ProfilePage() {
           localStorage.removeItem('eva_token');
           localStorage.removeItem('eva_user_id');
         } catch {}
-        router.replace('/login');
+        routerRef.current.replace('/login');
         return;
       }
 
       try {
-        const [evidenceRows, portraitData, observationRows, themeRoundRows] = await Promise.all([
+        const [evidenceRows, portraitData, observationRows, themeRoundRows, scopeData] = await Promise.all([
           evidenceApi.getByDimension().catch(() => []),
           portraitV1Api.current().catch((err: Error) => {
             if (!cancelled) setPortraitError(err.message || t('profile.load_failed'));
@@ -72,6 +79,7 @@ export default function ProfilePage() {
           }),
           observationsV1Api.list().catch(() => []),
           themeAssessmentApi.history().catch(() => []),
+          consentApi.getRecordScope?.()?.catch?.(() => ({ scope: 'unset' as const })) ?? Promise.resolve({ scope: 'unset' as const }),
         ]);
 
         if (cancelled) return;
@@ -79,6 +87,7 @@ export default function ProfilePage() {
         setPortrait((portraitData as PortraitV1Response | null) ?? null);
         setPublishedObservations(Array.isArray(observationRows) ? observationRows as PublishedObservationV1[] : []);
         setThemeRounds(Array.isArray(themeRoundRows) ? themeRoundRows as ThemeRoundHistoryItem[] : []);
+        setRecordScopeState(scopeData?.scope ?? 'unset');
       } catch (err) {
         if (cancelled) return;
         setError(err instanceof Error ? err.message : t('profile.load_failed'));
@@ -92,7 +101,7 @@ export default function ProfilePage() {
     return () => {
       cancelled = true;
     };
-  }, [router, t]);
+  }, []);
 
   async function logout() {
     try {
@@ -129,6 +138,22 @@ export default function ProfilePage() {
     }
   }
 
+  async function handleUpdateScope(newScope: RecordUsageScope) {
+    if (scopeSaving || recordScope === newScope) return;
+    setScopeSaving(true);
+    setScopeError('');
+    setScopeSuccess('');
+    try {
+      const res = await consentApi.setRecordScope(newScope);
+      setRecordScopeState(res?.scope ?? newScope);
+      setScopeSuccess('权限范围设置已更新并生效');
+    } catch (err: any) {
+      setScopeError(err?.message || '更新权限设置失败，原设置保持不变');
+    } finally {
+      setScopeSaving(false);
+    }
+  }
+
   if (loading)
     return (
       <main className="profile-page">
@@ -148,7 +173,7 @@ export default function ProfilePage() {
       {/* Minimal Header */}
       <header className="minimal-header">
         <div className="minimal-brand">
-          EVA <span>/ Personality Analytics</span>
+          EVA
         </div>
         <div className="minimal-user-badge">
           <span>{user.email}</span>
@@ -161,7 +186,7 @@ export default function ProfilePage() {
       {/* Minimal Navigation */}
       <nav className="minimal-nav" aria-label="Main navigation">
         <Link href="/profile" className="nav-link active">
-          Dashboard
+          {t('nav.dashboard')}
         </Link>
         <Link href="/theme-assessment" className="nav-link">
           {t('nav.assessment')}
@@ -272,6 +297,112 @@ export default function ProfilePage() {
                 ))}
               </div>
             )}
+          </div>
+
+          {/* 账号级认知记录使用范围设置 */}
+          <div className="section-card handdrawn-box" data-testid="record-scope-card">
+            <div className="section-title">
+              认知记录使用权限
+              <span className="count">
+                {recordScope === 'store_only'
+                  ? '仅本地保存'
+                  : recordScope === 'analyze_permitted'
+                  ? '允许心智分析'
+                  : recordScope === 'share_permitted'
+                  ? '允许授权分享'
+                  : '尚未设置'}
+              </span>
+            </div>
+            <p className="report-detail text-sm text-neutral-600 mb-4">
+              控制 Eva 引擎如何使用您的全量心智与行为记录。此为<strong>账号级全局偏好</strong>，单条记录的纠正自述依然在各卡片中独立生效。
+            </p>
+
+            <div className="space-y-3 mb-4">
+              <label
+                className={`block p-3 border rounded-xl cursor-pointer transition ${
+                  recordScope === 'store_only'
+                    ? 'border-neutral-900 bg-neutral-50 font-medium'
+                    : 'border-neutral-200 hover:border-neutral-300'
+                }`}
+              >
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="radio"
+                      name="recordScope"
+                      value="store_only"
+                      checked={recordScope === 'store_only'}
+                      onChange={() => void handleUpdateScope('store_only')}
+                      disabled={scopeSaving}
+                      className="text-neutral-900"
+                    />
+                    <span>💾 仅保存历史 (Store Only)</span>
+                  </div>
+                  <span className="text-xs text-neutral-500">最高隐私</span>
+                </div>
+                <p className="text-xs text-neutral-500 mt-1 pl-6">
+                  仅供个人浏览与导出。Eva 聊天与后台分析将<strong>完全停止读取历史记忆</strong>，不生成周报与聚合画像。
+                </p>
+              </label>
+
+              <label
+                className={`block p-3 border rounded-xl cursor-pointer transition ${
+                  recordScope === 'analyze_permitted'
+                    ? 'border-neutral-900 bg-neutral-50 font-medium'
+                    : 'border-neutral-200 hover:border-neutral-300'
+                }`}
+              >
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="radio"
+                      name="recordScope"
+                      value="analyze_permitted"
+                      checked={recordScope === 'analyze_permitted'}
+                      onChange={() => void handleUpdateScope('analyze_permitted')}
+                      disabled={scopeSaving}
+                      className="text-neutral-900"
+                    />
+                    <span>🧠 允许心智分析 (Analyze Permitted)</span>
+                  </div>
+                  <span className="text-xs text-emerald-600 font-medium">推荐模式</span>
+                </div>
+                <p className="text-xs text-neutral-500 mt-1 pl-6">
+                  允许 Eva 在对话中唤醒记忆，持续提炼您的思考模式、更新心智画像并生成周度实验建议。
+                </p>
+              </label>
+
+              <label
+                className={`block p-3 border rounded-xl cursor-pointer transition ${
+                  recordScope === 'share_permitted'
+                    ? 'border-neutral-900 bg-neutral-50 font-medium'
+                    : 'border-neutral-200 hover:border-neutral-300'
+                }`}
+              >
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="radio"
+                      name="recordScope"
+                      value="share_permitted"
+                      checked={recordScope === 'share_permitted'}
+                      onChange={() => void handleUpdateScope('share_permitted')}
+                      disabled={scopeSaving}
+                      className="text-neutral-900"
+                    />
+                    <span>🌐 允许授权分享 (Share Permitted)</span>
+                  </div>
+                  <span className="text-xs text-blue-600 font-medium">开放互通</span>
+                </div>
+                <p className="text-xs text-neutral-500 mt-1 pl-6">
+                  在心智分析基础上，允许生成可离线验真的防伪凭证，并可向第三方指定 Agent 授权访问。
+                </p>
+              </label>
+            </div>
+
+            {scopeSaving && <p className="text-xs text-neutral-500">正在同步权限设置到数据库事务...</p>}
+            {scopeSuccess && <p className="text-xs text-emerald-600 font-medium">{scopeSuccess}</p>}
+            {scopeError && <p className="text-xs text-rose-600 font-medium" role="alert">{scopeError}</p>}
           </div>
 
           <div className="section-card handdrawn-box">

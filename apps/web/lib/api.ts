@@ -251,7 +251,7 @@ export const consentApi = {
     method: 'POST',
     body: JSON.stringify({ consent_type: consentType }),
   }),
-  getRecordScope: () => request<{ scope: RecordUsageScope }>('/consent/record-scope'),
+  getRecordScope: () => request<{ scope: RecordUsageScope | 'unset' }>('/consent/record-scope'),
   setRecordScope: (scope: RecordUsageScope) => request<{ scope: RecordUsageScope }>('/consent/record-scope', {
     method: 'POST',
     body: JSON.stringify({ scope }),
