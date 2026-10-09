@@ -334,6 +334,17 @@ export interface ThemeRoundEvidence {
   choice_text: string;
 }
 
+export interface AiInsight {
+  source: 'ai';
+  model: string;
+  generated_at: string;
+  disclaimer: string;
+  paragraphs: Array<{
+    text: string;
+    evidence_question_ids: string[];
+  }>;
+}
+
 export interface ThemeRoundResult {
   theme_lens: ThemeLens;
   theme_title: string;
@@ -345,6 +356,7 @@ export interface ThemeRoundResult {
   counterevidence: string;
   boundary: string;
   evidence: ThemeRoundEvidence[];
+  ai_insight?: AiInsight;
 }
 
 export interface ThemeRoundResultResponse {

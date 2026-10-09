@@ -4472,6 +4472,53 @@ textarea:focus {
   padding: clamp(1.25rem, 2.5vw, 1.75rem) clamp(1.4rem, 3vw, 2rem);
 }
 
+.ai-insight-section {
+  border-top: 2px solid var(--border-secondary, rgba(0,0,0,0.12));
+  padding-top: clamp(1.5rem, 3vw, 2.25rem);
+}
+
+.ai-insight-header {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.ai-insight-badge {
+  font-size: 0.75rem;
+  font-weight: 500;
+  padding: 0.2rem 0.6rem;
+  border-radius: 999px;
+  background: var(--bg-secondary, rgba(0,0,0,0.05));
+  color: var(--text-secondary, rgba(0,0,0,0.6));
+  letter-spacing: 0.02em;
+}
+
+.ai-insight-paragraph {
+  margin: 0.85rem 0;
+  padding: 0.85rem 1.1rem;
+  border-left: 3px solid var(--border-primary, rgba(0,0,0,0.15));
+  border-radius: 0 8px 8px 0;
+  background: var(--bg-tertiary, rgba(0,0,0,0.02));
+}
+
+.ai-insight-paragraph > p {
+  margin: 0;
+  line-height: 1.7;
+}
+
+.ai-insight-evidence {
+  margin: 0.4rem 0 0;
+  font-size: 0.85rem;
+  color: var(--text-tertiary, rgba(0,0,0,0.45));
+}
+
+.ai-insight-disclaimer {
+  margin-top: 0.85rem;
+  font-size: 0.82rem;
+  color: var(--text-tertiary, rgba(0,0,0,0.45));
+  line-height: 1.6;
+}
+
 .theme-assessment-page .report-actions {
   gap: 0.85rem;
   flex-wrap: wrap;

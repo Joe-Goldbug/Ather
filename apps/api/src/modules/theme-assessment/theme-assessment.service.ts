@@ -18,6 +18,7 @@ import {
   type ThemeQuestion,
   type ThemeRoundAnswer,
   type ThemeRoundResult,
+  type RoundApproach,
   validateThemeRoundAnswers,
 } from '@eva/core';
 
@@ -46,6 +47,10 @@ export interface ClaimGuestOpeningBody {
 import { Database } from '../../common/database.js';
 import { FORMAL_EVIDENCE_VIEW } from '../../common/formal-evidence.js';
 import { ThemeFollowupGeneratorService } from './theme-followup-generator.service.js';
+import { ThemeQuestionGeneratorService, type CoreQuestionInput, type PriorRoundSummary, type DiaryDigestEntry } from './theme-question-generator.service.js';
+import { ThemeInsightGeneratorService, type AiInsight } from './theme-insight-generator.service.js';
+import { EVA_THEME_AI_PERSONALIZATION, EVA_THEME_AI_INSIGHT } from '../../common/feature-flags.js';
+import { sanitizeUserContext } from './llm-guards.js';
 
 type RoundRow = {
   id: string;
@@ -108,6 +113,16 @@ type ThemeRoundSelection = {
   target: FollowupTarget | null;
   status: 'targeted' | 'theme_followup' | 'target_unavailable' | 'theme_selection';
   selected_question_id: string | null;
+  personalization?: {
+    enabled: boolean;
+    generated_count: number;
+    fallback_count: number;
+    input_snapshot: {
+      prior_rounds: number;
+      diary_entries: number;
+      used_focus_contexts: string[];
+    };
+  };
 };
 
 type Recommendation = {
@@ -214,7 +229,9 @@ function readGuestClaim(token: string): GuestClaimPayload {
 export class ThemeAssessmentService {
   constructor(
     private readonly db: Database,
-    private readonly followupGenerator: ThemeFollowupGeneratorService
+    private readonly followupGenerator: ThemeFollowupGeneratorService,
+    private readonly questionGenerator: ThemeQuestionGeneratorService,
+    private readonly insightGenerator: ThemeInsightGeneratorService,
   ) {}
 
 
@@ -423,6 +440,45 @@ export class ThemeAssessmentService {
     const roundOrdinal = Number(ordinalResult.rows[0]?.total ?? 0);
     const target = theme === recommendation.theme_lens ? recommendation.target : null;
     const core = selectThemeRoundCore(theme, roundOrdinal, target?.observation_question_id ?? undefined);
+
+    let personalization: ThemeRoundSelection['personalization'] = undefined;
+    if (EVA_THEME_AI_PERSONALIZATION && roundOrdinal >= 1) {
+      const priorRounds = await this.gatherPriorRoundSummaries(userId, theme);
+      const diaryDigest = await this.gatherDiaryDigest(userId);
+      const usedFocusContexts = core.map((question) => `${question.focus_key}.${question.context}`);
+      const generated = await this.questionGenerator.generateCoreQuestions({
+        theme_lens: theme,
+        prior_rounds: priorRounds,
+        diary_digest: diaryDigest,
+        used_focus_contexts: usedFocusContexts,
+      });
+      let generatedCount = 0;
+      if (generated && generated.size > 0) {
+        for (const [index, question] of core.entries()) {
+          const promptText = generated.get(question.focus_key);
+          if (promptText) {
+            generatedCount++;
+            core[index] = {
+              ...question,
+              question_id: `${question.theme_lens}.${question.focus_key}.${question.context}.dyn${roundOrdinal}`,
+              source: 'dynamic' as const,
+              prompt: promptText,
+            };
+          }
+        }
+      }
+      personalization = {
+        enabled: true,
+        generated_count: generatedCount,
+        fallback_count: 6 - generatedCount,
+        input_snapshot: {
+          prior_rounds: priorRounds.length,
+          diary_entries: diaryDigest.length,
+          used_focus_contexts: usedFocusContexts,
+        },
+      };
+    }
+
     const targetQuestion = target?.observation_question_id
       ? getThemeQuestionBank(theme).find((question) => question.question_id === target.observation_question_id)
       : null;
@@ -445,6 +501,7 @@ export class ThemeAssessmentService {
           : selectedTargetQuestion ? 'targeted' : 'target_unavailable'
         : 'theme_selection',
       selected_question_id: core[0]?.question_id ?? null,
+      personalization,
     };
     const client = await this.db.pool.connect();
     try {
@@ -653,6 +710,17 @@ export class ThemeAssessmentService {
       serializedAnswers
     );
     if (!result) throw new ConflictException({ code: 'result_withheld' });
+
+    if (EVA_THEME_AI_INSIGHT) {
+      const priorRounds = await this.gatherPriorRoundSummaries(userId, round.theme_lens);
+      const diaryDigest = await this.gatherDiaryDigest(userId);
+      const insight = await this.insightGenerator.generateInsight(
+        round.theme_lens, result, priorRounds, diaryDigest,
+      );
+      if (insight) {
+        (result as ThemeRoundResult & { ai_insight?: AiInsight }).ai_insight = insight;
+      }
+    }
 
     const saved = await this.db.pool.query<{
       id: string;
@@ -1157,5 +1225,66 @@ export class ThemeAssessmentService {
         },
       ];
     });
+  }
+
+  private async gatherPriorRoundSummaries(userId: string, theme: ThemeLens): Promise<PriorRoundSummary[]> {
+    const result = await this.db.pool.query<{ result: ThemeRoundResult }>(
+      `SELECT rrev.result
+       FROM theme_assessment_result_revisions rrev
+       JOIN theme_assessment_rounds r ON r.id = rrev.round_id
+       WHERE r.user_id = $1 AND r.theme_lens = $2 AND r.status = 'completed'
+         AND rrev.invalidated_at IS NULL
+       ORDER BY r.completed_at DESC
+       LIMIT 3`,
+      [userId, theme]
+    );
+    return result.rows.map((row) => {
+      const evidence = row.result.evidence ?? [];
+      const counts: Record<RoundApproach, number> = {
+        approach: 0, protect: 0, analyze: 0, withdraw: 0,
+      };
+      for (const entry of evidence) {
+        counts[entry.approach] = (counts[entry.approach] ?? 0) + 1;
+      }
+      const dominant = (Object.entries(counts) as Array<[RoundApproach, number]>)
+        .sort(([, a], [, b]) => b - a)[0]?.[0] ?? 'analyze';
+      const observationFocuses = (row.result.observations ?? [])
+        .map((obs) => obs.focus);
+      return { dominant_approach: dominant, approach_counts: counts, observation_focuses: observationFocuses };
+    });
+  }
+
+  private async gatherDiaryDigest(userId: string): Promise<DiaryDigestEntry[]> {
+    const consentResult = await this.db.pool.query<{ is_allowed: boolean }>(
+      `SELECT NOT EXISTS (
+        SELECT 1 FROM consent_grants cg
+        WHERE cg.user_id = $1 AND cg.consent_type = 'evidence_collection' AND cg.granted = false
+      ) AS is_allowed`,
+      [userId]
+    );
+    if (!consentResult.rows[0]?.is_allowed) return [];
+
+    const result = await this.db.pool.query<{
+      entry_type: string;
+      mood_label: string | null;
+      raw_text: string | null;
+      captured_at: string;
+    }>(
+      `SELECT entry_type, mood_label, raw_text, captured_at
+       FROM captures
+       WHERE user_id = $1
+         AND process_mode IN ('organize', 'analyze')
+         AND captured_at > NOW() - INTERVAL '14 days'
+         AND raw_text IS NOT NULL AND length(trim(raw_text)) > 0
+       ORDER BY captured_at DESC
+       LIMIT 10`,
+      [userId]
+    );
+    return result.rows.map((row) => ({
+      entry_type: row.entry_type,
+      mood_label: row.mood_label ?? undefined,
+      text: sanitizeUserContext(row.raw_text ?? '') ?? '',
+      captured_at: row.captured_at,
+    }));
   }
 }
