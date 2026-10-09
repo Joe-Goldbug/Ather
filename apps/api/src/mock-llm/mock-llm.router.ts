@@ -2,10 +2,19 @@ import { buildEntityJson } from './fixtures/entity.fixture.js';
 import { buildReportJson } from './fixtures/report.fixture.js';
 import { buildScenarioJson } from './fixtures/scenario.fixture.js';
 import { buildWeeklyText } from './fixtures/weekly.fixture.js';
+import { buildThemeInsightJson, buildThemeQuestionsJson } from './fixtures/theme.fixture.js';
 
-type MockRoute = 'scenario' | 'report' | 'entity' | 'weekly' | 'default';
+type MockRoute = 'scenario' | 'report' | 'entity' | 'weekly' | 'theme-questions' | 'theme-insight' | 'default';
 
 const ROUTE_MATCHERS: Array<{ route: Exclude<MockRoute, 'default'>; patterns: RegExp[] }> = [
+  {
+    route: 'theme-questions',
+    patterns: [/Generate 6 situational test prompts/i, /one per focus_key/i],
+  },
+  {
+    route: 'theme-insight',
+    patterns: [/Write 1-3 paragraphs of situational insight/i],
+  },
   {
     route: 'scenario',
     patterns: [
@@ -62,6 +71,10 @@ export function detectMockRoute(system: string, user: string): MockRoute {
 export function buildMockContent(system: string, user: string): string {
   const route = detectMockRoute(system, user);
   switch (route) {
+    case 'theme-questions':
+      return buildThemeQuestionsJson(user);
+    case 'theme-insight':
+      return buildThemeInsightJson(user);
     case 'scenario':
       return JSON.stringify(buildScenarioJson());
     case 'report':

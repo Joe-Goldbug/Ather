@@ -1,20 +1,8 @@
 import { Injectable } from '@nestjs/common';
 import type { ThemeQuestion, ThemeRoundAnswer } from '@eva/core';
-
-const FORBIDDEN_FOLLOWUP_LANGUAGE =
-  /人格|人格类型|诊断|神经|迷走|潜意识|治疗|抑郁|焦虑|personality|diagnos|polyvagal/i;
+import { FORBIDDEN_THEME_LANGUAGE as FORBIDDEN_FOLLOWUP_LANGUAGE, sanitizeUserContext } from './llm-guards.js';
 
 type ProviderReply = { prompt?: unknown; options?: unknown };
-
-function sanitizeUserContext(value?: string): string | undefined {
-  const trimmed = value?.trim();
-  if (!trimmed) return undefined;
-  return trimmed
-    .slice(0, 240)
-    .replace(/\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}\b/gi, '[邮箱已隐藏]')
-    .replace(/https?:\/\/\S+/gi, '[链接已隐藏]')
-    .replace(/\+?\d[\d\s()-]{7,}\d/g, '[号码已隐藏]');
-}
 
 /**
  * Optional provider adapter for one bounded follow-up question. The fallback

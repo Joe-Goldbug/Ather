@@ -443,6 +443,33 @@ export default function ThemeAssessmentPage() {
           </div>
           <p className="report-detail">{portrait.boundary}</p>
         </section>
+        {portrait.ai_insight && (
+          <section className="report-section ai-insight-section">
+            <div className="ai-insight-header">
+              <h2 className="insight-label">AI 洞察参考</h2>
+              <span className="ai-insight-badge">AI 生成</span>
+            </div>
+            {portrait.ai_insight.paragraphs.map((paragraph, index) => {
+              const linkedObservations = paragraph.evidence_question_ids
+                .map((qid) => portrait.observations.find((obs) => obs.evidence_question_id === qid))
+                .filter(Boolean);
+              return (
+                <div key={index} className="ai-insight-paragraph">
+                  <p>{paragraph.text}</p>
+                  {linkedObservations.length > 0 && (
+                    <p className="ai-insight-evidence">
+                      证据：
+                      {linkedObservations.map((obs, i) => (
+                        <span key={i}>{i > 0 && '、'}{obs!.focus}</span>
+                      ))}
+                    </p>
+                  )}
+                </div>
+              );
+            })}
+            <p className="ai-insight-disclaimer">{portrait.ai_insight.disclaimer}</p>
+          </section>
+        )}
         </div>
         <section className="report-section">
           <h2>这和你真实吗？</h2>
