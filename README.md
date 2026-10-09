@@ -1,8 +1,11 @@
 # Eva
 
+> **Eva 帮你了解自己是怎样的人。**
+> Eva helps you understand who you are.
+
 ## 1. Eva 是什么 / What Is Eva
 
-**中文**：Eva 是一面用于反映人内在真实自我的计算化心智镜像（Computational Mind Mirror）。它不以刻板性格标签定义用户，也不靠虚假奉承取悦用户，而是通过 AI 引导的情境互动，帮助用户理解自己的思考模式，探索其性格特质、人格底色与情绪性情。
+**中文**：Eva 用于反映人内在真实自我。它不以刻板性格标签定义用户，也不靠虚假奉承取悦用户，而是通过 AI 引导的情境互动，帮助用户理解自己的思考模式，探索其性格特质、人格底色与情绪性情。
 
 **English**: Eva is a computational mind mirror designed to reflect a person’s inner self. Rather than defining users with rigid personality labels or superficial flattery, Eva uses AI-guided situational interactions to help users understand their thinking patterns and explore their character, temperament, and personality traits.
 
