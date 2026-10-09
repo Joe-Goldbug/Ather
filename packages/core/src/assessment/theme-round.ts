@@ -122,16 +122,16 @@ const definitions: Record<ThemeLens, ThemeDefinition> = {
       withdraw: '需要先拉开距离，给自己恢复空间',
     },
     strength: {
-      approach: '你有把内在感受带进真实关系的能力，不必总靠别人猜。',
-      protect: '你在情绪很满时仍会顾及后果，这让你不容易失控伤人。',
-      analyze: '你会尝试把混乱感受拆开理解，通常能比冲动反应更晚一步。',
-      withdraw: '你知道自己需要停下来，这是一种保护容量而不是失败。',
+      approach: '倾向于直接表达当下的情绪与感受，把内在状态显性化。',
+      protect: '倾向于先控制情绪表露，优先维持当下的局面秩序。',
+      analyze: '倾向于先梳理情绪触发的原因与机制，延缓即时反应。',
+      withdraw: '在情绪过载时选择主动拉开距离缓冲，保留恢复空间。',
     },
     watchout: {
-      approach: '当对方还没有准备好接住时，太快袒露可能让你觉得自己被忽略。',
-      protect: '如果每次都先压住，别人会以为你没事，而你会独自消耗。',
-      analyze: '理解很有帮助，但反复分析也可能把感受留在脑子里、迟迟没有出口。',
-      withdraw: '暂停能恢复，但长期不回来处理会让关系和问题停在原地。',
+      approach: '当对方尚未准备好承接时，直接袒露可能带来预期落差。',
+      protect: '持续压抑情绪表露可能增加个人的内在消耗。',
+      analyze: '过度关注分析可能推迟了情绪的实际处理与纾解。',
+      withdraw: '长时间拉开距离若缺少后续跟进，可能让问题处于搁置状态。',
     },
     focus: [
       {
@@ -205,16 +205,16 @@ const definitions: Record<ThemeLens, ThemeDefinition> = {
       withdraw: '倾向于在不确定时先撤回投入',
     },
     strength: {
-      approach: '你愿意让关系有真实接触，而不是只等对方猜。',
-      protect: '你会为自己留出空间，不轻易把安全感全交给关系。',
-      analyze: '你对关系里的细节敏感，能较早察觉变化。',
-      withdraw: '你能在不确定时先保护自己，避免被情绪完全带走。',
+      approach: '倾向于主动表达需要并建立直接接触，促成双向互动。',
+      protect: '倾向于守住个人界限与独立节奏，避免过快交出主动权。',
+      analyze: '倾向于先观察关系中的互动信号与细节线索，再决定应对。',
+      withdraw: '在关系出现不确定或压力时选择退后观察，降低即时卷入。',
     },
     watchout: {
-      approach: '如果靠近太快，回应稍慢就容易被你体验成落空。',
-      protect: '边界很重要，但过早设防也可能让别人进不来。',
-      analyze: '读信号有用，但过度解读会让关系变成持续的推理题。',
-      withdraw: '先撤回能止损，但对方也可能只看到你的冷淡。',
+      approach: '若推进节奏快于对方预期，可能带来反应不对称的落差。',
+      protect: '过早或过强的防守设定可能增加他人靠近的理解成本。',
+      analyze: '过度推演互动细节可能增加人际交往中的心智负荷。',
+      withdraw: '退后虽能减少即时摩擦，但也可能让对方接收到距离感或误读为疏远。',
     },
     focus: [
       {
@@ -288,16 +288,16 @@ const definitions: Record<ThemeLens, ThemeDefinition> = {
       withdraw: '会优先控制社交消耗和暴露',
     },
     strength: {
-      approach: '你能主动让关系开始，不完全依赖别人递出邀请。',
-      protect: '你知道社交不等于必须交出自己。',
-      analyze: '你能读懂场域，再选择适合自己的参与方式。',
-      withdraw: '你会管理有限的社交能量，而不是硬撑。',
+      approach: '倾向于主动发起对话并建立新连接，不依赖外部单向推动。',
+      protect: '倾向于在社交互动中维持个人边界，保持礼貌与距离。',
+      analyze: '倾向于先观察群体的场域氛围与互动模式，再选择介入切口。',
+      withdraw: '在消耗情境中选择控制参与深度，优先保存精力容量。',
     },
     watchout: {
-      approach: '主动很多时，也要留意自己是不是在替所有人维持气氛。',
-      protect: '保留能保护你，但别人可能难以知道如何接近你。',
-      analyze: '观察久了可能错过真正适合你加入的时机。',
-      withdraw: '减少消耗有必要，但长期撤离会让支持网络变窄。',
+      approach: '过度承担热场与推进角色，可能增加个人的社交维护负荷。',
+      protect: '边界表达若过于含蓄或克制，可能增加建立深度联结的阻力。',
+      analyze: '过长的观察前置可能错过自然融入互动的节奏点。',
+      withdraw: '较少的主动交互可能让外部支持与信息交互的网络变窄。',
     },
     focus: [
       {
@@ -371,16 +371,16 @@ const definitions: Record<ThemeLens, ThemeDefinition> = {
       withdraw: '会在压力下先降低外部暴露',
     },
     strength: {
-      approach: '你能把分歧带回共同解决问题，而不只停在情绪对抗。',
-      protect: '你对责任边界敏感，不容易无条件吞下不合理任务。',
-      analyze: '你会先厘清标准，减少无效努力。',
-      withdraw: '你会避免在准备不足时仓促表态，给自己留判断空间。',
+      approach: '倾向于主动提出方案推进协作，把分歧拉回具体问题解决。',
+      protect: '倾向于明确个人职责与底线，防止非预期的责任外溢。',
+      analyze: '倾向于先对齐客观事实、标准与优先级，降低试错损耗。',
+      withdraw: '倾向于在压力或未明朗时降低外部暴露，内部消化后再做决定。',
     },
     watchout: {
-      approach: '过度承担协作角色，容易让你默默补上所有人的缺口。',
-      protect: '守边界时也要避免让合作方只感到你在防守。',
-      analyze: '等信息完全齐全才行动，有时会错过需要先试一步的机会。',
-      withdraw: '降低暴露能自保，但关键时刻不表达会让价值难以被看见。',
+      approach: '过度承担推进职责容易在协作中不自觉兜底他人的缺口。',
+      protect: '边界防御若缺少替代方案说明，可能影响协作各方的推进体验。',
+      analyze: '等待信息完备才行动，可能在节奏要求高的场景中延迟决策。',
+      withdraw: '延迟表达或表态不足，可能降低自身观点在关键决策中的可见度。',
     },
     focus: [
       {
@@ -454,16 +454,16 @@ const definitions: Record<ThemeLens, ThemeDefinition> = {
       withdraw: '会先撤离让自己过度消耗的评价场域',
     },
     strength: {
-      approach: '你能在不确定中继续行动，不把完美当成开始条件。',
-      protect: '你会保护自己的价值感，不轻易让外界定义全部的你。',
-      analyze: '你会把“我不好”拆回可处理的事实，这很有力量。',
-      withdraw: '你知道什么时候环境正在过度消耗自己。',
+      approach: '倾向于带着不确定感与未完成状态继续推进，不以绝对完美为前提。',
+      protect: '倾向于在面对外界评价时维护核心自我价值，减缓冲击。',
+      analyze: '倾向于将负面感受拆解为具体事实与可归因责任进行理性审视。',
+      withdraw: '倾向于在高消耗或负面评价的环境中主动撤离，维持心理安全感。',
     },
     watchout: {
-      approach: '一直往前也可能让你错过真正需要休息或重新评估的时刻。',
-      protect: '保护价值感时，留意是否也挡住了有用的反馈。',
-      analyze: '分析能帮助你，但过度复盘会变成另一种自我审判。',
-      withdraw: '暂时远离有用，长期回避评价会让你失去校准机会。',
+      approach: '持续向前推进可能掩盖了需要停下重新评估方向的信号。',
+      protect: '过度的自我防护可能同时阻隔了具有建设性的外部反馈。',
+      analyze: '过度严苛的拆解复盘可能演变为深层的内在自我审判。',
+      withdraw: '过早或过久脱离评价环境可能减少现实层面的校准与成长契机。',
     },
     focus: [
       {
@@ -735,7 +735,7 @@ export function buildThemeRoundResult(
   const observations = evidence.slice(0, 4).map((item) => ({
     focus: item.focus_label,
     evidence_question_id: item.question_id,
-    text: `在${item.context_label}的「${item.focus_label}」里，你选择了「${item.choice_text}」；这轮你更倾向于${definition.approach_summary[item.approach]}。`,
+    text: `在${item.context_label}的「${item.focus_label}」模拟情境中，你选择了「${item.choice_text}」；Eva 将此归类为${definition.approach_summary[item.approach]}的应对倾向。`,
   }));
   const varied = new Set(evidence.map((item) => item.approach)).size > 1;
   return {
@@ -745,7 +745,7 @@ export function buildThemeRoundResult(
     headline: hasSingleDominant
       ? `这轮${definition.title}里，你更常${definition.approach_summary[dominant]}。`
       : `这轮${definition.title}里，你在不同情境中采用了不同的应对方式。`,
-    summary: `这不是对你的固定定义，而是六个具体情境里反复出现的应对方向。下面每一条都能回看你当时的选择。`,
+    summary: `这是基于当前模拟情境互动中你的行为选择归纳出的应对倾向，区分于你现实生活中的内在动机与背景自述。下面每一条都能回看情境依据，并支持补充纠正。`,
     observations,
     strength: hasSingleDominant
       ? definition.strength[dominant]
@@ -756,7 +756,7 @@ export function buildThemeRoundResult(
     counterevidence: varied
       ? '你在不同情境里并不是同一种反应。这个差异值得保留，下一轮可以继续看什么条件会让你靠近、保护、分析或后退。'
       : '这轮选择比较集中，但还不能说明这会在所有关系、时间和压力情境里都一样。',
-    boundary: '这是本轮主题测试留下的可回看线索，不是对你的永久人格定义。',
+    boundary: '这是本轮主题测试留下的可回看线索，不是对你的永久人格定义，亦不预设现实生活中的内在动机。',
     evidence,
   };
 }

@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { GlobalLanguageSwitcher } from './GlobalLanguageSwitcher';
+import { BaseWalletButton } from './web3/BaseWalletButton';
 import { useLocale } from '@/app/providers-impl';
 
 export function TopBar() {
@@ -12,10 +13,11 @@ export function TopBar() {
       <Link href="/" className="top-bar__logo" aria-label={t('common.brand_name')}>
         {t('common.brand_name')}
       </Link>
-      <div className="top-bar__right">
+      <div className="top-bar__right" style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
         <Link href="/whitepaper" className="top-bar__btn" aria-label="White Paper">
           <span>White Paper</span>
         </Link>
+        <BaseWalletButton />
         <GlobalLanguageSwitcher />
       </div>
     </header>

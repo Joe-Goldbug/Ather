@@ -7,6 +7,8 @@ import './whitepaper.css';
 import { useState, useMemo, useCallback, useRef } from 'react';
 import { Search, X, ArrowUp, ArrowDown } from 'lucide-react';
 import { useLocale } from '@/app/providers-impl';
+import { ComputeVaultCard } from '@/components/web3/ComputeVaultCard';
+import { CognitiveAttestationCard } from '@/components/web3/CognitiveAttestationCard';
 import type { Locale } from '@/lib/i18n';
 
 // ── Whitepaper content (embedded at build time) ─────────────────────────────
@@ -2241,6 +2243,14 @@ export default function WhitepaperPage() {
             </>
           )}
         </div>
+
+        {/* Interactive Web3 Modules Showcase */}
+        {!query && (
+          <div style={{ marginBottom: '32px' }}>
+            <ComputeVaultCard />
+            <CognitiveAttestationCard />
+          </div>
+        )}
 
         {/* Rendered content */}
         {query && matchingSections.length === 0 ? (

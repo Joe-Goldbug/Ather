@@ -238,6 +238,8 @@ export const weeklyReviewApi = {
 export type ConsentType = 'memory_retention' | 'evidence_collection' | 'report_storage' |
   'third_party_sharing' | 'weekly_review_analysis' | 'report_generation' | 'chat_history_use';
 
+export type RecordUsageScope = 'store_only' | 'analyze_permitted' | 'share_permitted';
+
 export const consentApi = {
   status: () => request<Record<ConsentType, boolean>>('/consent/status'),
   exportData: () => request<Record<string, unknown[]>>('/consent/export'),
@@ -248,6 +250,11 @@ export const consentApi = {
   revoke: (consentType: ConsentType) => request<{ revoked: boolean }>('/consent/revoke', {
     method: 'POST',
     body: JSON.stringify({ consent_type: consentType }),
+  }),
+  getRecordScope: () => request<{ scope: RecordUsageScope }>('/consent/record-scope'),
+  setRecordScope: (scope: RecordUsageScope) => request<{ scope: RecordUsageScope }>('/consent/record-scope', {
+    method: 'POST',
+    body: JSON.stringify({ scope }),
   }),
 };
 

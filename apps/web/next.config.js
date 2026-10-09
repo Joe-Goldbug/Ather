@@ -23,6 +23,15 @@ const nextConfig = {
     config.resolve.alias['@eva/core/assessment'] = path.resolve(__dirname, '../../packages/core/dist/src/assessment/index.js');
     config.resolve.alias['@eva/core/shared'] = path.resolve(__dirname, '../../packages/core/dist/src/shared/index.js');
     config.resolve.alias['@eva/core/shared/locales'] = path.resolve(__dirname, '../../packages/core/dist/src/shared/locales.js');
+    config.resolve.fallback = {
+      ...config.resolve.fallback,
+      '@base-org/account': false,
+      '@metamask/connect-evm': false,
+      '@safe-global/safe-apps-sdk': false,
+      '@safe-global/safe-apps-provider': false,
+      '@walletconnect/ethereum-provider': false,
+      accounts: false,
+    };
     return config;
   },
   async rewrites() {

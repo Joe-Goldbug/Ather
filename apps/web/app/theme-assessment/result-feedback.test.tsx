@@ -562,8 +562,42 @@ describe('theme result feedback', () => {
     fireEvent.click(screen.getAllByRole('button', { name: '不太符合' })[0]);
 
     expect(await screen.findByTestId('observation-feedback-q1')).toHaveTextContent('这条观察不符合');
+    expect(screen.getByText('已提出异议 · 不作为无争议结论使用')).toBeDefined();
     expect(screen.getByText('历史生成的观察（你已标记为不符合）：情境一')).toBeDefined();
     expect(screen.getByRole('heading', { name: '你会先稳住自己' })).toBeDefined();
     expect(api.respond).toHaveBeenCalledWith('round-1', expect.objectContaining({ observation_question_id: 'q1' }));
+  });
+
+  it('submits a per-observation clarification with custom explanation', async () => {
+    const completed = await api.complete();
+    api.complete.mockResolvedValue({
+      ...completed,
+      result: {
+        ...completed.result,
+        observations: [{ focus: '观察一', text: '情境一', evidence_question_id: 'q1' }],
+      },
+      observation_feedback: {},
+      whole_result_refuted: false,
+    });
+    api.respond.mockResolvedValue({
+      response_id: 'response-q1-clarify', result_revision_id: 'revision-1', action: 'clarify',
+      explanation: '当时是因为对方不熟，不是没有精力', observation_question_id: 'q1', state: 'needs_follow_up',
+      created_at: '2026-09-26T00:04:00.000Z', replayed: false,
+    });
+    await reachResult();
+
+    fireEvent.click(screen.getAllByRole('button', { name: '补充说明' })[0]);
+    const textarea = screen.getByLabelText('补充这条观察的背景理由');
+    fireEvent.change(textarea, { target: { value: '当时是因为对方不熟，不是没有精力' } });
+    fireEvent.click(screen.getByRole('button', { name: '提交说明' }));
+
+    await waitFor(() => {
+      expect(api.respond).toHaveBeenCalledWith('round-1', expect.objectContaining({
+        action: 'clarify',
+        observation_question_id: 'q1',
+        explanation: '当时是因为对方不熟，不是没有精力',
+      }));
+    });
+    expect(await screen.findByText('你的说明：“当时是因为对方不熟，不是没有精力”')).toBeDefined();
   });
 });

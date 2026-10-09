@@ -7,6 +7,7 @@ import { createContext, useContext, useState, ReactNode } from 'react';
 import { setStoredLocale, SUPPORTED_LOCALES, type Locale } from '../lib/i18n';
 import { messages } from '../messages/index';
 import { PageShell } from '../components/PageShell';
+import { Web3Provider } from '../components/web3/Web3Provider';
 
 // ── Locale Context ──────────────────────────────────────────────────────────
 
@@ -87,8 +88,10 @@ interface Props {
 
 export function Providers({ children, initialLocale }: Props) {
   return (
-    <LocaleProvider initialLocale={initialLocale}>
-      <PageShell>{children}</PageShell>
-    </LocaleProvider>
+    <Web3Provider>
+      <LocaleProvider initialLocale={initialLocale}>
+        <PageShell>{children}</PageShell>
+      </LocaleProvider>
+    </Web3Provider>
   );
 }

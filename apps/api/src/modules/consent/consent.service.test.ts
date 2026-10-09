@@ -189,4 +189,25 @@ describe('consent control', () => {
     });
     expect(calls.some((sql) => sql.includes('DELETE FROM users'))).toBe(false);
   });
+
+  it('manages 3-level record usage scope (store_only, analyze_permitted, share_permitted)', async () => {
+    let currentScope = 'analyze_permitted';
+    const query = vi.fn(async (sql: string, params?: unknown[]) => {
+      if (sql.includes('INSERT INTO consent_grants') && typeof params?.[1] === 'string' && params[1].startsWith('record_scope:')) {
+        currentScope = params[1].replace('record_scope:', '');
+      }
+      if (sql.includes("consent_type LIKE 'record_scope:%'")) {
+        return { rows: [{ consent_type: `record_scope:${currentScope}` }] };
+      }
+      return { rows: [] };
+    });
+    const service = new ConsentService({ pool: { query } } as never, {} as never, {} as never);
+    expect(await service.getRecordScope('user-1')).toEqual({ scope: 'analyze_permitted' });
+
+    await service.setRecordScope('user-1', 'store_only');
+    expect(await service.getRecordScope('user-1')).toEqual({ scope: 'store_only' });
+
+    await service.setRecordScope('user-1', 'share_permitted');
+    expect(await service.getRecordScope('user-1')).toEqual({ scope: 'share_permitted' });
+  });
 });

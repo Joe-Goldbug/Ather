@@ -964,17 +964,34 @@ export function ProfilePortraitView({
               <p className="empty-state-text">{evidenceDialog.error}</p>
             )}
             {evidenceDialog.status === 'ready' && evidenceDialog.data && (
-              evidenceDialog.data.content_text && evidenceDialog.data.fragment ? (
-                <HighlightedFragment
-                  text={evidenceDialog.data.content_text}
-                  start={evidenceDialog.data.fragment.start}
-                  end={evidenceDialog.data.fragment.end}
-                />
-              ) : (
-                <p className="empty-state-text">
-                  无法定位原始片段（原文可能已被编辑）。证据引用：{evidenceDialog.quote ?? '（无引用）'}
-                </p>
-              )
+              <>
+                <div className="evidence-dialog-status-tags">
+                  {withdrawState === 'done' && (
+                    <span className="report-detail report-detail--withdrawn">
+                      状态: 已由用户驳回（不计入画像计算）
+                    </span>
+                  )}
+                  {(!evidenceDialog.data.content_text || !evidenceDialog.data.fragment) && (
+                    <span className="report-detail report-detail--missing">
+                      限制: 原始上下文已变更或缺失
+                    </span>
+                  )}
+                </div>
+                {evidenceDialog.data.content_text && evidenceDialog.data.fragment ? (
+                  <HighlightedFragment
+                    text={evidenceDialog.data.content_text}
+                    start={evidenceDialog.data.fragment.start}
+                    end={evidenceDialog.data.fragment.end}
+                  />
+                ) : (
+                  <div className="empty-state-text">
+                    <p>无法定位原始片段（原文可能已被编辑或清空）。</p>
+                    <p className="report-detail">
+                      证据引用：{evidenceDialog.quote ?? '（无引用）'}。系统在此维度保持低置信度或未知状态，不作强行确定性推断。
+                    </p>
+                  </div>
+                )}
+              </>
             )}
           </div>
         </div>

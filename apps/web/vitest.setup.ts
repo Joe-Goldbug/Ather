@@ -44,17 +44,22 @@ function createMemoryStorage() {
 }
 
 function ensureStorage(name: 'localStorage' | 'sessionStorage') {
-  if (typeof globalThis[name] !== 'undefined') return;
   const storage = createMemoryStorage();
-  Object.defineProperty(globalThis, name, {
-    value: storage,
-    configurable: true,
-  });
-  if (typeof window !== 'undefined') {
-    Object.defineProperty(window, name, {
+  try {
+    Object.defineProperty(globalThis, name, {
       value: storage,
       configurable: true,
+      writable: true,
     });
+  } catch {}
+  if (typeof window !== 'undefined') {
+    try {
+      Object.defineProperty(window, name, {
+        value: storage,
+        configurable: true,
+        writable: true,
+      });
+    } catch {}
   }
 }
 

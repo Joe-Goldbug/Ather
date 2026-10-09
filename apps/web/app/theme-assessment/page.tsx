@@ -77,6 +77,8 @@ export default function ThemeAssessmentPage() {
   const [feedbackStatus, setFeedbackStatus] = useState('');
   const [showSupplement, setShowSupplement] = useState(false);
   const [supplementText, setSupplementText] = useState('');
+  const [activeObservationClarifyId, setActiveObservationClarifyId] = useState<string | null>(null);
+  const [observationClarifyText, setObservationClarifyText] = useState('');
 
   useEffect(() => {
     if (sessionLoading) return;
@@ -267,8 +269,13 @@ export default function ThemeAssessmentPage() {
       setCoverage(null);
       void themeAssessmentApi.coverage().then(setCoverage).catch(() => setCoverage(null));
       if (action === 'clarify') {
-        setShowSupplement(false);
-        setSupplementText('');
+        if (observationQuestionId) {
+          setActiveObservationClarifyId(null);
+          setObservationClarifyText('');
+        } else {
+          setShowSupplement(false);
+          setSupplementText('');
+        }
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : '保存反馈失败。');
@@ -313,8 +320,28 @@ export default function ThemeAssessmentPage() {
           {portrait.observations.map((observation) => {
             const observationFeedback = result.observation_feedback?.[observation.evidence_question_id];
             return (
-              <article key={observation.evidence_question_id} className="result-dim-card">
+              <article
+                key={observation.evidence_question_id}
+                className={`result-dim-card ${observationFeedback?.action === 'refute' ? 'result-dim-card--refuted' : ''}`}
+              >
                 <h3>{observation.focus}</h3>
+                {observationFeedback?.action === 'refute' && (
+                  <div
+                    className="dispute-badge"
+                    style={{
+                      display: 'inline-block',
+                      fontSize: '0.8rem',
+                      padding: '2px 8px',
+                      borderRadius: '4px',
+                      background: 'rgba(239, 68, 68, 0.1)',
+                      color: '#dc2626',
+                      marginBottom: '8px',
+                      fontWeight: 500,
+                    }}
+                  >
+                    已提出异议 · 不作为无争议结论使用
+                  </div>
+                )}
                 <p>{observationFeedback?.action === 'refute'
                   ? `${t('theme_round.observation_refuted_label')}：${observation.text}`
                   : observation.text}</p>
@@ -322,6 +349,11 @@ export default function ThemeAssessmentPage() {
                   <p className="report-detail" data-testid={`observation-feedback-${observation.evidence_question_id}`}>
                     {feedbackSummary(observationFeedback.action, true)}
                     {observationFeedback.state === 'needs_follow_up' && ' 这条先作为有争议的记录保留。'}
+                  </p>
+                )}
+                {observationFeedback?.explanation && (
+                  <p className="report-detail" style={{ fontStyle: 'italic', marginTop: '4px' }}>
+                    你的说明：“{observationFeedback.explanation}”
                   </p>
                 )}
                 <div className="report-actions report-actions--per-observation">
@@ -334,7 +366,58 @@ export default function ThemeAssessmentPage() {
                   <button type="button" disabled={submitting} onClick={() => respond('refute', observation.evidence_question_id)}>
                     不太符合
                   </button>
+                  <button
+                    type="button"
+                    disabled={submitting}
+                    onClick={() => {
+                      setActiveObservationClarifyId(
+                        activeObservationClarifyId === observation.evidence_question_id ? null : observation.evidence_question_id
+                      );
+                      setObservationClarifyText('');
+                    }}
+                  >
+                    补充说明
+                  </button>
                 </div>
+                {activeObservationClarifyId === observation.evidence_question_id && (
+                  <div className="supplement-input-area" style={{ marginTop: '12px' }}>
+                    <label className="supplement-input-label" htmlFor={`supplement-${observation.evidence_question_id}`}>
+                      补充这条观察的背景理由
+                    </label>
+                    <textarea
+                      id={`supplement-${observation.evidence_question_id}`}
+                      className="supplement-textarea"
+                      value={observationClarifyText}
+                      onChange={(event) => setObservationClarifyText(event.target.value)}
+                      maxLength={1000}
+                      rows={3}
+                      disabled={submitting}
+                      placeholder="例如：当时是因为对方不熟，不是没有精力；或在特定情境下才会这样。"
+                    />
+                    <div className="report-actions">
+                      <button
+                        type="button"
+                        disabled={submitting || !observationClarifyText.trim()}
+                        onClick={() => respond('clarify', observation.evidence_question_id, observationClarifyText)}
+                      >
+                        {submitting && pendingFeedbackTarget === observation.evidence_question_id && (
+                          <span className="action-loading-spinner" aria-hidden="true" />
+                        )}
+                        {submitting && pendingFeedbackTarget === observation.evidence_question_id ? '正在提交…' : '提交说明'}
+                      </button>
+                      <button
+                        type="button"
+                        disabled={submitting}
+                        onClick={() => {
+                          setActiveObservationClarifyId(null);
+                          setObservationClarifyText('');
+                        }}
+                      >
+                        取消
+                      </button>
+                    </div>
+                  </div>
+                )}
                 {submitting && pendingFeedbackTarget === observation.evidence_question_id && (
                   <p className="action-loading" role="status" aria-live="polite">
                     <span className="action-loading-spinner" aria-hidden="true" />

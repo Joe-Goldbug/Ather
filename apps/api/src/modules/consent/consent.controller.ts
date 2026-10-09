@@ -4,7 +4,7 @@
 
 import { Controller, Post, Get, Delete, Body, Param, UseGuards, Req } from '@nestjs/common';
 import { AuthGuard } from '../auth/auth.guard.js';
-import { ConsentService, validateConsentType } from './consent.service.js';
+import { ConsentService, validateConsentType, validateRecordUsageScope } from './consent.service.js';
 import type { AuthUser } from '../auth/auth.service.js';
 
 @Controller('consent')
@@ -33,6 +33,19 @@ export class ConsentController {
   @Get('status')
   async status(@Req() req: { user: AuthUser }) {
     return this.consent.getStatus(req.user.id);
+  }
+
+  @Post('record-scope')
+  async setRecordScope(
+    @Body() body: { scope?: unknown },
+    @Req() req: { user: AuthUser },
+  ) {
+    return this.consent.setRecordScope(req.user.id, validateRecordUsageScope(body?.scope));
+  }
+
+  @Get('record-scope')
+  async getRecordScope(@Req() req: { user: AuthUser }) {
+    return this.consent.getRecordScope(req.user.id);
   }
 
   @Get('export')

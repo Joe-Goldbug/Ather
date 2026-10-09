@@ -44,6 +44,16 @@ export function validateConsentType(value: unknown): ConsentType {
   return value as ConsentType;
 }
 
+export const RECORD_USAGE_SCOPES = ['store_only', 'analyze_permitted', 'share_permitted'] as const;
+export type RecordUsageScope = typeof RECORD_USAGE_SCOPES[number];
+
+export function validateRecordUsageScope(value: unknown): RecordUsageScope {
+  if (typeof value !== 'string' || !RECORD_USAGE_SCOPES.includes(value as RecordUsageScope)) {
+    throw new BadRequestException('Invalid record_usage_scope; must be store_only, analyze_permitted, or share_permitted');
+  }
+  return value as RecordUsageScope;
+}
+
 @Injectable()
 export class ConsentService {
   constructor(
@@ -83,6 +93,63 @@ export class ConsentService {
       }
     }
     return result;
+  }
+
+  async setRecordScope(userId: string, scope: RecordUsageScope): Promise<{ scope: RecordUsageScope }> {
+    for (const s of RECORD_USAGE_SCOPES) {
+      if (s !== scope) {
+        await this.db.pool.query(
+          `UPDATE consent_grants SET granted = false, revoked_at = NOW() WHERE user_id = $1 AND consent_type = $2`,
+          [userId, `record_scope:${s}`],
+        );
+      }
+    }
+    await this.db.pool.query(
+      `INSERT INTO consent_grants (user_id, consent_type, granted)
+       VALUES ($1, $2, true)
+       ON CONFLICT (user_id, consent_type)
+       DO UPDATE SET granted = true, granted_at = NOW(), revoked_at = NULL`,
+      [userId, `record_scope:${scope}`],
+    );
+
+    if (scope === 'store_only') {
+      await this.grant(userId, 'memory_retention');
+      await this.grant(userId, 'report_storage');
+      await this.revoke(userId, 'evidence_collection');
+      await this.revoke(userId, 'report_generation');
+      await this.revoke(userId, 'weekly_review_analysis');
+      await this.revoke(userId, 'third_party_sharing');
+    } else if (scope === 'analyze_permitted') {
+      await this.grant(userId, 'memory_retention');
+      await this.grant(userId, 'report_storage');
+      await this.grant(userId, 'evidence_collection');
+      await this.grant(userId, 'report_generation');
+      await this.grant(userId, 'weekly_review_analysis');
+      await this.revoke(userId, 'third_party_sharing');
+    } else if (scope === 'share_permitted') {
+      await this.grant(userId, 'memory_retention');
+      await this.grant(userId, 'report_storage');
+      await this.grant(userId, 'evidence_collection');
+      await this.grant(userId, 'report_generation');
+      await this.grant(userId, 'weekly_review_analysis');
+      await this.grant(userId, 'third_party_sharing');
+    }
+
+    return { scope };
+  }
+
+  async getRecordScope(userId: string): Promise<{ scope: RecordUsageScope }> {
+    const rows = await this.db.pool.query<{ consent_type: string }>(
+      `SELECT consent_type FROM consent_grants WHERE user_id = $1 AND granted = true AND consent_type LIKE 'record_scope:%'`,
+      [userId],
+    );
+    if (rows.rows.length > 0) {
+      const found = rows.rows[0].consent_type.replace('record_scope:', '') as RecordUsageScope;
+      if (RECORD_USAGE_SCOPES.includes(found)) {
+        return { scope: found };
+      }
+    }
+    return { scope: 'analyze_permitted' };
   }
 
   async createAgentGrant(

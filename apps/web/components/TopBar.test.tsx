@@ -2,26 +2,26 @@ import React from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it, vi } from 'vitest';
 
-vi.mock('./PageShell', () => ({
-  PageShell: ({ children }: { children: React.ReactNode }) => <>{children}</>,
+vi.mock('./web3/BaseWalletButton', () => ({
+  BaseWalletButton: () => <div data-testid="base-wallet-button" />,
 }));
 
-vi.mock('next/link', () => ({
-  default: ({ href, children, ...props }: React.AnchorHTMLAttributes<HTMLAnchorElement> & { href: string }) => (
-    <a href={href} {...props}>{children}</a>
-  ),
+vi.mock('./GlobalLanguageSwitcher', () => ({
+  GlobalLanguageSwitcher: () => <div data-testid="global-lang-switcher" />,
 }));
 
-import { Providers } from '../app/providers-impl';
+vi.mock('@/app/providers-impl', () => ({
+  useLocale: () => ({
+    locale: 'zh-CN',
+    t: (key: string) => (key === 'common.brand_name' ? 'EVA' : key),
+  }),
+}));
+
 import { TopBar } from './TopBar';
 
 describe('TopBar', () => {
   it('keeps the White Paper link in the top-right navigation', () => {
-    const markup = renderToStaticMarkup(
-      <Providers initialLocale="zh-CN">
-        <TopBar />
-      </Providers>
-    );
+    const markup = renderToStaticMarkup(<TopBar />);
 
     expect(markup).toContain('href="/"');
     expect(markup).toContain('href="/whitepaper"');
