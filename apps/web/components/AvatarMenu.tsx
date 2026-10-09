@@ -160,13 +160,13 @@ export function AvatarMenu() {
             type="button"
             className="avatar-menu__item"
             role="menuitem"
-            data-testid="game-login"
+            data-testid="email-login"
             onClick={() => {
               setOpen(false);
               router.push('/login?returnTo=%2F');
             }}
           >
-            {t('nav.game_login')}
+            {t('nav.email_login')}
           </button>
         )}
 

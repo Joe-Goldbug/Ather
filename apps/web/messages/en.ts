@@ -41,7 +41,7 @@ export const en = {
     wallet_disconnect: 'Disconnect Wallet',
     wallet_connecting: 'Connecting wallet…',
     wallet_login: 'Wallet Login',
-    game_login: 'Game Login',
+    email_login: 'Email Login',
     account: 'Account',
     whitepaper: 'White Paper',
     home: 'Home',

@@ -41,7 +41,7 @@ export const es = {
     wallet_disconnect: 'Desconectar Billetera',
     wallet_connecting: 'Conectando billetera…',
     wallet_login: 'Acceso con Billetera',
-    game_login: 'Acceso de Juego',
+    email_login: 'Acceso con Correo',
     account: 'Cuenta',
     whitepaper: 'White Paper',
     home: 'Inicio',

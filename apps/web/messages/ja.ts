@@ -41,7 +41,7 @@ export const ja = {
     wallet_disconnect: 'ウォレット切断',
     wallet_connecting: 'ウォレット接続中…',
     wallet_login: 'ウォレットログイン',
-    game_login: 'ゲームログイン',
+    email_login: 'メールログイン',
     account: 'アカウント',
     whitepaper: 'ホワイトペーパー',
     home: 'ホーム',

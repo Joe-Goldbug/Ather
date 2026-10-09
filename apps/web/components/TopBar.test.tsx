@@ -55,7 +55,7 @@ describe('TopBar', () => {
     expect(markup).not.toContain('top-bar__btn');
     // 头像菜单：两种登录方式
     expect(markup).toContain('data-testid="avatar-button"');
-    expect(markup).toContain('data-testid="game-login"');
+    expect(markup).toContain('data-testid="email-login"');
     expect(markup).toContain('data-testid="wallet-login"');
     // 未登录不显示内部导航
     expect(markup).not.toContain('href="/profile"');
@@ -85,7 +85,7 @@ describe('TopBar', () => {
     // 登录态头像：首字母 + 退出入口；游戏登录项消失
     expect(markup).toContain('avatar-button__glyph');
     expect(markup).toContain('data-testid="logout"');
-    expect(markup).not.toContain('data-testid="game-login"');
+    expect(markup).not.toContain('data-testid="email-login"');
     // 白皮书仍在下拉中
     expect(markup).toContain('href="/whitepaper"');
   });

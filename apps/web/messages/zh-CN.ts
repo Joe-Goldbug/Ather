@@ -41,7 +41,7 @@ export const zhCN = {
     wallet_disconnect: '断开钱包',
     wallet_connecting: '钱包连接中…',
     wallet_login: '钱包登录',
-    game_login: '游戏登录',
+    email_login: '邮箱登录',
     account: '账户',
     whitepaper: '白皮书',
     home: '首页',
