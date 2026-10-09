@@ -11,7 +11,11 @@ export function BaseWalletButton() {
   if (isTest) {
     return (
       <div data-testid="base-wallet-button" style={{ display: 'inline-flex' }}>
-        <button style={{ background: '#0052FF', color: '#ffffff' }}>Passkey 钱包连接 (Base)</button>
+        <button className="wallet-connect-btn">
+          <span className="wallet-btn__icon">🔵</span>
+          <span className="wallet-btn__text-full">Passkey 钱包连接 (Base)</span>
+          <span className="wallet-btn__text-mobile">Base 钱包</span>
+        </button>
       </div>
     );
   }
@@ -31,39 +35,44 @@ export function BaseWalletButton() {
 
   if (isConnected && address) {
     const shortAddr = `${address.slice(0, 6)}...${address.slice(-4)}`;
+    const shortChain = chainId === baseSepolia.id ? 'Sepolia' : chainId === base.id ? 'Base' : 'Local';
     return (
-      <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', fontSize: '13px' }}>
+      <div className="wallet-connected-group" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '12px' }}>
         <button
           onClick={() => {
             const nextChain = chainId === baseSepolia.id ? anvilChain.id : baseSepolia.id;
             switchChain?.({ chainId: nextChain });
           }}
+          className="wallet-connected-chain-btn"
           title="Click to toggle network"
           style={{
             background: 'rgba(0, 82, 255, 0.08)',
             color: '#0052FF',
             border: '1px solid rgba(0, 82, 255, 0.2)',
             borderRadius: '16px',
-            padding: '4px 10px',
+            padding: '3px 8px',
             cursor: 'pointer',
-            fontSize: '12px',
+            fontSize: '11px',
             fontWeight: 500,
+            whiteSpace: 'nowrap',
           }}
         >
-          ● {getChainName()}
+          ● <span className="wallet-btn__text-full">{getChainName()}</span><span className="wallet-btn__text-mobile">{shortChain}</span>
         </button>
         <button
           onClick={() => disconnect()}
+          className="wallet-connected-addr-btn"
           title="Click to disconnect"
           style={{
             background: 'var(--color-surface, #fff)',
             color: 'var(--color-text, #111)',
             border: '1px solid var(--color-border, #e5e5e5)',
             borderRadius: '16px',
-            padding: '4px 12px',
+            padding: '3px 8px',
             cursor: 'pointer',
-            fontSize: '12px',
+            fontSize: '11px',
             fontFamily: 'monospace',
+            whiteSpace: 'nowrap',
           }}
         >
           {shortAddr}
@@ -79,23 +88,15 @@ export function BaseWalletButton() {
     <button
       onClick={() => cbConnector && connect({ connector: cbConnector })}
       disabled={isPending}
-      style={{
-        background: '#0052FF', // Base signature blue
-        color: '#ffffff',
-        border: 'none',
-        borderRadius: '16px',
-        padding: '6px 14px',
-        fontSize: '12px',
-        fontWeight: 600,
-        cursor: 'pointer',
-        display: 'inline-flex',
-        alignItems: 'center',
-        gap: '6px',
-        transition: 'opacity 0.15s ease',
-      }}
+      className="wallet-connect-btn"
     >
-      <span style={{ fontSize: '14px' }}>🔵</span>
-      {isPending ? '连接中...' : 'Passkey 钱包连接 (Base)'}
+      <span className="wallet-btn__icon" style={{ fontSize: '12px', lineHeight: 1 }}>🔵</span>
+      <span className="wallet-btn__text-full">
+        {isPending ? '连接中...' : 'Passkey 钱包连接 (Base)'}
+      </span>
+      <span className="wallet-btn__text-mobile">
+        {isPending ? '连接中...' : 'Base 钱包'}
+      </span>
     </button>
   );
 }

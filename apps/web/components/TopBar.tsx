@@ -31,43 +31,68 @@ export function TopBar() {
     'EVA';
 
   return (
-    <header className="top-bar">
-      <div className="top-bar__left">
-        <Link href="/" className="top-bar__logo" aria-label={displayName}>
-          {displayName}
-        </Link>
+    <header className={`top-bar ${isAuthed ? 'top-bar--authed' : ''}`}>
+      <div className="top-bar__row">
+        <div className="top-bar__left">
+          <Link href="/" className="top-bar__logo" aria-label={displayName}>
+            {displayName}
+          </Link>
 
-        {isAuthed && (
-          <nav className="top-bar__nav" aria-label="Main navigation">
-            <Link
-              href="/profile"
-              className={`top-bar__nav-link ${pathname === '/profile' ? 'active' : ''}`}
-            >
-              {t('nav.dashboard')}
-            </Link>
-            <Link
-              href="/theme-assessment"
-              className={`top-bar__nav-link ${pathname.startsWith('/theme-assessment') ? 'active' : ''}`}
-            >
-              {t('nav.assessment')}
-            </Link>
-            <Link
-              href="/daily-mirror"
-              className={`top-bar__nav-link ${pathname.startsWith('/daily-mirror') ? 'active' : ''}`}
-            >
-              {t('nav.diary')}
-            </Link>
-          </nav>
-        )}
+          {isAuthed && (
+            <nav className="top-bar__nav top-bar__nav--desktop" aria-label="Main navigation">
+              <Link
+                href="/profile"
+                className={`top-bar__nav-link ${pathname === '/profile' ? 'active' : ''}`}
+              >
+                {t('nav.dashboard')}
+              </Link>
+              <Link
+                href="/theme-assessment"
+                className={`top-bar__nav-link ${pathname.startsWith('/theme-assessment') ? 'active' : ''}`}
+              >
+                {t('nav.assessment')}
+              </Link>
+              <Link
+                href="/daily-mirror"
+                className={`top-bar__nav-link ${pathname.startsWith('/daily-mirror') ? 'active' : ''}`}
+              >
+                {t('nav.diary')}
+              </Link>
+            </nav>
+          )}
+        </div>
+
+        <div className="top-bar__right">
+          <Link href="/whitepaper" className="top-bar__btn" aria-label="White Paper">
+            <span>White Paper</span>
+          </Link>
+          <BaseWalletButton />
+          <GlobalLanguageSwitcher />
+        </div>
       </div>
 
-      <div className="top-bar__right" style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-        <Link href="/whitepaper" className="top-bar__btn" aria-label="White Paper">
-          <span>White Paper</span>
-        </Link>
-        <BaseWalletButton />
-        <GlobalLanguageSwitcher />
-      </div>
+      {isAuthed && (
+        <nav className="top-bar__nav top-bar__nav--mobile" aria-label="Mobile navigation">
+          <Link
+            href="/profile"
+            className={`top-bar__nav-link ${pathname === '/profile' ? 'active' : ''}`}
+          >
+            {t('nav.dashboard')}
+          </Link>
+          <Link
+            href="/theme-assessment"
+            className={`top-bar__nav-link ${pathname.startsWith('/theme-assessment') ? 'active' : ''}`}
+          >
+            {t('nav.assessment')}
+          </Link>
+          <Link
+            href="/daily-mirror"
+            className={`top-bar__nav-link ${pathname.startsWith('/daily-mirror') ? 'active' : ''}`}
+          >
+            {t('nav.diary')}
+          </Link>
+        </nav>
+      )}
     </header>
   );
 }

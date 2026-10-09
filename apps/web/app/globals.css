@@ -400,18 +400,28 @@ input:focus, textarea:focus {
 
 /* ── Top Bar (global app header) ─────────────────────────── */
 .top-bar {
-  position: fixed;
+  position: fixed !important;
   top: 0;
   left: 0;
   right: 0;
   height: 60px;
   z-index: 100;
   display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 0 clamp(0.75rem, 2.5vw, 1.75rem);
+  background: var(--background);
+  border-bottom: 0 !important;
+  box-sizing: border-box;
+}
+
+.top-bar__row {
+  display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0 clamp(1rem, 2.5vw, 1.75rem);
-  background: var(--background);
-  border-bottom: 1px solid var(--border-light);
+  width: 100%;
+  height: 100%;
+  min-height: 52px;
 }
 
 .top-bar__left {
@@ -419,6 +429,7 @@ input:focus, textarea:focus {
   align-items: center;
   gap: clamp(1rem, 2vw, 2rem);
   min-width: 0;
+  flex-shrink: 0;
 }
 
 .top-bar__logo {
@@ -431,7 +442,7 @@ input:focus, textarea:focus {
   color: var(--foreground);
   text-decoration: none;
   background: transparent !important;
-  border: none;
+  border: none !important;
   border-radius: 0;
   padding: 0;
   min-height: auto;
@@ -439,7 +450,8 @@ input:focus, textarea:focus {
   -webkit-appearance: none;
   appearance: none;
   outline: none;
-  white-space: nowrap;
+  white-space: nowrap !important;
+  flex-shrink: 0;
 }
 
 .top-bar__logo svg {
@@ -457,8 +469,15 @@ input:focus, textarea:focus {
 .top-bar__nav {
   display: flex;
   align-items: center;
+  white-space: nowrap !important;
+}
+
+.top-bar__nav--desktop {
   gap: clamp(0.75rem, 1.5vw, 1.5rem);
-  white-space: nowrap;
+}
+
+.top-bar__nav--mobile {
+  display: none;
 }
 
 .top-bar__nav-link {
@@ -469,6 +488,7 @@ input:focus, textarea:focus {
   position: relative;
   padding: 4px 0;
   transition: color 0.15s ease;
+  white-space: nowrap !important;
 }
 
 .top-bar__nav-link:hover {
@@ -494,8 +514,155 @@ input:focus, textarea:focus {
 .top-bar__right {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: 12px;
   padding: 0;
+  flex-shrink: 0;
+}
+
+.top-bar__btn {
+  display: inline-flex;
+  align-items: center;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--foreground);
+  text-decoration: none;
+  white-space: nowrap !important;
+  padding: 4px 8px;
+  border-radius: 4px;
+  flex-shrink: 0;
+  transition: opacity 0.15s ease;
+}
+
+.top-bar__btn:hover {
+  opacity: 0.75;
+}
+
+/* Wallet button responsive pill */
+.wallet-connect-btn {
+  background: #0052FF !important;
+  color: #ffffff !important;
+  border: 1px solid #0052FF !important;
+  border-radius: 9999px !important;
+  padding: 5px 12px !important;
+  font-size: 12px !important;
+  font-weight: 600 !important;
+  cursor: pointer;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 5px !important;
+  white-space: nowrap !important;
+  box-shadow: none !important;
+  flex-shrink: 0;
+  line-height: 1.2 !important;
+  transition: opacity 0.15s ease, transform 0.15s ease !important;
+}
+
+.wallet-connect-btn:hover {
+  background: #0045d8 !important;
+  color: #ffffff !important;
+  opacity: 0.95;
+}
+
+.wallet-btn__text-mobile {
+  display: none;
+}
+
+.wallet-btn__text-full {
+  display: inline;
+}
+
+/* ── Mobile H5 (<= 768px) ─────────────────────────── */
+@media (max-width: 768px) {
+  :root {
+    --top-bar-height: 54px;
+  }
+
+  .top-bar {
+    height: 54px;
+    padding: 0 12px;
+  }
+
+  .top-bar.top-bar--authed {
+    height: 88px;
+    padding-bottom: 2px;
+  }
+
+  body:has(.top-bar--authed),
+  .top-bar--authed ~ * {
+    --top-bar-height: 88px;
+  }
+
+  .top-bar__row {
+    min-height: 48px;
+  }
+
+  .top-bar__logo {
+    font-size: 1.15rem;
+  }
+
+  .top-bar__right {
+    gap: 8px;
+  }
+
+  .top-bar__btn {
+    font-size: 11.5px;
+    padding: 3px 5px;
+  }
+
+  .wallet-connect-btn {
+    padding: 4px 8px !important;
+    font-size: 11.5px !important;
+    gap: 4px !important;
+  }
+
+  .wallet-btn__text-full {
+    display: none;
+  }
+
+  .wallet-btn__text-mobile {
+    display: inline;
+  }
+
+  .top-bar__nav--desktop {
+    display: none;
+  }
+
+  .top-bar__nav--mobile {
+    display: flex;
+    align-items: center;
+    justify-content: space-around;
+    width: 100%;
+    height: 36px;
+    border-top: 1px solid var(--border-light, #f0f0f0);
+    padding: 0 4px;
+    gap: 8px;
+  }
+
+  .top-bar__nav--mobile .top-bar__nav-link {
+    font-size: 13px;
+    padding: 4px 6px;
+  }
+}
+
+@media (max-width: 380px) {
+  .top-bar {
+    padding: 0 8px;
+  }
+
+  .top-bar__right {
+    gap: 5px;
+  }
+
+  .top-bar__btn {
+    font-size: 11px;
+    padding: 2px 4px;
+  }
+
+  .wallet-connect-btn {
+    padding: 3px 6px !important;
+    font-size: 11px !important;
+  }
 }
 
 /* ── Global Language Switcher ─────────────────────────── */
@@ -4238,7 +4405,6 @@ textarea:focus {
 }
 
 /* Keep structural dividers in the same hand-drawn language as content cards. */
-.top-bar,
 .theme-profile-page .minimal-header,
 .theme-profile-page .minimal-nav {
   position: relative;
@@ -4258,6 +4424,7 @@ textarea:focus {
   filter: url(#sketch-wobble);
   transform: rotate(-0.08deg);
   transform-origin: center;
+  pointer-events: none;
 }
 
 .theme-profile-page .nav-link.active {
