@@ -44,3 +44,18 @@ pnpm-debug.log*
 # OS
 .DS_Store
 Thumbs.db
+
+# Documentation, research, business plans and academic references (kept locally only)
+docs/
+science-references/
+*.pptx
+*.docx
+scripts/generate-eva-pitch*.py
+scripts/generate-thesis*.ps1
+apps/api/*.md
+apps/web/app/chat/*.md
+
+# Local AI agent rules
+AGENTS.md
+CLAUDE.md
+
