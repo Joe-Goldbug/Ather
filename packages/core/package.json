@@ -61,6 +61,10 @@
     "./reflection": {
       "import": "./dist/src/reflection/index.js",
       "types": "./dist/src/reflection/index.d.ts"
+    },
+    "./credential": {
+      "import": "./dist/src/credential/index.js",
+      "types": "./dist/src/credential/index.d.ts"
     }
   },
   "scripts": {

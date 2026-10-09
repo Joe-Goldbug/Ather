@@ -1,5 +1,4 @@
 import { existsSync } from 'node:fs';
-import { RedisMemoryServer } from 'redis-memory-server';
 import Redis from 'ioredis';
 import { expect, test } from 'vitest';
 import { runBullmqCanary } from './bullmq-canary.js';
@@ -12,6 +11,12 @@ const redisBinary = [
 ].find((candidate): candidate is string => Boolean(candidate && existsSync(candidate)));
 
 test.skipIf(!redisBinary)('round-trips a synthetic BullMQ job and removes the temporary queue', async () => {
+  let RedisMemoryServer: any;
+  try {
+    ({ RedisMemoryServer } = await import('redis-memory-server'));
+  } catch {
+    return; // optional test dependency not installed
+  }
   const redisServer = new RedisMemoryServer({
     instance: { port: 0 },
     binary: { systemBinary: redisBinary },

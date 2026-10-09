@@ -8,6 +8,7 @@ export const QUEUE_NAMES = {
   MEMORY_AGGREGATE: 'memory-aggregate',
   SNAPSHOT: 'personality-snapshot',
   SCRIPT_GENERATION: 'script-generation',
+  CREDENTIAL_ANCHOR: 'credential-anchor',
 } as const;
 
 // Job payload types
@@ -49,6 +50,14 @@ export interface ScriptGenerationJob {
   userId: string;
 }
 
+export interface CredentialAnchorJob {
+  credentialId: string;
+  userId: string;
+  recordId: string;
+  revisionId: string;
+  contentDigest: string;
+}
+
 // Queue name → default options
 export const QUEUE_CONFIGS = {
   [QUEUE_NAMES.REPORT]: {
@@ -83,6 +92,13 @@ export const QUEUE_CONFIGS = {
     attempts: 2,
     backoff: { type: 'exponential' as const, delay: 5000 },
     removeOnComplete: { count: 200 },
+    removeOnFail: { count: 500 },
+  },
+  // Phase 6: Credential anchor queue on Base Sepolia
+  [QUEUE_NAMES.CREDENTIAL_ANCHOR]: {
+    attempts: 3,
+    backoff: { type: 'exponential' as const, delay: 5000 },
+    removeOnComplete: { count: 100 },
     removeOnFail: { count: 500 },
   },
 } as const;

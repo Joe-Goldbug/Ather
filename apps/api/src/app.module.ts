@@ -27,6 +27,8 @@ import { PortraitV1Module } from './modules/portrait/portrait-v1.module.js';
 import { ThemeAssessmentModule } from './modules/theme-assessment/theme-assessment.module.js';
 import { ProductEventsModule } from './modules/product-events/product-events.module.js';
 import { ProductFeedbackModule } from './modules/product-feedback/product-feedback.module.js';
+import { CredentialModule } from './modules/credential/credential.module.js';
+import { Web3Module } from './modules/web3/web3.module.js';
 
 const optionalModules = [
   ...(process.env.EVA_LOCAL_MOCK_LLM === '1' ? [MockLlmModule] : []),
@@ -40,6 +42,8 @@ const optionalModules = [
     DatabaseModule,   // Global — shared Neon Pool
     RedisModule,      // Global — Redis service
     QueueModule,      // Global — BullMQ queue service
+    CredentialModule, // Phase 3 — Verifiable credentials export & verification
+    Web3Module,       // Phase 5 & 6 — Base Sepolia optional wallet binding & anchor loop
     ConsentModule,   // Global — GDPR / data authorization
     DiaryModule,     // Global — diary CRUD
     EvidenceModule,   // Evidence event persistence — @Global()

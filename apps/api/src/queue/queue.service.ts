@@ -8,7 +8,7 @@
 import { Injectable, OnModuleDestroy, ServiceUnavailableException } from '@nestjs/common';
 import { Queue } from 'bullmq';
 import { getRedis } from './redis.js';
-import { QUEUE_NAMES, QUEUE_CONFIGS, type ReportJob, type WeeklyReviewJob, type MemoryAggregateJob, type SnapshotJob } from './queue.js';
+import { QUEUE_NAMES, QUEUE_CONFIGS, type ReportJob, type WeeklyReviewJob, type MemoryAggregateJob, type SnapshotJob, type CredentialAnchorJob } from './queue.js';
 import { Database } from '../common/database.js';
 import { withUserQueueAdmission } from './queue-admission.js';
 
@@ -85,6 +85,16 @@ export class QueueService implements OnModuleDestroy {
     const queue = this.getQueue(QUEUE_NAMES.SNAPSHOT);
     if (!queue) return;
     await withUserQueueAdmission(this.db.pool, job.userId, () => queue.add('snapshot', job));
+  }
+
+  // ── Credential anchor on Base Sepolia ──────────────────────────────
+  async enqueueCredentialAnchor(job: CredentialAnchorJob): Promise<string> {
+    const queue = this.getQueue(QUEUE_NAMES.CREDENTIAL_ANCHOR);
+    const key = `anchor-${job.credentialId}`;
+    if (!queue) return key;
+    const added = await withUserQueueAdmission(this.db.pool, job.userId, () =>
+      queue.add('anchor', job, { jobId: key }));
+    return added.id ?? key;
   }
 
   /**

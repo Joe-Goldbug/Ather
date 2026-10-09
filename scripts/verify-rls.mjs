@@ -1,91 +1,209 @@
-// RLS 隔离验证：确认匿名/其他用户读不到不该读的数据
-//
-// 判定方法（不能用「单条件查询」对比，必须用「策略条件」对比「无条件」）：
-//   RLS_ACTIVE   =策略条件下 0 行 + 无条件 N 行（N>0）→ 策略确实在过滤
-//   RLS_BYPASSED = 两个数字相同 → 策略被绕过
-//
-// 注意：neondb_owner 带rolbypassrls=true，必须依赖
-// 004_force_rls.sql 的 FORCE ROW LEVEL SECURITY 才会受策略约束。
-import { Client } from 'pg';
+// scripts/verify-rls.mjs
+// 真实 RLS 隔离验证：使用非特权角色 + 真实 SQL 查询（不手写用户过滤条件）
+// 验收标准：
+// 1. 匿名用户通过纯 SELECT count(*) FROM <table> 读不到任何私密数据 (count === 0)
+// 2. 用户 A 无法读取、更新或删除用户 B 的记录
+// 3. 会话撤回后，相同 token 查询立即返回 0 行
+// 4. 清除 session_token 后，连接不残留上一位用户的权限
 
-const c = new Client({
-  connectionString: process.env.DATABASE_URL,
-  ssl: { rejectUnauthorized: false },
+import 'dotenv/config';
+import { Client } from 'pg';
+import { randomUUID } from 'node:crypto';
+
+const databaseUrl = process.env.DATABASE_URL;
+if (!databaseUrl) {
+  console.error('[verify-rls] DATABASE_URL is required');
+  process.exit(1);
+}
+
+function isLocal(url) {
+  try {
+    const u = new URL(url);
+    return ['localhost', '127.0.0.1', '::1'].includes(u.hostname);
+  } catch {
+    return false;
+  }
+}
+
+const client = new Client({
+  connectionString: databaseUrl,
+  ssl: isLocal(databaseUrl) ? false : { rejectUnauthorized: false },
   connectionTimeoutMillis: 20000,
 });
-await c.connect();
-const schema = process.env.DATABASE_SCHEMA || process.env.EVA_DATABASE_SCHEMA || 'eva_web3';
-await c.query(`SET search_path TO ${schema}`);
+
+await client.connect();
+
+const schema = process.env.DATABASE_SCHEMA || process.env.EVA_DATABASE_SCHEMA || 'public';
+await client.query(`SET search_path TO ${schema}`);
 
 const TABLES = [
+  'captures',
   'theme_assessment_rounds',
   'theme_assessment_round_items',
   'theme_assessment_round_answers',
   'theme_assessment_result_revisions',
   'theme_assessment_result_responses',
-  'captures',
 ];
 
-// ── 1. 强制 RLS 是否已应用 ──────────────────────────────────────────
-const force = await c.query(
+console.log(`[verify-rls] Connected. Schema: ${schema}`);
+
+// ── 1. 检查表是否开启 RLS ──────────────────────────────────────────
+const rlsStatus = await client.query(
   `SELECT relname, relrowsecurity, relforcerowsecurity
    FROM pg_class
-   WHERE relnamespace = schema::regnamespace AND relname = ANY($1)`,
-  [TABLES],
-);
-const notForced = force.rows.filter((r) => !r.relforcerowsecurity).map((r) => r.relname);
-process.stdout.write(
-  `FORCE RLS: ${force.rows.length - notForced.length}/${force.rows.length} 表已启用` +
-    (notForced.length ? ` | 未启用: ${notForced.join(', ')}` : '') +
-    '\n',
+   WHERE relnamespace = $1::regnamespace AND relname = ANY($2)`,
+  [schema, TABLES],
 );
 
-// ── 2. 匿名视角：策略条件下应全部为 0 ──────────────────────────────
-await c.query("SELECT set_config('app.session_token', '', false)");
-const POLICYT_OWNER = `(SELECT user_id FROM session_tokens
-   WHERE token = current_setting('app.session_token', true)
-     AND NOT revoked AND expires_at > NOW())`;
-
-let policyVisible = 0;
-let totalVisible = 0;
-for (const t of TABLES) {
-  const viaPolicy = await c.query(
-    t === 'theme_assessment_round_items' || t === 'theme_assessment_result_revisions'
-      ? `SELECT count(*)::int c FROM ${t}
-         WHERE round_id IN (SELECT id FROM theme_assessment_rounds WHERE user_id = ${POLICYT_OWNER})`
-      : `SELECT count(*)::int c FROM ${t} WHERE user_id = ${POLICYT_OWNER}`,
-  );
-  const total = await c.query(`SELECT count(*)::int c FROM ${t}`);
-  policyVisible += viaPolicy.rows[0].c;
-  totalVisible += total.rows[0].c;
-}
-process.stdout.write(`匿名经策略可见: ${policyVisible} 行（应0）\n`);
-process.stdout.write(`匿名无条件可见: ${totalVisible} 行（应 > 0，证明有数据）\n`);
-
-// ── 3. 已登录用户：应能读到自己���轮次 ───────────────────────────────
-const { rows: sessions } = await c.query(
-  `SELECT u.email, s.token
-   FROM session_tokens s JOIN users u ON u.id = s.user_id
-   WHERE NOT s.revoked AND s.expires_at > NOW()
-   ORDER BY s.created_at DESC`,
-);
-process.stdout.write(`活跃会话: ${sessions.length} 个\n`);
-
-let ownVisible = 0;
-if (sessions.length > 0) {
-  const t = sessions[0].token;
-  await c.query('SELECT set_config($1, $2, false)', ['app.session_token', t]);
-  const mine = await c.query(
-    `SELECT count(*)::int c FROM theme_assessment_rounds
-     WHERE user_id = ${POLICYT_OWNER}`,
-  );
-  ownVisible = mine.rows[0].c;
-  process.stdout.write(`以 ${sessions[0].email} 身份可见自己的轮次: ${ownVisible} 行（应 > 0）\n`);
+const missingTables = TABLES.filter((t) => !rlsStatus.rows.some((r) => r.relname === t));
+if (missingTables.length > 0) {
+  console.error(`[verify-rls] 缺少表: ${missingTables.join(', ')}`);
+  process.exit(1);
 }
 
-const rlsOk =
-  notForced.length === 0 && policyVisible === 0 && totalVisible > 0 && ownVisible > 0;
-process.stdout.write(rlsOk ? '\nRLS_OK\n' : '\nRLS_PROBLEM\n');
-if (!rlsOk) process.exitCode = 1;
+const noRls = rlsStatus.rows.filter((r) => !r.relrowsecurity).map((r) => r.relname);
+if (noRls.length > 0) {
+  console.error(`[verify-rls] 以下表未启用 RLS: ${noRls.join(', ')}`);
+  process.exit(1);
+}
+console.log(`[verify-rls] 表 RLS 状态检查: 全部 ${TABLES.length} 张表均已启用 relrowsecurity`);
 
-await c.end();
+// ── 2. 准备真实非特权角色 ───────────────────────────────────────────
+const currentRoleRes = await client.query('SELECT current_user, rolbypassrls FROM pg_roles WHERE rolname = current_user');
+const currentRole = currentRoleRes.rows[0];
+console.log(`[verify-rls] 当前连接角色: ${currentRole.current_user} (bypassrls=${currentRole.rolbypassrls})`);
+
+const VERIFIER_ROLE = 'eva_rls_verifier';
+// 创建非特权测试角色（无 BYPASSRLS）
+await client.query(`
+  DO $$
+  BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = '${VERIFIER_ROLE}') THEN
+      CREATE ROLE ${VERIFIER_ROLE} NOSUPERUSER NOCREATEDB NOCREATEROLE NOBYPASSRLS;
+    END IF;
+  END
+  $$;
+`);
+await client.query(`GRANT USAGE ON SCHEMA ${schema} TO ${VERIFIER_ROLE}`);
+await client.query(`GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA ${schema} TO ${VERIFIER_ROLE}`);
+
+// ── 3. 准备隔离测试数据（User A & User B）─────────────────────────────
+const userAId = randomUUID();
+const userBId = randomUUID();
+const tokenA = `test-token-a-${randomUUID()}`;
+const tokenB = `test-token-b-${randomUUID()}`;
+const captureAId = randomUUID();
+const captureBId = randomUUID();
+const roundAId = randomUUID();
+const roundBId = randomUUID();
+
+try {
+  // 插入测试用户与有效会话
+  await client.query(
+    `INSERT INTO users (id, email) VALUES ($1, $2), ($3, $4) ON CONFLICT (id) DO NOTHING`,
+    [userAId, `test-user-a-${userAId.slice(0, 8)}@eva.test`, userBId, `test-user-b-${userBId.slice(0, 8)}@eva.test`],
+  );
+
+  await client.query(
+    `INSERT INTO session_tokens (token, user_id, expires_at, revoked) VALUES
+     ($1, $2, NOW() + INTERVAL '1 day', false),
+     ($3, $4, NOW() + INTERVAL '1 day', false)`,
+    [tokenA, userAId, tokenB, userBId],
+  );
+
+  // 插入属于 User A 和 User B 的私密记录
+  await client.query(
+    `INSERT INTO captures (id, user_id, entry_type, process_mode, modality, source_weight, captured_at, capture_mode, allow_weekly_review, raw_text) VALUES
+     ($1, $2, 'quick_fragment', 'save_only', 'text', 1.0, NOW(), 'real', false, 'User A Secret Observation'),
+     ($3, $4, 'quick_fragment', 'save_only', 'text', 1.0, NOW(), 'real', false, 'User B Secret Observation')`,
+    [captureAId, userAId, captureBId, userBId],
+  );
+
+  await client.query(
+    `INSERT INTO theme_assessment_rounds (id, user_id, theme_lens, locale, status, question_bank_version, started_at, entry_source) VALUES
+     ($1, $2, 'emotion', 'zh-CN', 'in_progress', 'v1', NOW(), 'registered_theme'),
+     ($3, $4, 'emotion', 'zh-CN', 'in_progress', 'v1', NOW(), 'registered_theme')`,
+    [roundAId, userAId, roundBId, userBId],
+  );
+
+  // ── 4. 切换为非特权角色执行真实 RLS 检验 ────────────────────────────
+  await client.query(`SET ROLE ${VERIFIER_ROLE}`);
+
+  // (1) 匿名视角：无 session_token，SELECT count(*) 必须为 0，不能读取到任何私密数据
+  await client.query(`SELECT set_config('app.session_token', '', false)`);
+  for (const t of TABLES) {
+    const res = await client.query(`SELECT count(*)::int AS c FROM ${t}`);
+    const visibleCount = res.rows[0].c;
+    if (visibleCount !== 0) {
+      throw new Error(`[RLS 失败] 匿名用户在表 ${t} 可读取到 ${visibleCount} 条数据！`);
+    }
+  }
+  console.log('[verify-rls] 验收 1 通过: 匿名视角下全表纯查询返回 0 行，未泄露任何数据');
+
+  // (2) 用户 A 视角：只能读到自己的记录，读不到用户 B 的记录
+  await client.query(`SELECT set_config('app.session_token', $1, false)`, [tokenA]);
+  const userACaptures = await client.query(`SELECT id, user_id FROM captures`);
+  if (!userACaptures.rows.some((r) => r.id === captureAId)) {
+    throw new Error('[RLS 失败] 用户 A 无法读取自己的 captures 记录！');
+  }
+  if (userACaptures.rows.some((r) => r.id === captureBId || r.user_id === userBId)) {
+    throw new Error('[RLS 失败] 用户 A 读到了用户 B 的 captures 记录！跨租户泄露！');
+  }
+
+  const userARounds = await client.query(`SELECT id, user_id FROM theme_assessment_rounds`);
+  if (!userARounds.rows.some((r) => r.id === roundAId)) {
+    throw new Error('[RLS 失败] 用户 A 无法读取自己的 rounds 记录！');
+  }
+  if (userARounds.rows.some((r) => r.id === roundBId || r.user_id === userBId)) {
+    throw new Error('[RLS 失败] 用户 A 读到了用户 B 的 rounds 记录！跨租户泄露！');
+  }
+  console.log('[verify-rls] 验收 2 通过: 用户 A 只能读取自身记录，严密隔离用户 B');
+
+  // (3) 越权写入防护：用户 A 无法修改或删除用户 B 的数据
+  const updateRes = await client.query(
+    `UPDATE captures SET raw_text = 'Malicious Update' WHERE id = $1`,
+    [captureBId],
+  );
+  if (updateRes.rowCount !== 0) {
+    throw new Error(`[RLS 失败] 用户 A 竟然修改了用户 B 的记录！受影响行数: ${updateRes.rowCount}`);
+  }
+
+  const deleteRes = await client.query(
+    `DELETE FROM captures WHERE id = $1`,
+    [captureBId],
+  );
+  if (deleteRes.rowCount !== 0) {
+    throw new Error(`[RLS 失败] 用户 A 竟然删除了用户 B 的记录！受影响行数: ${deleteRes.rowCount}`);
+  }
+  console.log('[verify-rls] 验收 3 通过: 用户 A 对用户 B 数据的篡改与删除操作被 RLS 阻止 (0 行受影响)');
+
+  // (4) 会话撤回防护：撤回 Token A 后，立即失去访问权限
+  await client.query(`RESET ROLE`); // 临时切回管理身份标记撤回
+  await client.query(`UPDATE session_tokens SET revoked = true WHERE token = $1`, [tokenA]);
+  await client.query(`SET ROLE ${VERIFIER_ROLE}`);
+
+  await client.query(`SELECT set_config('app.session_token', $1, false)`, [tokenA]);
+  const revokedCaptures = await client.query(`SELECT count(*)::int AS c FROM captures`);
+  if (revokedCaptures.rows[0].c !== 0) {
+    throw new Error(`[RLS 失败] 会话撤回后，Token A 仍能读取 ${revokedCaptures.rows[0].c} 行数据！`);
+  }
+  console.log('[verify-rls] 验收 4 通过: 会话撤回后即时阻断，Token 无法再读取任何数据');
+
+  // (5) 连接池会话清理：清除 session_token 后连接回归匿名态
+  await client.query(`SELECT set_config('app.session_token', '', false)`);
+  const clearedRes = await client.query(`SELECT count(*)::int AS c FROM captures`);
+  if (clearedRes.rows[0].c !== 0) {
+    throw new Error(`[RLS 失败] 清除 session_token 后连接仍残留用户上下文！`);
+  }
+  console.log('[verify-rls] 验收 5 通过: 清除上下文后连接池复用不会继承上个用户身份');
+
+  console.log('\n[verify-rls] 全部真实 RLS 隔离与授权验收项全部通过 (RLS_VERIFIED_SUCCESS)');
+} finally {
+  // 清理测试数据
+  await client.query(`RESET ROLE`);
+  await client.query(`DELETE FROM captures WHERE id IN ($1, $2)`, [captureAId, captureBId]);
+  await client.query(`DELETE FROM theme_assessment_rounds WHERE id IN ($1, $2)`, [roundAId, roundBId]);
+  await client.query(`DELETE FROM session_tokens WHERE token IN ($1, $2)`, [tokenA, tokenB]);
+  await client.query(`DELETE FROM users WHERE id IN ($1, $2)`, [userAId, userBId]);
+  await client.end();
+}

@@ -5,7 +5,11 @@
   "author": "Ethan & Whitepeace",
   "license": "UNLICENSED",
   "type": "module",
-  "packageManager": "bun",
+  "packageManager": "bun@1.3.14",
+  "engines": {
+    "node": ">=24.21.0",
+    "bun": ">=1.3.14"
+  },
   "workspaces": [
     "packages/*",
     "apps/*"
@@ -18,6 +22,9 @@
     "dev:api": "cd apps/api && bun run dev",
     "dev:web": "cd apps/web && bun run dev",
     "test:core": "bun test packages/core/src",
+    "test:api": "cd apps/api && bun run test",
+    "test:web": "cd apps/web && bun run test",
+    "test": "bun run test:core && bun run test:api",
     "test:e2e": "node e2e-test.mjs"
   },
   "devDependencies": {

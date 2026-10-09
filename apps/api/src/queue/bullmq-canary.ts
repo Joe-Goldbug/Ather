@@ -46,6 +46,8 @@ export async function runBullmqCanary(
   const queueName = `eva-release-canary-${randomUUID().replaceAll('-', '')}`;
   const producerConnection = createRedisClient(redisUrl, { connectTimeout: timeoutMs });
   const workerConnection = createRedisClient(redisUrl, { connectTimeout: timeoutMs });
+  producerConnection.on('error', () => {});
+  workerConnection.on('error', () => {});
   const queue = new Queue(queueName, {
     connection: producerConnection,
     defaultJobOptions: { removeOnComplete: true, removeOnFail: true },

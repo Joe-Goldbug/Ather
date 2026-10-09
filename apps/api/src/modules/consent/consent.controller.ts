@@ -2,7 +2,7 @@
 // Consent endpoints — grant, revoke, status, export, delete
 // Phase 4
 
-import { Controller, Post, Get, Delete, Body, UseGuards, Req } from '@nestjs/common';
+import { Controller, Post, Get, Delete, Body, Param, UseGuards, Req } from '@nestjs/common';
 import { AuthGuard } from '../auth/auth.guard.js';
 import { ConsentService, validateConsentType } from './consent.service.js';
 import type { AuthUser } from '../auth/auth.service.js';
@@ -43,5 +43,37 @@ export class ConsentController {
   @Delete('delete')
   async deleteAccount(@Req() req: { user: AuthUser }) {
     return this.consent.deleteUserData(req.user.id);
+  }
+
+  @Post('grants/agent')
+  async createAgentGrant(
+    @Body()
+    body: {
+      agent_id: string;
+      purpose_scope: string;
+      scopes: string[];
+      expires_in_days?: number;
+    },
+    @Req() req: { user: AuthUser },
+  ) {
+    return this.consent.createAgentGrant(req.user.id, {
+      agentId: body.agent_id,
+      purposeScope: body.purpose_scope,
+      scopes: body.scopes,
+      expiresInDays: body.expires_in_days,
+    });
+  }
+
+  @Post('grants/agent/:grantId/revoke')
+  async revokeAgentGrant(
+    @Param('grantId') grantId: string,
+    @Req() req: { user: AuthUser },
+  ) {
+    return this.consent.revokeAgentGrant(req.user.id, grantId);
+  }
+
+  @Get('grants/agent')
+  async listAgentGrants(@Req() req: { user: AuthUser }) {
+    return this.consent.listAgentGrants(req.user.id);
   }
 }

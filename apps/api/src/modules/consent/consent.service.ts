@@ -85,6 +85,87 @@ export class ConsentService {
     return result;
   }
 
+  async createAgentGrant(
+    userId: string,
+    params: {
+      agentId: string;
+      purposeScope: string;
+      scopes: string[];
+      expiresInDays?: number;
+    },
+  ) {
+    if (!params.agentId || !params.purposeScope || !Array.isArray(params.scopes) || params.scopes.length === 0) {
+      throw new BadRequestException('agentId, purposeScope, and non-empty scopes are required');
+    }
+
+    const ruleRes = await this.db.pool.query(
+      `SELECT id FROM governance_rule_versions WHERE status = 'approved' ORDER BY version DESC LIMIT 1`,
+    );
+    const ruleId = ruleRes.rows[0]?.id;
+    if (!ruleId) {
+      throw new BadRequestException('No approved governance rule found');
+    }
+
+    const grantId = (await import('node:crypto')).randomUUID();
+    const expiresIn = Number(params.expiresInDays) || 30;
+
+    await this.db.pool.query(
+      `INSERT INTO agent_scope_grants (id, user_id, agent_id, purpose_scope, scopes, rule_id, granted_at, expires_at)
+       VALUES ($1, $2, $3, $4, $5, $6, NOW(), NOW() + ($7 || ' days')::INTERVAL)`,
+      [grantId, userId, params.agentId, params.purposeScope, params.scopes, ruleId, expiresIn],
+    );
+
+    await this.grant(userId, 'third_party_sharing');
+    if (CONSENT_TYPES.includes(params.purposeScope as ConsentType)) {
+      await this.grant(userId, params.purposeScope as ConsentType);
+    }
+
+    return {
+      receiptType: 'Eva 记录的用户授权',
+      grantId,
+      userId,
+      agentId: params.agentId,
+      purposeScope: params.purposeScope,
+      scopes: params.scopes,
+      grantedAt: new Date().toISOString(),
+      expiresInDays: expiresIn,
+      status: 'active',
+      auditNotice: '该授权回执代表用户在Eva平台明确授权接收方在指定范围与期限内访问，非用户私钥签名。',
+    };
+  }
+
+  async revokeAgentGrant(userId: string, grantId: string) {
+    const res = await this.db.pool.query(
+      `UPDATE agent_scope_grants
+       SET revoked_at = NOW()
+       WHERE id = $1 AND user_id = $2 AND revoked_at IS NULL
+       RETURNING id, agent_id, purpose_scope, revoked_at`,
+      [grantId, userId],
+    );
+    if (res.rows.length === 0) {
+      throw new BadRequestException('Active grant not found or already revoked');
+    }
+    return {
+      revoked: true,
+      grantId,
+      revokedAt: res.rows[0].revoked_at,
+    };
+  }
+
+  async listAgentGrants(userId: string) {
+    const res = await this.db.pool.query(
+      `SELECT id, agent_id, purpose_scope, scopes, granted_at, expires_at, revoked_at,
+              CASE WHEN revoked_at IS NOT NULL THEN 'revoked'
+                   WHEN expires_at IS NOT NULL AND expires_at <= NOW() THEN 'expired'
+                   ELSE 'active' END AS status
+       FROM agent_scope_grants
+       WHERE user_id = $1
+       ORDER BY granted_at DESC`,
+      [userId],
+    );
+    return res.rows;
+  }
+
   async exportUserData(userId: string) {
     const tables = [
       'dynamic_profiles', 'evidence_events', 'assessment_runs', 'personality_snapshots',

@@ -13,11 +13,14 @@ import {
   type WeeklyReviewJob,
   type MemoryAggregateJob,
   type SnapshotJob,
+  type CredentialAnchorJob,
 } from './queue.js';
 import {
   ScriptGenerationProcessor,
   type ScriptGenerationJob,
 } from './script-generation.processor.js';
+import { BaseService } from '../modules/web3/base.service.js';
+import { CredentialAnchorProcessor } from '../modules/web3/credential-anchor.processor.js';
 import { getRedis } from './redis.js';
 import { createQueryPool } from '../common/pool.js';
 import { resolveLlmRuntimeConfig } from '../common/llm-config.js';
@@ -584,6 +587,27 @@ snapshotWorker.on('failed', (job, err) => {
   console.error(`[snapshotWorker] ✗ ${job?.id} failed:`, err.message);
 });
 
+// ── Credential anchor on Base Sepolia (Phase 6) ───────────────────────────
+const baseServiceForWorker = new BaseService();
+const anchorProcessor = new CredentialAnchorProcessor({ pool } as any, baseServiceForWorker);
+
+const anchorWorker = new Worker<CredentialAnchorJob>(
+  QUEUE_NAMES.CREDENTIAL_ANCHOR,
+  async (job) => {
+    console.log(`[anchorWorker] Processing anchor job for credential ${job.data.credentialId}`);
+    return await anchorProcessor.processAnchorJob(job.data);
+  },
+  {
+    connection: redis,
+    concurrency: 5,
+    ...LIGHT_WORKER_TIMING,
+  },
+);
+
+anchorWorker.on('failed', (job, err) => {
+  console.error(`[anchorWorker] ✗ ${job?.id} failed:`, err.message);
+});
+
 // ── Outbox poller（1-4）────────────────────────────────────────────────────
 // Unhandled portrait events remain pending until a governed handler is registered.
 // EVA_OUTBOX_POLL_INTERVAL_MS adjusts the interval (default 10s).
@@ -668,6 +692,7 @@ process.on('SIGTERM', async () => {
     memoryWorker.close(),
     snapshotWorker.close(),
     scriptGenerationWorker.close(),
+    anchorWorker.close(),
     redis.quit(),
     pool.end(),
     new Promise<void>((resolve) => {

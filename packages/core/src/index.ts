@@ -13,3 +13,4 @@ export * from './safety/index.js';
 export * from './shared/index.js';
 export * from './progression/index.js';
 export * from './reflection/index.js';
+export * from './credential/index.js';

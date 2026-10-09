@@ -8,7 +8,10 @@
     "build": "bun run --cwd ../../packages/core build && nest build",
     "start": "nest start",
     "start:prod": "node dist/main.js",
-    "test": "jest",
+    "test": "bun run test:spec && bun run test:unit",
+    "test:spec": "jest",
+    "test:unit": "vitest run",
+    "test:pg": "vitest run --include '**/*.pg.test.ts'",
     "worker": "node dist/queue/worker.js"
   },
   "dependencies": {
@@ -25,22 +28,24 @@
     "cookie-parser": "^1.4.7",
     "ioredis": "^5.6.1",
     "pg": "^8.16.0",
-    "react": "^19.2.0",
+    "react": "19.3.0",
     "reflect-metadata": "^0.2.2",
     "resend": "^6.12.2",
     "rxjs": "^7.8.1",
+    "viem": "^2.57.4",
     "zod": "^3.23.8"
   },
   "devDependencies": {
     "@nestjs/cli": "^10.4.9",
     "@nestjs/schematics": "^10.2.3",
-    "@nestjs/testing": "^11.1.19",
+    "@nestjs/testing": "10.4.22",
     "@types/cookie-parser": "^1.4.10",
     "@types/jest": "^30.0.0",
     "@types/node": "^22.0.0",
-    "@types/react": "^19.2.14",
+    "@types/react": "^19.3.0",
     "jest": "^30.3.0",
     "ts-jest": "^29.4.9",
-    "typescript": "^5.9.3"
+    "typescript": "^5.9.3",
+    "vitest": "^1.6.1"
   }
 }
