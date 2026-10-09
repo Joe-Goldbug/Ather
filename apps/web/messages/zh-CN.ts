@@ -623,7 +623,7 @@ export const zhCN = {
   },
 
   landing: {
-    hero_description: '通过情境互动反映内在真实自我，理解你的思考模式与性格底色。',
+    hero_description: 'Eva 帮你了解自己是怎样的人。',
     tagline: "Eva 用于反映人内在真实自我。它不以刻板性格标签定义用户，也不靠虚假奉承取悦用户，而是通过 AI 引导的情境互动，帮助用户理解自己的思考模式，探索其性格特质、人格底色与情绪性情。",
     auth_link: '登录 / 注册',
     cta_start: '开始了解自己',

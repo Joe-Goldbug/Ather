@@ -553,7 +553,7 @@ export const ja = {
   },
 
   landing: {
-    hero_description: '情景的な対話を通じて本当の自分を映し出し、思考パターンと性格の基礎を理解する。',
+    hero_description: 'Evaは、あなたがどんな人なのかを理解する手助けをします。',
     tagline: '',
     auth_link: 'ログイン / 登録',
     cta_start: 'アセスメントを始める',

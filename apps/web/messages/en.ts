@@ -498,7 +498,7 @@ export const en = {
   },
 
   landing: {
-    hero_description: 'Reflecting your true inner self through situational interactions to understand thinking patterns and personality traits.',
+    hero_description: 'Eva helps you understand who you are.',
     tagline: "Eva is designed to reflect a person’s inner self. Rather than defining users with rigid personality labels or superficial flattery, Eva uses AI-guided situational interactions to help users understand their thinking patterns and explore their character, temperament, and personality traits.",
     auth_link: 'Login / Register',
     cta_start: 'Play',

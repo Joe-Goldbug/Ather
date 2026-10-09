@@ -843,8 +843,8 @@ input:focus, textarea:focus {
 .report-header h1,
 .review-header h1,
 .diary-header h1 {
-  font-size: clamp(2rem, 5vw, 3.5rem);
-  line-height: 1.02;
+  font-size: clamp(1.125rem, 2.5vw, 1.75rem);
+  line-height: 1.35;
 }
 
 .report-date,
@@ -1753,6 +1753,13 @@ input:focus, textarea:focus {
   font-size: 1.05rem;
   line-height: 1.7;
   color: #30343b;
+}
+
+.report-insight p {
+  white-space: pre-line;
+  line-height: 1.75;
+  color: var(--text-primary);
+  font-size: 0.95rem;
 }
 
 .complete-report-screen .report-actions {
@@ -4003,9 +4010,9 @@ textarea:focus {
 }
 
 .theme-assessment-page .report-header h1 {
-  font-size: clamp(2.125rem, 4.4vw, 3.5rem);
-  line-height: 1.14;
-  max-width: 16ch;
+  font-size: clamp(1.125rem, 2.2vw, 1.75rem);
+  line-height: 1.35;
+  max-width: 38ch;
   margin-inline: auto;
 }
 
@@ -4020,7 +4027,7 @@ textarea:focus {
 }
 
 .theme-assessment-page .report-section > h2 {
-  font-size: clamp(1.45rem, 2.3vw, 1.85rem);
+  font-size: clamp(1.05rem, 1.6vw, 1.3rem);
   line-height: 1.35;
   margin-bottom: 1.25rem;
 }

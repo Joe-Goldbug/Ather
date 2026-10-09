@@ -154,23 +154,23 @@ export function buildGuestEpisodeResult(answers: GuestEpisodeAnswer[]): GuestEpi
   const descriptions: Record<RoundApproach, { action: string; benefit: string; cost: string }> = {
     approach: {
       action: '主动接触他人、表达需要并推动共同处理',
-      benefit: '让信息和关系更快重新连接',
-      cost: '可能让你承担更多协调压力，也更早暴露自己的立场',
+      benefit: '守护了局势推进的速度与确定性。面对突发真空与协作断层，你难以忍受停滞消耗，本能地通过主动沟通重构行动网络；你宁可自身多承担协调负荷，也要防止集体陷入失控。',
+      cost: '容易陷入“过度功能化”，在潜意识中替系统的脆弱买单。当你习惯性率先顶上时，同伴容易后退并转嫁责任；过早亮明立场也容易让你在局势未明前成为矛盾的焦点与被归咎的靶子。',
     },
     protect: {
       action: '先明确责任、依赖和个人边界',
-      benefit: '减少失控、误解责任或再次被占用',
-      cost: '可能拉开合作距离，也可能让共同问题稍后才被处理',
+      benefit: '守护了个人心力底线与事实权责的明晰。在高压与混乱中，你拥有极高的边界清醒度，坚决拒绝被情绪绑架或无端成为他人失职的消耗品，用清晰的职责划分维护了合作的秩序底线。',
+      cost: '容易被合作方感知为防备心重与距离感。把界限划得太清，在危机初期可能会延缓集体共同补位的时机，并在需要展现脆弱与深度信任的关键时刻错失情感连接。',
     },
     analyze: {
       action: '先核对信息、设置检查点，再决定行动',
-      benefit: '降低误判，并让决定更容易说明和复查',
-      cost: '可能消耗行动窗口，也可能让他人感到你没有马上回应',
+      benefit: '守护了决策的质量与事实证据的稳固。面对纷繁分歧与突发风险，你拒绝被冲动情绪挟持，坚持以数据、事实与可复查的节点作为安全感基石，极大降低了因盲目盲动带来的二次误判。',
+      cost: '容易陷入推演瘫痪，消耗宝贵的行动时间窗口。在需要即时决断与果断表态的高压关头，过度的求证可能让同伴感到迟疑与疏离，甚至错失稍纵即逝的协同机会。',
     },
     withdraw: {
       action: '暂缓回应、退出当前冲突或先处理别的部分',
-      benefit: '避免在压力最高时冲动升级',
-      cost: '可能把决定权交给别人，也让误解和风险暂时保留',
+      benefit: '守护了核心情绪秩序与身心能量的低耗稳定。在人际张力与非理性对抗到达峰值时，你拥有敏锐的止损直觉，擅长通过退后半步来阻断矛盾的连锁升级，避免沦为情绪宣泄的牺牲品。',
+      cost: '实质上把局势的主导权和定义权让渡给了外部环境。虽然规避了正面冲突，但深层的误解与核心风险并没有真正清除，可能给同伴留下被动回避的印象，并保留潜在的隐患。',
     },
   };
   const ranked = (Object.keys(counts) as RoundApproach[]).sort(
@@ -180,7 +180,7 @@ export function buildGuestEpisodeResult(answers: GuestEpisodeAnswer[]): GuestEpi
   const repeated = ranked.filter((approach) => counts[approach] === highestCount && highestCount >= 2);
   const pairKey = repeated.length === 2 ? [...repeated].sort().join('+') : '';
   const pairSummaries: Record<string, string> = {
-    'analyze+withdraw': '你在突发压力中兼具理性核查与抽离避险，习惯先退后半步理清全貌再做决断。',
+    'analyze+withdraw': '你在突发压力中兼具理性核查与低耗避险，习惯先退后半步理清全貌再做决断。',
     'approach+protect': '你在协作中兼具推动意愿与边界意识，愿意主动担当但坚持权责清晰。',
     'analyze+approach': '你在协作分歧中兼具主动性与事实导向，善于用客观依据推进共同行动。',
     'analyze+protect': '你在复杂局面中展现出严谨的防御姿态，依靠规则边界与理性核查应对风险。',
@@ -208,6 +208,23 @@ export function buildGuestEpisodeResult(answers: GuestEpisodeAnswer[]): GuestEpi
     (node) => !repeated.includes(nodeApproaches[node.id]!)
   ).map((node) => `《${node.title}》`);
 
+  let exceptionExplanation = '六个节点均保持了一致的应对姿态；在不同关系和压力条件下，可能还会浮现出更丰富的侧面。';
+  if (exceptionNodes.length > 0) {
+    const hasTrustBreach = exceptionNodes.some((n) => n.includes('迟到') || n.includes('不完整'));
+    const hasConflict = exceptionNodes.some((n) => n.includes('分歧') || n.includes('破裂'));
+    const hasOverload = exceptionNodes.some((n) => n.includes('多出来的责任'));
+
+    let contextReason = '当人际张力触及特定信任或权责变数时，你的决策系统打破了惯性，做出了针对性调频。';
+    if (hasTrustBreach) {
+      contextReason = '相比任务本身的繁重，“信息不透明与同伴失信”更能打破你的惯常姿态，促使你调整应对方式。';
+    } else if (hasConflict) {
+      contextReason = '在遭遇公开否定或责任推诿的冲突时刻，你调整了策略，表明自尊与事实公平是你的清晰应激转折点。';
+    } else if (hasOverload) {
+      contextReason = '面对临时追加的超额责任时，你打破了常规节奏，折射出你对职责边界被无序入侵的高度警觉。';
+    }
+    exceptionExplanation = `${exceptionNodes.join('、')}中的选择与主要惯性不同。${contextReason}`;
+  }
+
   return {
     episode_id: GUEST_EPISODE_ID,
     episode_version: GUEST_EPISODE_VERSION,
@@ -217,11 +234,9 @@ export function buildGuestEpisodeResult(answers: GuestEpisodeAnswer[]): GuestEpi
     source_independence_group: `simulation:${GUEST_EPISODE_ID}:${GUEST_EPISODE_VERSION}`,
     summary,
     pattern,
-    benefits: selectedBenefits.join('；') || '本章应对方式较为分散，未呈现单一突出的收益侧重。',
-    costs: selectedCosts.join('；') || '本章应对方式较为分散，未呈现单一突出的潜在代价。',
-    exceptions: exceptionNodes.length > 0
-      ? `${exceptionNodes.join('、')}中的选择与主要惯性不同，表明当触及特定人际变数时，你的决策策略会发生针对性调整。`
-      : '六个节点均保持了一致的应对姿态；在不同关系和压力条件下，可能还会浮现出更丰富的侧面。',
-    unknowns: '本章仅折射出你在特定模拟情境下的决策倾向；真实心智随情境演变，不被单一剧本所限定。',
+    benefits: selectedBenefits.join('\n\n') || '本章应对方式较为分散，未呈现单一突出的收益侧重。',
+    costs: selectedCosts.join('\n\n') || '本章应对方式较为分散，未呈现单一突出的潜在代价。',
+    exceptions: exceptionExplanation,
+    unknowns: '心智如流水，因境而生。本章观察仅折射出你在特定任务危机下的瞬时侧影；真实自我永远在动态演变，不被单一模拟所永久定性。在现实生活里，退后半步与主动向前，都是属于你的正当权利。',
   };
 }

@@ -553,7 +553,7 @@ export const es = {
   },
 
   landing: {
-    hero_description: 'Refleja tu verdadero yo a través de interacciones situacionales para comprender tus patrones de pensamiento y personalidad.',
+    hero_description: 'Eva te ayuda a comprender quién eres.',
     tagline: '',
     auth_link: 'Iniciar sesión / Registrarse',
     cta_start: 'Comenzar Evaluación',

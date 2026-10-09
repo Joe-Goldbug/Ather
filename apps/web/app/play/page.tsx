@@ -219,11 +219,11 @@ export default function PlayPage() {
           <p className="report-description">{result.pattern}</p>
         </header>
         <section className="report-section">
-          <div className="report-insight"><h2 className="insight-label">保护了什么</h2><p>{result.benefits}</p></div>
-          <div className="report-insight"><h2 className="insight-label">可能付出的代价</h2><p>{result.costs}</p></div>
-          <div className="report-insight"><h2 className="insight-label">例外与矛盾</h2><p>{result.exceptions}</p></div>
+          <div className="report-insight"><h2 className="insight-label">守护的价值 · 核心铠甲</h2><p>{result.benefits}</p></div>
+          <div className="report-insight"><h2 className="insight-label">优势的双刃剑 · 隐形代价</h2><p>{result.costs}</p></div>
+          <div className="report-insight"><h2 className="insight-label">行为转折点 · 例外分析</h2><p>{result.exceptions}</p></div>
           <p className="report-detail">{result.unknowns}</p>
-          <p className="report-detail">这是模拟情境中的候选观察，不是诊断，也不是对你的永久定义。</p>
+          <p className="report-detail">这是模拟情境中的观察反馈，不是诊断，也不是对你的永久定义。</p>
         </section>
         <section className="report-section">
           {saved ? (
