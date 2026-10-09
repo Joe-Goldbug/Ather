@@ -7,11 +7,34 @@ vi.mock('next/link', () => ({
 }));
 
 vi.mock('lucide-react', () => {
-  return new Proxy({}, {
+  const cache = new Map<string, any>();
+  const getIcon = (name: string) => {
+    if (!cache.has(name)) {
+      const Icon = (props: any) => React.createElement('span', { 'data-icon': name, ...props });
+      Icon.displayName = name;
+      cache.set(name, Icon);
+    }
+    return cache.get(name);
+  };
+
+  return new Proxy({ __esModule: true }, {
     get: (_, name) => {
-      const Icon = (props: any) => React.createElement('span', { 'data-icon': String(name), ...props });
-      Icon.displayName = String(name);
-      return Icon;
+      if (name === '__esModule') return true;
+      if (name === 'then' || typeof name === 'symbol') return undefined;
+      return getIcon(String(name));
+    },
+    has: (_, name) => {
+      if (name === 'then') return false;
+      return true;
+    },
+    getOwnPropertyDescriptor: (_, name) => {
+      if (name === 'then') return undefined;
+      return {
+        configurable: true,
+        enumerable: true,
+        value: name === '__esModule' ? true : getIcon(String(name)),
+        writable: true,
+      };
     },
   });
 });
