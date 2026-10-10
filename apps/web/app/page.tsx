@@ -33,35 +33,17 @@ export default function LandingPage() {
             {displayName}
           </h1>
           <p className="hero-tagline authed-tagline">
-            真实的自我在选择中逐渐清晰。选择一个功能，开始探索或查阅你的心智轨迹。
+            真实的自我在选择中逐渐清晰。先来一次免费情景测试，或从页面顶部进入你的心智轨迹。
           </p>
 
           <div className="home-entry-cards">
-            <Link href="/theme-assessment" className="home-entry-card home-entry-card--highlight">
-              <span className="home-entry-badge">情境决策</span>
-              <span className="home-entry-label">{t('nav.assessment')}</span>
+            <Link href="/play" className="home-entry-card home-entry-card--highlight">
+              <span className="home-entry-badge">免费体验</span>
+              <span className="home-entry-label">免费情景测试</span>
               <span className="home-entry-desc">
-                面对突发协作与人际冲突，在真实抉择中映照内心
+                无需登录，4-6 分钟完成一次情景模拟，立刻查看分析结果
               </span>
-              <span className="home-entry-arrow" aria-hidden="true">进入情境 →</span>
-            </Link>
-
-            <Link href="/profile" className="home-entry-card">
-              <span className="home-entry-badge">行为档案</span>
-              <span className="home-entry-label">{t('nav.dashboard')}</span>
-              <span className="home-entry-desc">
-                查看多维性格侧写、证据链条与可验证画像
-              </span>
-              <span className="home-entry-arrow" aria-hidden="true">查看记录 →</span>
-            </Link>
-
-            <Link href="/daily-mirror" className="home-entry-card">
-              <span className="home-entry-badge">日常心镜</span>
-              <span className="home-entry-label">{t('nav.diary')}</span>
-              <span className="home-entry-desc">
-                核对每天的真实反应，随时与心智镜像展开对话
-              </span>
-              <span className="home-entry-arrow" aria-hidden="true">打开笔记 →</span>
+              <span className="home-entry-arrow" aria-hidden="true">开始体验 →</span>
             </Link>
           </div>
         </section>
