@@ -7,6 +7,7 @@ export * from './profile-delta-contract.js';
 export * from './llm-explanation-contract.js';
 export * from './archetype-decision.js';
 export * from './constants.js';
+export * from './understanding.js';
 
 export {
   validateLLMExplanation,
