@@ -8,6 +8,12 @@ const nextConfig = {
   // Keep dev and production artifacts separate so `next build` output does not
   // poison later `next dev` chunk loading in this iCloud-backed workspace.
   distDir: isDev ? (process.env.NEXT_DEV_DIST_DIR ?? '.next-dev') : '.next',
+  // [fix 2026-10-10] Dev rewrites proxy defaults to a 30s timeout, which killed
+  // POST /api/v1/assessment-rounds whenever the Agnes LLM call (personalized
+  // question generation) plus retry exceeded it — the browser saw a plain-text
+  // "Internal Server Error". Raise the dev proxy ceiling; long calls are still
+  // bounded server-side by THEME_AI_TIMEOUT_MS.
+  ...(isDev ? { experimental: { proxyTimeout: 120_000 } } : {}),
   // [fix 2026-06-24] Disable React Strict Mode in dev to prevent the double-mount
   // RSC fetch abort that surfaces as `net::ERR_ABORTED` on /login?_rsc=… in
   // the browser console. Production keeps Strict Mode on (default).

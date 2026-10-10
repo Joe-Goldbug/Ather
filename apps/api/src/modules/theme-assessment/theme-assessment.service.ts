@@ -443,8 +443,11 @@ export class ThemeAssessmentService {
 
     let personalization: ThemeRoundSelection['personalization'] = undefined;
     if (EVA_THEME_AI_PERSONALIZATION && roundOrdinal >= 1) {
-      const priorRounds = await this.gatherPriorRoundSummaries(userId, theme);
-      const diaryDigest = await this.gatherDiaryDigest(userId);
+      // 并行采集：两个独立 Neon 查询串行会吃掉 LLM 超时预算
+      const [priorRounds, diaryDigest] = await Promise.all([
+        this.gatherPriorRoundSummaries(userId, theme),
+        this.gatherDiaryDigest(userId),
+      ]);
       const usedFocusContexts = core.map((question) => `${question.focus_key}.${question.context}`);
       const generated = await this.questionGenerator.generateCoreQuestions({
         theme_lens: theme,
@@ -721,8 +724,10 @@ export class ThemeAssessmentService {
     if (!result) throw new ConflictException({ code: 'result_withheld' });
 
     if (EVA_THEME_AI_INSIGHT) {
-      const priorRounds = await this.gatherPriorRoundSummaries(userId, round.theme_lens);
-      const diaryDigest = await this.gatherDiaryDigest(userId);
+      const [priorRounds, diaryDigest] = await Promise.all([
+        this.gatherPriorRoundSummaries(userId, round.theme_lens),
+        this.gatherDiaryDigest(userId),
+      ]);
       const insight = await this.insightGenerator.generateInsight(
         round.theme_lens, result, priorRounds, diaryDigest,
       );
