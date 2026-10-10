@@ -37,7 +37,7 @@ export default function LandingPage() {
           </p>
 
           <div className="home-entry-cards home-entry-cards--single">
-            <Link href="/play" className="home-entry-card home-entry-card--highlight home-entry-card--banner">
+            <Link href="/play" className="home-entry-card home-entry-card--banner">
               <span className="home-entry-badge">免费体验</span>
               <span className="home-entry-label">免费情景测试</span>
               <span className="home-entry-desc">

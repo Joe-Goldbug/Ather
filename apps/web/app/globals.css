@@ -5041,6 +5041,34 @@ textarea:focus {
   flex-shrink: 0;
 }
 
+/* 横幅默认白底，悬停/激活时整体反转为黑底白字 */
+.home-entry-card--banner:hover,
+.home-entry-card--banner:active,
+.home-entry-card--banner:focus-visible {
+  background: var(--foreground, #18181b);
+  color: var(--surface, #ffffff);
+  border-color: var(--foreground, #18181b);
+}
+
+.home-entry-card--banner:hover .home-entry-desc,
+.home-entry-card--banner:active .home-entry-desc,
+.home-entry-card--banner:focus-visible .home-entry-desc {
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.home-entry-card--banner:hover .home-entry-arrow,
+.home-entry-card--banner:active .home-entry-arrow,
+.home-entry-card--banner:focus-visible .home-entry-arrow {
+  color: var(--surface, #ffffff);
+}
+
+.home-entry-card--banner:hover .home-entry-badge,
+.home-entry-card--banner:active .home-entry-badge,
+.home-entry-card--banner:focus-visible .home-entry-badge {
+  background: rgba(255, 255, 255, 0.18);
+  color: #ffffff;
+}
+
 @media (max-width: 768px) {
   .home-entry-card--banner {
     flex-direction: column;
