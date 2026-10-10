@@ -230,8 +230,10 @@ export class ThemeAssessmentService {
   constructor(
     private readonly db: Database,
     private readonly followupGenerator: ThemeFollowupGeneratorService,
-    private readonly questionGenerator: ThemeQuestionGeneratorService,
-    private readonly insightGenerator: ThemeInsightGeneratorService,
+    // Unit tests for guest and rule-only paths do not instantiate AI generators.
+    // Nest always injects both dependencies in production.
+    private readonly questionGenerator: ThemeQuestionGeneratorService = undefined as never,
+    private readonly insightGenerator: ThemeInsightGeneratorService = undefined as never,
   ) {}
 
 
@@ -376,11 +378,11 @@ export class ThemeAssessmentService {
          theme_title: result.episode_title,
          headline: result.summary,
          summary: result.pattern,
-         observations: [{
-           focus: '本章出现的做法',
-           text: result.pattern,
-           evidence_question_id: GUEST_EPISODE_ID,
-         }],
+         observations: result.observations.map((observation) => ({
+           focus: observation.title,
+           text: observation.text,
+           evidence_question_id: observation.id,
+         })),
          strength: result.benefits,
          watchout: result.costs,
          counterevidence: result.exceptions,
@@ -390,6 +392,7 @@ export class ThemeAssessmentService {
          source_independence_group: result.source_independence_group,
          evidence_kind: result.evidence_kind,
          science_status: result.science_status,
+         guest_report: result,
       };
 
       await client.query(

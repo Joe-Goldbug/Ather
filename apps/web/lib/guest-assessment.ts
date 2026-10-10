@@ -58,6 +58,72 @@ export function clearGuestData() {
   sessionStorage.removeItem(GUEST_CLAIM_TOKEN_KEY);
 }
 
+export const GUEST_FEEDBACK_KEY = 'eva_guest_feedback';
+
+export interface GuestFeedbackData {
+  action: 'confirm' | 'partial' | 'dispute';
+  note: string;
+}
+
+export type GuestFeedbackByObservation = Record<string, GuestFeedbackData>;
+
+export function saveGuestFeedback(data: GuestFeedbackData) {
+  if (typeof window === 'undefined') return;
+  sessionStorage.setItem(GUEST_FEEDBACK_KEY, JSON.stringify(data));
+}
+
+export function loadGuestFeedback(): GuestFeedbackData | null {
+  if (typeof window === 'undefined') return null;
+  const raw = sessionStorage.getItem(GUEST_FEEDBACK_KEY);
+  if (!raw) return null;
+  try {
+    const data = JSON.parse(raw);
+    if (
+      data &&
+      (data.action === 'confirm' || data.action === 'partial' || data.action === 'dispute') &&
+      typeof data.note === 'string'
+    ) {
+      return data as GuestFeedbackData;
+    }
+    sessionStorage.removeItem(GUEST_FEEDBACK_KEY);
+    return null;
+  } catch {
+    sessionStorage.removeItem(GUEST_FEEDBACK_KEY);
+    return null;
+  }
+}
+
+export function clearGuestFeedback() {
+  if (typeof window === 'undefined') return;
+  sessionStorage.removeItem(GUEST_FEEDBACK_KEY);
+}
+
+export function loadGuestFeedbackByObservation(): GuestFeedbackByObservation {
+  if (typeof window === 'undefined') return {};
+  const raw = sessionStorage.getItem(GUEST_FEEDBACK_KEY);
+  if (!raw) return {};
+  try {
+    const value = JSON.parse(raw);
+    if (value && typeof value.action === 'string') return { 'guest:overall': value as GuestFeedbackData };
+    if (!value || typeof value !== 'object' || Array.isArray(value)) throw new Error('invalid_feedback');
+    const entries = Object.entries(value).flatMap(([observationId, feedback]) => {
+      const item = feedback as GuestFeedbackData;
+      return (item.action === 'confirm' || item.action === 'partial' || item.action === 'dispute') && typeof item.note === 'string'
+        ? [[observationId, { action: item.action, note: item.note }] as const]
+        : [];
+    });
+    return Object.fromEntries(entries) as GuestFeedbackByObservation;
+  } catch {
+    sessionStorage.removeItem(GUEST_FEEDBACK_KEY);
+    return {};
+  }
+}
+
+export function saveGuestFeedbackByObservation(feedback: GuestFeedbackByObservation) {
+  if (typeof window === 'undefined') return;
+  sessionStorage.setItem(GUEST_FEEDBACK_KEY, JSON.stringify(feedback));
+}
+
 const MIGRATED_KEY = 'eva_guest_assessment_migrated_v1';
 const ASSESSMENT_STATE_KEY = 'eva_assessment_state';
 

@@ -357,6 +357,7 @@ export interface ThemeRoundResult {
   boundary: string;
   evidence: ThemeRoundEvidence[];
   ai_insight?: AiInsight;
+  guest_report?: GuestChapterRecord;
 }
 
 export interface ThemeRoundResultResponse {
@@ -777,6 +778,19 @@ export interface GuestChapterRecord {
   costs: string;
   exceptions: string;
   unknowns: string;
+  story_replay: string;
+  observations: Array<{
+    id: string;
+    title: string;
+    text: string;
+    evidence_node_ids: string[];
+    evidence: Array<{
+      node_id: string;
+      node_title: string;
+      choice_text: string;
+    }>;
+    reflection_question: string;
+  }>;
 }
 
 export interface GuestCompletion {

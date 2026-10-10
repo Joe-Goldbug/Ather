@@ -2,18 +2,23 @@
 
 import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useSession } from '@/hooks/useSession';
 import {
   guestAssessmentApi,
+  themeAssessmentApi,
   type GuestAnswer,
   type GuestChapterRecord,
   type GuestOpening,
 } from '@/lib/api';
 import {
   clearGuestData,
+  clearGuestFeedback,
   loadClaimToken,
+  loadGuestFeedbackByObservation,
   loadGuestSession,
   saveClaimToken,
+  saveGuestFeedbackByObservation,
   saveGuestSession,
 } from '@/lib/guest-assessment';
 
@@ -43,7 +48,9 @@ function claimedRecord(result: {
   watchout: string;
   counterevidence: string;
   boundary: string;
+  guest_report?: GuestChapterRecord;
 }): GuestChapterRecord {
+  if (result.guest_report) return result.guest_report;
   return {
     episode_id: 'rain-before-stop',
     episode_version: 'v1',
@@ -57,10 +64,20 @@ function claimedRecord(result: {
     costs: result.watchout,
     exceptions: result.counterevidence,
     unknowns: result.boundary,
+    story_replay: '',
+    observations: [{
+      id: 'guest:overall',
+      title: '这次模拟中的主要做法',
+      text: result.summary,
+      evidence_node_ids: [],
+      evidence: [],
+      reflection_question: '这份观察符合现实中的你吗？',
+    }],
   };
 }
 
 export default function PlayPage() {
+  const router = useRouter();
   const { user, loading: authLoading } = useSession();
   const initialized = useRef(false);
   const [opening, setOpening] = useState<GuestOpening | null>(null);
@@ -72,19 +89,25 @@ export default function PlayPage() {
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [pendingChoiceId, setPendingChoiceId] = useState<GuestAnswer['choice_id'] | null>(null);
+  const [feedbackByObservation, setFeedbackByObservation] = useState<Record<string, { action: 'confirm' | 'partial' | 'dispute'; note: string }>>({});
 
   useEffect(() => {
     if (authLoading || initialized.current) return;
     initialized.current = true;
 
     async function restore() {
+      const savedFeedback = loadGuestFeedbackByObservation();
+      setFeedbackByObservation(savedFeedback);
+
       const token = loadClaimToken();
       if (user && token) {
         try {
-          const claimed = await guestAssessmentApi.claim({ claim_token: token });
+          const claimed = await claim(token, savedFeedback);
           setResult(claimedRecord(claimed.result));
           setSaved(true);
           clearGuestData();
+          clearGuestFeedback();
+          router.replace('/profile');
           setLoading(false);
           return;
         } catch {
@@ -107,7 +130,13 @@ export default function PlayPage() {
     }
 
     void restore();
-  }, [authLoading, user]);
+  }, [authLoading, router, user]);
+
+  function updateFeedback(observationId: string, action: 'confirm' | 'partial' | 'dispute', note: string) {
+    const next = { ...feedbackByObservation, [observationId]: { action, note } };
+    setFeedbackByObservation(next);
+    saveGuestFeedbackByObservation(next);
+  }
 
   async function startOpening() {
     const startedAt = Date.now();
@@ -118,6 +147,8 @@ export default function PlayPage() {
       await keepChoiceFeedbackVisible(startedAt);
       setOpening(data);
       setAnswers([]);
+      setFeedbackByObservation({});
+      clearGuestFeedback();
       saveGuestSession({ adult_confirmed: true, opening: data, answers: [], pending_consequence: null });
     } catch {
       await keepChoiceFeedbackVisible(startedAt);
@@ -127,11 +158,22 @@ export default function PlayPage() {
     }
   }
 
-  async function claim(token: string) {
+  async function claim(token: string, feedback = feedbackByObservation) {
     const claimed = await guestAssessmentApi.claim({ claim_token: token });
+    const runId = opening?.guest_run_id ?? loadGuestSession()?.opening.guest_run_id ?? 'restored';
+    for (const [observationId, item] of Object.entries(feedback)) {
+      await themeAssessmentApi.respond(claimed.round_id, {
+        operation_id: `guest-feedback:${runId}:${observationId}`,
+        action: item.action === 'dispute' ? 'refute' : item.action,
+        explanation: item.note || undefined,
+        observation_question_id: observationId === 'guest:overall' ? undefined : observationId,
+      });
+    }
     setResult(claimedRecord(claimed.result));
     setSaved(true);
     clearGuestData();
+    clearGuestFeedback();
+    return claimed;
   }
 
   async function completeOpening(chapter: GuestOpening, completedAnswers: GuestAnswer[]) {
@@ -141,7 +183,10 @@ export default function PlayPage() {
       const completed = await guestAssessmentApi.complete(completionBody(chapter, completedAnswers));
       setResult(completed.result);
       saveClaimToken(completed.claim_token);
-      if (user) await claim(completed.claim_token);
+      if (user) {
+        await claim(completed.claim_token);
+        router.replace('/profile');
+      }
     } catch {
       setError('结算或保存暂时失败。你的选择仍保存在这个浏览器中。');
     } finally {
@@ -185,25 +230,25 @@ export default function PlayPage() {
 
   if (!opening && !result) {
     return (
-      <main className="report-container theme-assessment-page">
-        <header className="report-header">
-          <p className="report-date">第一章 · 雨停之前</p>
-          <h1>直接进入一个共同任务</h1>
-          <p className="report-description">约 4 至 6 分钟。没有正确答案，也不会给你贴人格标签。</p>
-        </header>
-        <section className="report-section">
-          <h2>开始前确认</h2>
-          <p>首版长期记录功能仅面向已满 18 岁的成年人。</p>
-          <button
-            type="button"
-            className="btn-primary"
-            disabled={submitting}
-            aria-busy={submitting}
-            onClick={startOpening}
-          >
-            {submitting && <span className="action-loading-spinner" aria-hidden="true" />}
-            {submitting ? '正在准备…' : '我已满 18 岁，开始玩'}
-          </button>
+      <main className="container play-intro-page">
+        <section className="play-intro">
+          <p className="play-intro-chapter">第一章 · 雨停之前</p>
+          <h1 className="play-intro-title">直接进入一个共同任务</h1>
+          <p className="play-intro-desc">
+            约 4 至 6 分钟。没有正确答案，也不会给你贴人格标签。
+          </p>
+          <div className="play-intro-actions">
+            <button
+              type="button"
+              className="hero-cta play-intro-btn"
+              disabled={submitting}
+              aria-busy={submitting}
+              onClick={startOpening}
+            >
+              {submitting && <span className="action-loading-spinner" aria-hidden="true" />}
+              {submitting ? '正在准备…' : '进去情景'}
+            </button>
+          </div>
           {error && <p className="error" role="alert">{error}</p>}
         </section>
       </main>
@@ -214,16 +259,126 @@ export default function PlayPage() {
     return (
       <main className="report-container theme-assessment-page">
         <header className="report-header">
-          <p className="report-date">{result.episode_title}</p>
+          <p className="report-date">测验结果 · {result.episode_title}</p>
           <h1>{result.summary}</h1>
           <p className="report-description">{result.pattern}</p>
         </header>
         <section className="report-section">
-          <div className="report-insight"><h2 className="insight-label">守护的价值 · 核心铠甲</h2><p>{result.benefits}</p></div>
-          <div className="report-insight"><h2 className="insight-label">优势的双刃剑 · 隐形代价</h2><p>{result.costs}</p></div>
-          <div className="report-insight"><h2 className="insight-label">行为转折点 · 例外分析</h2><p>{result.exceptions}</p></div>
+          {result.story_replay && <div className="report-insight"><h2 className="insight-label">这段故事里发生了什么</h2><p>{result.story_replay}</p></div>}
+          <div className="report-insight"><h2 className="insight-label">应对方式的主要作用</h2><p>{result.benefits}</p></div>
+          <div className="report-insight"><h2 className="insight-label">可能付出的潜在代价</h2><p>{result.costs}</p></div>
+          <div className="report-insight"><h2 className="insight-label">不同情境下的变化与例外</h2><p>{result.exceptions}</p></div>
           <p className="report-detail">{result.unknowns}</p>
           <p className="report-detail">这是模拟情境中的观察反馈，不是诊断，也不是对你的永久定义。</p>
+
+          {result.observations.map((observation) => {
+            const feedback = feedbackByObservation[observation.id];
+            return <div
+            key={observation.id}
+            className="report-feedback-box"
+            style={{
+              marginTop: '1.5rem',
+              padding: '1.25rem',
+              border: '1px solid var(--border-light, #e5e7eb)',
+              borderRadius: '12px',
+              background: 'var(--card-bg, #ffffff)',
+            }}
+          >
+            <h3 style={{ fontSize: '1rem', fontWeight: 600, marginBottom: '0.5rem' }}>{observation.title}</h3>
+            <p className="report-detail" style={{ marginBottom: '0.75rem', lineHeight: 1.6 }}>
+              {observation.text}
+            </p>
+            <div
+              className="feedback-btn-group"
+              style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '8px' }}
+            >
+              <button
+                type="button"
+                className="btn-secondary"
+                aria-pressed={feedback?.action === 'confirm'}
+                style={{
+                  minHeight: '44px',
+                  padding: '0.5rem 1rem',
+                  fontWeight: feedback?.action === 'confirm' ? 600 : 400,
+                  borderColor: feedback?.action === 'confirm' ? 'var(--accent-color, #171717)' : undefined,
+                  backgroundColor: feedback?.action === 'confirm' ? 'var(--accent-light, #f5f5f5)' : undefined,
+                }}
+                onClick={() => updateFeedback(observation.id, 'confirm', feedback?.note ?? '')}
+              >
+                {feedback?.action === 'confirm' ? '✓ 符合我的习惯' : '符合我的习惯'}
+              </button>
+              <button
+                type="button"
+                className="btn-secondary"
+                aria-pressed={feedback?.action === 'partial'}
+                style={{
+                  minHeight: '44px',
+                  padding: '0.5rem 1rem',
+                  fontWeight: feedback?.action === 'partial' ? 600 : 400,
+                  borderColor: feedback?.action === 'partial' ? 'var(--accent-color, #171717)' : undefined,
+                  backgroundColor: feedback?.action === 'partial' ? 'var(--accent-light, #f5f5f5)' : undefined,
+                }}
+                onClick={() => updateFeedback(observation.id, 'partial', feedback?.note ?? '')}
+              >
+                {feedback?.action === 'partial' ? '✓ 部分符合' : '部分符合'}
+              </button>
+              <button
+                type="button"
+                className="btn-secondary"
+                aria-pressed={feedback?.action === 'dispute'}
+                style={{
+                  minHeight: '44px',
+                  padding: '0.5rem 1rem',
+                  fontWeight: feedback?.action === 'dispute' ? 600 : 400,
+                  borderColor: feedback?.action === 'dispute' ? 'var(--accent-color, #171717)' : undefined,
+                  backgroundColor: feedback?.action === 'dispute' ? 'var(--accent-light, #f5f5f5)' : undefined,
+                }}
+                onClick={() => updateFeedback(observation.id, 'dispute', feedback?.note ?? '')}
+              >
+                {feedback?.action === 'dispute' ? '✓ 不符合 / 存疑' : '不符合 / 存疑'}
+              </button>
+            </div>
+            <p className="report-detail" style={{ marginBottom: '0.5rem' }}>{observation.reflection_question}</p>
+            {observation.evidence.length > 0 && (
+              <details className="report-detail" style={{ marginBottom: '0.75rem' }}>
+                <summary>查看这条观察依据的情境选择</summary>
+                <ul>
+                  {observation.evidence.map((item) => <li key={item.node_id}>“{item.node_title}”：{item.choice_text}</li>)}
+                </ul>
+              </details>
+            )}
+            {feedback && (
+              <div style={{ marginTop: '8px' }}>
+                <p className="report-detail" style={{ color: feedback.action === 'dispute' ? '#dc2626' : 'inherit' }}>
+                  {feedback.action === 'confirm' && '已标记为符合真实习惯。'}
+                  {feedback.action === 'partial' && '已标记为部分符合，保留待细化状态。'}
+                  {feedback.action === 'dispute' && '已标记存疑，登录保存后会作为有争议记录保留。'}
+                </p>
+                <div style={{ marginTop: '6px' }}>
+                  <input
+                    type="text"
+                    aria-label="补充真实原因或不同看法"
+                    value={feedback.note}
+                    maxLength={500}
+                    onChange={(e) => updateFeedback(observation.id, feedback.action, e.target.value)}
+                    placeholder="选填：补充你这样处理的真实原因或不同看法…"
+                    style={{
+                      width: '100%',
+                      padding: '8px 12px',
+                      fontSize: '1rem',
+                      lineHeight: 1.5,
+                      borderRadius: '6px',
+                      border: '1px solid var(--border-light, #d1d5db)',
+                      background: 'transparent',
+                      color: 'inherit',
+                      boxSizing: 'border-box',
+                    }}
+                  />
+                </div>
+              </div>
+            )}
+          </div>;
+          })}
         </section>
         <section className="report-section">
           {saved ? (

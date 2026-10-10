@@ -407,10 +407,22 @@ export default function ThemeAssessmentPage() {
           <p className="report-detail">{t('theme_round.historical_conclusion_label')}：{portrait.headline}</p>
         )}
         <p className="report-description">{portrait.summary}</p>
+        {portrait.guest_report && (
+          <section className="report-section">
+            <h2>这段故事里发生了什么</h2>
+            <p>{portrait.guest_report.story_replay}</p>
+            <div className="report-insight"><h3 className="insight-label">应对方式的主要作用</h3><p>{portrait.guest_report.benefits}</p></div>
+            <div className="report-insight"><h3 className="insight-label">可能付出的潜在代价</h3><p>{portrait.guest_report.costs}</p></div>
+            <div className="report-insight"><h3 className="insight-label">不同情境下的变化与例外</h3><p>{portrait.guest_report.exceptions}</p></div>
+          </section>
+        )}
         <section className="report-section">
           <h2>这轮具体看到了什么</h2>
           {portrait.observations.map((observation) => {
             const observationFeedback = result.observation_feedback?.[observation.evidence_question_id];
+            const guestObservation = portrait.guest_report?.observations.find(
+              (item) => item.id === observation.evidence_question_id
+            );
             return (
               <article
                 key={observation.evidence_question_id}
@@ -437,6 +449,16 @@ export default function ThemeAssessmentPage() {
                 <p>{observationFeedback?.action === 'refute'
                   ? `${t('theme_round.observation_refuted_label')}：${observation.text}`
                   : observation.text}</p>
+                {guestObservation?.evidence.length ? (
+                  <details className="report-detail" style={{ marginTop: '8px' }}>
+                    <summary>查看这条观察依据的情境选择</summary>
+                    <ul>
+                      {guestObservation.evidence.map((item) => (
+                        <li key={item.node_id}>“{item.node_title}”：{item.choice_text}</li>
+                      ))}
+                    </ul>
+                  </details>
+                ) : null}
                 {observationFeedback && (
                   <p className="report-detail" data-testid={`observation-feedback-${observation.evidence_question_id}`}>
                     {feedbackSummary(observationFeedback.action, true)}
@@ -833,9 +855,6 @@ export default function ThemeAssessmentPage() {
       <header className="report-header">
         <p className="report-date">连续主题测试</p>
         <h1>这一轮，你想先从哪里了解自己？</h1>
-        <p className="report-description">
-          每轮至少 6 个具体情境；必要时才增加最多 2 个澄清或反例追问。
-        </p>
       </header>
       {error && (
         <p className="error" role="alert">

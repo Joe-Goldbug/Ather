@@ -11,9 +11,13 @@ vi.mock('./api', () => ({
 }));
 
 import {
+  GUEST_FEEDBACK_KEY,
   GUEST_SESSION_KEY,
+  clearGuestFeedback,
+  loadGuestFeedback,
   loadGuestSession,
   migrateGuestAssessment,
+  saveGuestFeedback,
   saveGuestSession,
 } from './guest-assessment';
 
@@ -114,5 +118,24 @@ describe('migrateGuestAssessment', () => {
 
     expect(loadGuestSession()).toBeNull();
     expect(sessionStorage.getItem(GUEST_SESSION_KEY)).toBeNull();
+  });
+
+  it('round-trips user feedback data and clears properly', () => {
+    const feedback = { action: 'dispute' as const, note: '真实习惯不符' };
+    saveGuestFeedback(feedback);
+    expect(loadGuestFeedback()).toEqual(feedback);
+
+    clearGuestFeedback();
+    expect(loadGuestFeedback()).toBeNull();
+  });
+
+  it('removes malformed or corrupted feedback data instead of trusting it', () => {
+    sessionStorage.setItem(GUEST_FEEDBACK_KEY, 'not-valid-json');
+    expect(loadGuestFeedback()).toBeNull();
+    expect(sessionStorage.getItem(GUEST_FEEDBACK_KEY)).toBeNull();
+
+    sessionStorage.setItem(GUEST_FEEDBACK_KEY, JSON.stringify({ action: 'invalid-action', note: 123 }));
+    expect(loadGuestFeedback()).toBeNull();
+    expect(sessionStorage.getItem(GUEST_FEEDBACK_KEY)).toBeNull();
   });
 });

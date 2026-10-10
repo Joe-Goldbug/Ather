@@ -6,10 +6,13 @@ const mocks = vi.hoisted(() => ({
   getOpening: vi.fn(),
   complete: vi.fn(),
   claim: vi.fn(),
+  respond: vi.fn(),
   useSession: vi.fn(),
+  replace: vi.fn(),
 }));
 
 vi.mock('@/hooks/useSession', () => ({ useSession: mocks.useSession }));
+vi.mock('next/navigation', () => ({ useRouter: () => ({ replace: mocks.replace }) }));
 vi.mock('@/lib/api', async () => {
   const actual = await vi.importActual<typeof import('@/lib/api')>('@/lib/api');
   return {
@@ -19,6 +22,7 @@ vi.mock('@/lib/api', async () => {
       complete: mocks.complete,
       claim: mocks.claim,
     },
+    themeAssessmentApi: { respond: mocks.respond },
   };
 });
 
@@ -45,7 +49,7 @@ const opening = {
 const record = {
   episode_id: 'rain-before-stop',
   episode_version: 'v1',
-  episode_title: '雨停之前',
+  episode_title: '突发压力与协作应对',
   evidence_kind: 'simulation' as const,
   science_status: 'candidate_only' as const,
   source_independence_group: 'simulation:rain-before-stop:v1',
@@ -55,6 +59,15 @@ const record = {
   costs: '代价',
   exceptions: '例外',
   unknowns: '仍不确定',
+  story_replay: '故事回放',
+  observations: [{
+    id: 'guest:approach:primary',
+    title: '主要做法',
+    text: '这条观察有明确的情境依据。',
+    evidence_node_ids: ['node-1'],
+    evidence: [{ node_id: 'node-1', node_title: '节点 1', choice_text: '选择 A1' }],
+    reflection_question: '这符合现实中的你吗？',
+  }],
 };
 
 describe('PlayPage guest opening acceptance', () => {
@@ -66,13 +79,13 @@ describe('PlayPage guest opening acceptance', () => {
     mocks.complete.mockResolvedValue({ result: record, claim_token: 'payload.signature' });
   });
 
-  it('does not fetch the story before explicit 18+ confirmation', async () => {
+  it('does not fetch the story before user starts the scenario', async () => {
     render(<PlayPage />);
 
-    expect(await screen.findByText('我已满 18 岁，开始玩')).toBeInTheDocument();
+    expect(await screen.findByText('进去情景')).toBeInTheDocument();
     expect(mocks.getOpening).not.toHaveBeenCalled();
 
-    fireEvent.click(screen.getByText('我已满 18 岁，开始玩'));
+    fireEvent.click(screen.getByText('进去情景'));
     expect(await screen.findByText('节点 1')).toBeInTheDocument();
     expect(mocks.getOpening).toHaveBeenCalledTimes(1);
   });
@@ -84,7 +97,7 @@ describe('PlayPage guest opening acceptance', () => {
     }));
     render(<PlayPage />);
 
-    fireEvent.click(await screen.findByRole('button', { name: '我已满 18 岁，开始玩' }));
+    fireEvent.click(await screen.findByRole('button', { name: '进去情景' }));
 
     const button = await screen.findByRole('button', { name: '正在准备…' });
     expect(button).toBeDisabled();
@@ -99,7 +112,7 @@ describe('PlayPage guest opening acceptance', () => {
     render(<PlayPage />);
     const startedAt = performance.now();
 
-    fireEvent.click(await screen.findByRole('button', { name: '我已满 18 岁，开始玩' }));
+    fireEvent.click(await screen.findByRole('button', { name: '进去情景' }));
 
     const button = screen.getByRole('button', { name: '正在准备…' });
     expect(button).toHaveAttribute('aria-busy', 'true');
@@ -110,7 +123,7 @@ describe('PlayPage guest opening acceptance', () => {
 
   it('submits six decisions as an adult-confirmed chapter and offers the real login route', async () => {
     render(<PlayPage />);
-    fireEvent.click(await screen.findByText('我已满 18 岁，开始玩'));
+    fireEvent.click(await screen.findByText('进去情景'));
 
     for (let index = 1; index <= 6; index += 1) {
       const startedAt = index === 1 ? performance.now() : 0;
@@ -131,6 +144,37 @@ describe('PlayPage guest opening acceptance', () => {
     }
 
     expect(await screen.findByText('本章记录')).toBeInTheDocument();
+    expect(screen.getByText('应对方式的主要作用')).toBeInTheDocument();
+    expect(screen.getByText('可能付出的潜在代价')).toBeInTheDocument();
+    expect(screen.getByText('不同情境下的变化与例外')).toBeInTheDocument();
+
+    const confirmBtn = screen.getByRole('button', { name: '符合我的习惯' });
+    const partialBtn = screen.getByRole('button', { name: '部分符合' });
+    const disputeBtn = screen.getByRole('button', { name: '不符合 / 存疑' });
+
+    expect(confirmBtn).toHaveAttribute('aria-pressed', 'false');
+    expect(partialBtn).toHaveAttribute('aria-pressed', 'false');
+    expect(disputeBtn).toHaveAttribute('aria-pressed', 'false');
+
+    fireEvent.click(disputeBtn);
+    expect(screen.getByText(/已标记存疑，登录保存后会作为有争议记录保留/)).toBeInTheDocument();
+    expect(disputeBtn).toHaveAttribute('aria-pressed', 'true');
+    expect(confirmBtn).toHaveAttribute('aria-pressed', 'false');
+
+    const noteInput = screen.getByPlaceholderText(/选填：补充你这样处理的真实原因或不同看法/);
+    expect(noteInput).toHaveAttribute('aria-label', '补充真实原因或不同看法');
+    expect(noteInput).toHaveAttribute('maxlength', '500');
+    expect(noteInput).toHaveStyle({ fontSize: '1rem' });
+    fireEvent.change(noteInput, { target: { value: '现实中我会直接找备用人选' } });
+    expect(noteInput).toHaveValue('现实中我会直接找备用人选');
+
+    expect(JSON.parse(sessionStorage.getItem('eva_guest_feedback')!)).toEqual({
+      'guest:approach:primary': {
+        action: 'dispute',
+        note: '现实中我会直接找备用人选',
+      },
+    });
+
     expect(mocks.complete).toHaveBeenCalledWith(expect.objectContaining({
       guest_run_id: opening.guest_run_id,
       version: opening.episode_version,
@@ -140,7 +184,7 @@ describe('PlayPage guest opening acceptance', () => {
     expect(screen.getByRole('link', { name: '注册或登录并保存' }))
       .toHaveAttribute('href', '/login?returnTo=%2Fplay');
     await waitFor(() => expect(sessionStorage.getItem('eva_guest_claim_token')).toBe('payload.signature'));
-  });
+  }, 15_000);
 
   it('restores an older pending consequence directly into the next question', async () => {
     sessionStorage.setItem('eva_guest_session', JSON.stringify({
@@ -160,7 +204,7 @@ describe('PlayPage guest opening acceptance', () => {
   it('keeps completed answers available to retry when automatic settlement fails', async () => {
     mocks.complete.mockRejectedValueOnce(new Error('network unavailable'));
     render(<PlayPage />);
-    fireEvent.click(await screen.findByText('我已满 18 岁，开始玩'));
+    fireEvent.click(await screen.findByText('进去情景'));
 
     for (let index = 1; index <= 6; index += 1) {
       fireEvent.click(await screen.findByText(`选择 A${index}`));
@@ -189,5 +233,43 @@ describe('PlayPage guest opening acceptance', () => {
     expect(await screen.findByText('保存暂时失败。你的本地记录仍在，可以稍后重试。')).toBeInTheDocument();
     expect(sessionStorage.getItem('eva_guest_claim_token')).toBe('payload.signature');
     expect(sessionStorage.getItem('eva_guest_session')).not.toBeNull();
+  });
+
+  it('restores previously recorded user feedback and note across sessions', async () => {
+    sessionStorage.setItem('eva_guest_claim_token', 'payload.signature');
+    sessionStorage.setItem('eva_guest_feedback', JSON.stringify({
+      'guest:approach:primary': { action: 'confirm', note: '这确实符合我的应对方式' },
+    }));
+    mocks.useSession.mockReturnValue({ user: { id: 'user-1' }, loading: false });
+    mocks.claim.mockResolvedValue({ round_id: 'round-1', result: { ...record, guest_report: record } });
+
+    render(<PlayPage />);
+
+    expect(await screen.findByText('本章记录已保存')).toBeInTheDocument();
+    const confirmBtn = screen.getByRole('button', { name: '✓ 符合我的习惯' });
+    expect(confirmBtn).toHaveAttribute('aria-pressed', 'true');
+    expect(screen.getByText('已标记为符合真实习惯。')).toBeInTheDocument();
+    expect(screen.getByDisplayValue('这确实符合我的应对方式')).toBeInTheDocument();
+    expect(mocks.respond).toHaveBeenCalledWith('round-1', expect.objectContaining({
+      action: 'confirm',
+      observation_question_id: 'guest:approach:primary',
+      explanation: '这确实符合我的应对方式',
+    }));
+    expect(mocks.replace).toHaveBeenCalledWith('/profile');
+  });
+
+  it('resets feedback state and storage when starting a new assessment run', async () => {
+    sessionStorage.setItem('eva_guest_feedback', JSON.stringify({
+      action: 'dispute',
+      note: '旧的反馈意见',
+    }));
+
+    render(<PlayPage />);
+
+    expect(await screen.findByText('进去情景')).toBeInTheDocument();
+    fireEvent.click(screen.getByText('进去情景'));
+
+    expect(await screen.findByText('节点 1')).toBeInTheDocument();
+    expect(sessionStorage.getItem('eva_guest_feedback')).toBeNull();
   });
 });

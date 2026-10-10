@@ -32,15 +32,33 @@ describe('ThemeQuestionGeneratorService', () => {
   beforeEach(() => {
     originalFetch = global.fetch;
     originalEnv = {
+      OPENAI_BASE_URL: process.env.OPENAI_BASE_URL,
+      OPENAI_API_KEY: process.env.OPENAI_API_KEY,
+      OPENAI_MODEL: process.env.OPENAI_MODEL,
+      OPENAI_CHAT_COMPLETIONS_PATH: process.env.OPENAI_CHAT_COMPLETIONS_PATH,
       LLM_BASE_URL: process.env.LLM_BASE_URL,
       LLM_API_KEY: process.env.LLM_API_KEY,
       LLM_MODEL: process.env.LLM_MODEL,
+      LLM_CHAT_COMPLETIONS_PATH: process.env.LLM_CHAT_COMPLETIONS_PATH,
       THEME_AI_TIMEOUT_MS: process.env.THEME_AI_TIMEOUT_MS,
+      THEME_AI_BASE_URL: process.env.THEME_AI_BASE_URL,
+      THEME_AI_API_KEY: process.env.THEME_AI_API_KEY,
+      THEME_AI_MODEL: process.env.THEME_AI_MODEL,
+      THEME_AI_CHAT_COMPLETIONS_PATH: process.env.THEME_AI_CHAT_COMPLETIONS_PATH,
     };
+    delete process.env.OPENAI_BASE_URL;
+    delete process.env.OPENAI_API_KEY;
+    delete process.env.OPENAI_MODEL;
+    delete process.env.OPENAI_CHAT_COMPLETIONS_PATH;
     process.env.LLM_BASE_URL = 'https://api.example.com/v1';
     process.env.LLM_API_KEY = 'test-key';
     process.env.LLM_MODEL = 'test-model';
+    delete process.env.LLM_CHAT_COMPLETIONS_PATH;
     process.env.THEME_AI_TIMEOUT_MS = '5000';
+    delete process.env.THEME_AI_BASE_URL;
+    delete process.env.THEME_AI_API_KEY;
+    delete process.env.THEME_AI_MODEL;
+    delete process.env.THEME_AI_CHAT_COMPLETIONS_PATH;
   });
 
   afterEach(() => {
@@ -70,6 +88,9 @@ describe('ThemeQuestionGeneratorService', () => {
     delete process.env.LLM_BASE_URL;
     delete process.env.LLM_API_KEY;
     delete process.env.LLM_MODEL;
+    delete process.env.OPENAI_BASE_URL;
+    delete process.env.OPENAI_API_KEY;
+    delete process.env.OPENAI_MODEL;
     let calls = 0;
     global.fetch = vi.fn(async () => { calls++; return { ok: true, json: async () => ({ choices: [] }) } as Response; });
     const svc = new ThemeQuestionGeneratorService();

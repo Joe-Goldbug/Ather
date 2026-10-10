@@ -82,6 +82,7 @@ export interface ThemeRoundResult {
   counterevidence: string;
   boundary: string;
   evidence: ThemeRoundEvidence[];
+  guest_report?: import('./guest-episode').GuestEpisodeResult;
 }
 
 type FocusDefinition = {

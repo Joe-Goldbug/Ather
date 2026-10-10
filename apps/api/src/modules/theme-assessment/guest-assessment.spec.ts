@@ -160,5 +160,15 @@ describe('GuestAssessment API Logic', () => {
       science_status: 'candidate_only',
       source_independence_group: expect.stringContaining(GUEST_RUN_ID),
     });
+    expect(savedResult.guest_report).toMatchObject({
+      episode_id: GUEST_EPISODE_ID,
+      story_replay: expect.any(String),
+      observations: expect.arrayContaining([
+        expect.objectContaining({ id: expect.stringMatching(/^guest:/), evidence_node_ids: expect.any(Array) }),
+      ]),
+    });
+    expect(savedResult.observations).toEqual(expect.arrayContaining([
+      expect.objectContaining({ evidence_question_id: expect.stringMatching(/^guest:/) }),
+    ]));
   });
 });

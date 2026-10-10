@@ -14,6 +14,7 @@ export interface StoryDecisionNode {
 
 export const GUEST_EPISODE_ID = 'rain-before-stop';
 export const GUEST_EPISODE_VERSION = 'v1';
+export const GUEST_EPISODE_TITLE = '突发压力与协作应对';
 export const GUEST_QUESTION_BANK_VERSION = 'guest-rain-before-stop-v1';
 export const GUEST_COPY_VERSION = 'zh-CN-v1';
 
@@ -65,7 +66,7 @@ export const RAIN_BEFORE_STOP_NODES: StoryDecisionNode[] = [
   {
     id: 'node-5',
     title: '短暂的破裂',
-    context: '入口最终出现积水。林对你说：“你早就觉得有问题，为什么没有让大家停下来？”无论你之前做过什么，这句话都忽略了一部分事实。',
+    context: '入口最终出现积水。林对你说：“你早就觉得有问题，为什么没有让大家停下来？”这句话把责任集中到了你身上，而前面发生了什么需要你们共同回看。',
     options: [
       { id: 'A', text: '说明当时发生了什么，并邀请林一起先处理积水', consequence: '关系仍有摩擦，但你们开始共同解决问题。', approach: 'approach' },
       { id: 'B', text: '先纠正责任归属，拒绝独自承担这次后果', consequence: '事实边界被保住，但修复行动延后。', approach: 'protect' },
@@ -104,6 +105,21 @@ export interface GuestEpisodeResult {
   costs: string;
   exceptions: string;
   unknowns: string;
+  story_replay: string;
+  observations: GuestEpisodeObservation[];
+}
+
+export interface GuestEpisodeObservation {
+  id: string;
+  title: string;
+  text: string;
+  evidence_node_ids: string[];
+  evidence: Array<{
+    node_id: string;
+    node_title: string;
+    choice_text: string;
+  }>;
+  reflection_question: string;
 }
 
 export function validateGuestEpisodeAnswers(answers: GuestEpisodeAnswer[]): string[] {
@@ -145,98 +161,168 @@ export function buildGuestEpisodeResult(answers: GuestEpisodeAnswer[]): GuestEpi
   };
 
   const nodeApproaches: Record<string, RoundApproach> = {};
-  for (const answer of answers) {
-    const node = RAIN_BEFORE_STOP_NODES.find((n) => n.id === answer.node_id)!;
-    const option = node.options.find((o) => o.id === answer.choice_id)!;
+  const orderedFacts = answers.map((answer) => {
+    const node = RAIN_BEFORE_STOP_NODES.find((item) => item.id === answer.node_id)!;
+    const option = node.options.find((item) => item.id === answer.choice_id)!;
     counts[option.approach]++;
     nodeApproaches[node.id] = option.approach;
-  }
+    return { node, option };
+  });
+  const approachNames: Record<RoundApproach, string> = {
+    approach: '主动沟通',
+    protect: '明确界限',
+    analyze: '核查依据',
+    withdraw: '暂缓避险',
+  };
+
   const descriptions: Record<RoundApproach, { action: string; benefit: string; cost: string }> = {
     approach: {
-      action: '主动接触他人、表达需要并推动共同处理',
-      benefit: '守护了局势推进的速度与确定性。面对突发真空与协作断层，你难以忍受停滞消耗，本能地通过主动沟通重构行动网络；你宁可自身多承担协调负荷，也要防止集体陷入失控。',
-      cost: '容易陷入“过度功能化”，在潜意识中替系统的脆弱买单。当你习惯性率先顶上时，同伴容易后退并转嫁责任；过早亮明立场也容易让你在局势未明前成为矛盾的焦点与被归咎的靶子。',
+      action: '主动沟通并推动共同处理',
+      benefit: '让信息更快流动，推动事情往前走，避免问题被搁置。',
+      cost: '容易替别人承担原本不需要负责的协调压力，并在事情不顺时较早成为被追责的对象。',
     },
     protect: {
-      action: '先明确责任、依赖和个人边界',
-      benefit: '守护了个人心力底线与事实权责的明晰。在高压与混乱中，你拥有极高的边界清醒度，坚决拒绝被情绪绑架或无端成为他人失职的消耗品，用清晰的职责划分维护了合作的秩序底线。',
-      cost: '容易被合作方感知为防备心重与距离感。把界限划得太清，在危机初期可能会延缓集体共同补位的时机，并在需要展现脆弱与深度信任的关键时刻错失情感连接。',
+      action: '明确职责界限，先说明自己能负责的部分',
+      benefit: '守住自己的工作边界，避免无端承担不属于自己的责任。',
+      cost: '容易拉开与同伴的距离，可能让现场紧急问题暂时悬空，并在需要协同配合时显得防备较重。',
     },
     analyze: {
-      action: '先核对信息、设置检查点，再决定行动',
-      benefit: '守护了决策的质量与事实证据的稳固。面对纷繁分歧与突发风险，你拒绝被冲动情绪挟持，坚持以数据、事实与可复查的节点作为安全感基石，极大降低了因盲目盲动带来的二次误判。',
-      cost: '容易陷入推演瘫痪，消耗宝贵的行动时间窗口。在需要即时决断与果断表态的高压关头，过度的求证可能让同伴感到迟疑与疏离，甚至错失稍纵即逝的协同机会。',
+      action: '先核查事实依据与现有数据，再决定下一步',
+      benefit: '减少在混乱中凭直觉盲动，使后续处理更有依据。',
+      cost: '核查过程会消耗现场有限的行动时间，可能让急于得到回应的同伴感到迟疑与距离。',
     },
     withdraw: {
-      action: '暂缓回应、退出当前冲突或先处理别的部分',
-      benefit: '守护了核心情绪秩序与身心能量的低耗稳定。在人际张力与非理性对抗到达峰值时，你拥有敏锐的止损直觉，擅长通过退后半步来阻断矛盾的连锁升级，避免沦为情绪宣泄的牺牲品。',
-      cost: '实质上把局势的主导权和定义权让渡给了外部环境。虽然规避了正面冲突，但深层的误解与核心风险并没有真正清除，可能给同伴留下被动回避的印象，并保留潜在的隐患。',
+      action: '暂缓表态、退出当前冲突或先做不需要配合的事',
+      benefit: '避免在情绪最高点激化正面冲突，保护自己的注意力和节奏。',
+      cost: '没有真正解决面前的分歧与隐患，把现场决定权留给了别人，也容易被误解为回避问题。',
     },
   };
-  const ranked = (Object.keys(counts) as RoundApproach[]).sort(
-    (left, right) => counts[right] - counts[left]
-  );
+
+  const ALL_APPROACHES: RoundApproach[] = ['approach', 'protect', 'analyze', 'withdraw'];
+  const ranked = [...ALL_APPROACHES].sort((left, right) => {
+    const diff = counts[right] - counts[left];
+    if (diff !== 0) return diff;
+    return ALL_APPROACHES.indexOf(left) - ALL_APPROACHES.indexOf(right);
+  });
   const highestCount = counts[ranked[0]!];
-  const repeated = ranked.filter((approach) => counts[approach] === highestCount && highestCount >= 2);
-  const pairKey = repeated.length === 2 ? [...repeated].sort().join('+') : '';
-  const pairSummaries: Record<string, string> = {
-    'analyze+withdraw': '你在突发压力中兼具理性核查与低耗避险，习惯先退后半步理清全貌再做决断。',
-    'approach+protect': '你在协作中兼具推动意愿与边界意识，愿意主动担当但坚持权责清晰。',
-    'analyze+approach': '你在协作分歧中兼具主动性与事实导向，善于用客观依据推进共同行动。',
-    'analyze+protect': '你在复杂局面中展现出严谨的防御姿态，依靠规则边界与理性核查应对风险。',
-    'protect+withdraw': '你在外部压力下注重自我保护与低能耗应对，优先守住核心阵地与节奏。',
-    'approach+withdraw': '你在冲突与协作中根据局势灵活进退，在主动介入与果断止损间切换。',
+  const repeated = ranked.filter((approach) => counts[approach] === highestCount);
+
+  const top = ranked[0]!;
+  const topFacts = orderedFacts.filter((fact) => fact.option.approach === top);
+  const firstChangeIndex = orderedFacts.findIndex((fact, index) => index > 0 && fact.option.approach !== orderedFacts[index - 1]!.option.approach);
+  const firstChange = firstChangeIndex > 0 ? orderedFacts[firstChangeIndex] : null;
+  const priorFact = firstChangeIndex > 0 ? orderedFacts[firstChangeIndex - 1] : null;
+  const observationEvidence = (facts: typeof orderedFacts) => facts.map(({ node, option }) => ({
+    node_id: node.id,
+    node_title: node.title,
+    choice_text: option.text,
+  }));
+  const replayFacts = orderedFacts.slice(0, 3).map(({ node, option }) => `在“${node.title}”时，你选择了“${option.text}”`).join('；');
+  const laterFacts = orderedFacts.slice(3).map(({ node, option }) => `随后在“${node.title}”时，你选择了“${option.text}”`).join('；');
+  const story_replay = `${replayFacts}。${laterFacts}。这六次选择构成了同一段协作压力逐步上升的故事：从消息迟到、工作临时增加，到公开归责和后续安排。它们可以帮助你回看自己在不同压力点怎样行动；它们不能证明你在现实里一定会这样做，也不能替你解释选择背后的原因。`;
+  const primaryObservation: GuestEpisodeObservation = {
+    id: `guest:${top}:primary`,
+    title: `这次最常见的做法：${approachNames[top]}`,
+    text: `在${topFacts.map(({ node }) => `“${node.title}”`).join('、')}等 ${topFacts.length} 个节点里，你选择${descriptions[top].action}。在协作出现空白、责任不清或场面紧张时，这种做法会让${descriptions[top].benefit.replace('。', '')}。它的代价也很具体：${descriptions[top].cost.replace('。', '')}。这不是对你好坏的评价，而是在提醒你，同一种处理方式既能解决眼前问题，也可能把系统原本的问题压到你身上。这里描述的是这段模拟中的可见选择和可能后果，不是在判断你的动机。`,
+    evidence_node_ids: topFacts.map(({ node }) => node.id),
+    evidence: observationEvidence(topFacts),
+    reflection_question: `你在这些节点里这样做，更多是因为这符合你的习惯、当时信息不足，还是这只是你希望做到的处理方式？`,
   };
-  const singleSummaries: Record<RoundApproach, string> = {
-    approach: '你在人际与任务突发状况中倾向于主动破局，优先通过沟通与协同建立解决路径。',
-    protect: '你在高压协作中优先厘清权责与边界，防止自身与任务陷入被动与失控。',
-    analyze: '你在面对不确定与分歧时优先核对事实依据，以理智审慎作为第一防线。',
-    withdraw: '你在压力与冲突峰值时倾向于先暂缓抽离，避免情绪升级并保存心力。',
-  };
+  const observations: GuestEpisodeObservation[] = [primaryObservation];
+  if (firstChange && priorFact) {
+    observations.push({
+      id: 'guest:transition:first-change',
+      title: '第一次改变做法的地方',
+      text: `你从“${priorFact.node.title}”中的${approachNames[priorFact.option.approach]}，转到“${firstChange.node.title}”中的${approachNames[firstChange.option.approach]}。这只能说明这两个节点的选择不同；是因为责任、时间、关系还是精力发生了变化，需要由你补充，不能从选择本身确定原因。`,
+      evidence_node_ids: [priorFact.node.id, firstChange.node.id],
+      evidence: observationEvidence([priorFact, firstChange]),
+      reflection_question: `从“${priorFact.node.title}”到“${firstChange.node.title}”，什么信息或感受让你改变了做法？`,
+    });
+  }
+  if (repeated.length > 1 || highestCount < 4) {
+    observations.push({
+      id: 'guest:variation:distribution',
+      title: '这次没有单一固定的应对方式',
+      text: `六个节点的选择没有完全收敛到一种做法。${repeated.map((approach) => `“${approachNames[approach]}”`).join('、')}在这次作答中同样突出。不同情境下换做法可以是在权衡，也可能只是故事条件不同；这份结果不能把变化自动解释成成熟、摇摆或人格特征。`,
+      evidence_node_ids: orderedFacts.map(({ node }) => node.id),
+      evidence: observationEvidence(orderedFacts),
+      reflection_question: '回看这些节点时，哪一次选择最不像现实中的你？为什么？',
+    });
+  }
 
-  const summary = repeated.length === 1
-    ? singleSummaries[repeated[0]!]
-    : (pairSummaries[pairKey] || '你在多重压力情境中展现出平衡且灵活的应对策略。');
+  let summary = '';
+  let pattern = '';
+  let benefits = '';
+  let costs = '';
+  let exceptions = '';
 
-  const pattern = repeated.length === 1
-    ? `这一章里，你主要采取“${descriptions[repeated[0]!].action}”的方式，展现出连贯的应对姿态。`
-    : `这一章里，你在“${descriptions[repeated[0]!].action}”与“${descriptions[repeated[1]!].action}”之间灵活切换，展现出复合的应对节奏。`;
-
-  const selectedBenefits = repeated.map((approach) => descriptions[approach].benefit);
-  const selectedCosts = repeated.map((approach) => descriptions[approach].cost);
-  const exceptionNodes = RAIN_BEFORE_STOP_NODES.filter(
-    (node) => !repeated.includes(nodeApproaches[node.id]!)
-  ).map((node) => `《${node.title}》`);
-
-  let exceptionExplanation = '六个节点均保持了一致的应对姿态；在不同关系和压力条件下，可能还会浮现出更丰富的侧面。';
-  if (exceptionNodes.length > 0) {
-    const hasTrustBreach = exceptionNodes.some((n) => n.includes('迟到') || n.includes('不完整'));
-    const hasConflict = exceptionNodes.some((n) => n.includes('分歧') || n.includes('破裂'));
-    const hasOverload = exceptionNodes.some((n) => n.includes('多出来的责任'));
-
-    let contextReason = '当人际张力触及特定信任或权责变数时，你的决策系统打破了惯性，做出了针对性调频。';
-    if (hasTrustBreach) {
-      contextReason = '相比任务本身的繁重，“信息不透明与同伴失信”更能打破你的惯常姿态，促使你调整应对方式。';
-    } else if (hasConflict) {
-      contextReason = '在遭遇公开否定或责任推诿的冲突时刻，你调整了策略，表明自尊与事实公平是你的清晰应激转折点。';
-    } else if (hasOverload) {
-      contextReason = '面对临时追加的超额责任时，你打破了常规节奏，折射出你对职责边界被无序入侵的高度警觉。';
-    }
-    exceptionExplanation = `${exceptionNodes.join('、')}中的选择与主要惯性不同。${contextReason}`;
+  if (highestCount === 6) {
+    summary = `面对突发协作与冲突，你六次都选择${descriptions[top].action}。`;
+    pattern = `六个情境节点中，你的选择方向完全一致，始终倾向于${descriptions[top].action}。`;
+    benefits = descriptions[top].benefit;
+    costs = descriptions[top].cost;
+    exceptions = '六个节点都选择了相同方向，这次模拟中没有出现反向的例外选择。';
+  } else if (repeated.length === 1 && highestCount >= 3) {
+    summary = `面对突发协作与冲突，你更常选择${descriptions[top].action}。`;
+    pattern = `六个节点中，你有 ${highestCount} 次选择${descriptions[top].action}，这是本章最主要的做法。`;
+    benefits = descriptions[top].benefit;
+    costs = descriptions[top].cost;
+    const exceptionNodes = RAIN_BEFORE_STOP_NODES.filter(
+      (node) => nodeApproaches[node.id] !== top
+    ).map((node) => `《${node.title}》`);
+    exceptions = `${exceptionNodes.join('、')}中的选择与主要做法不同，表明在特定情境下你改变了反应策略。`;
+  } else if (repeated.length === 2 && highestCount === 3) {
+    const [app1, app2] = repeated;
+    summary = `你在“${approachNames[app1!]}”和“${approachNames[app2!]}”之间各做了一半选择，没有单一主导做法。`;
+    pattern = `六个节点中，你各有 3 次选择${descriptions[app1!].action}与${descriptions[app2!].action}。`;
+    benefits = `【${approachNames[app1!]}】${descriptions[app1!].benefit}\n\n【${approachNames[app2!]}】${descriptions[app2!].benefit}`;
+    costs = `【${approachNames[app1!]}】${descriptions[app1!].cost}\n\n【${approachNames[app2!]}】${descriptions[app2!].cost}`;
+    exceptions = '六个节点被这两种做法平分，没有出现第三种应对方式。这两种做法的切换取决于具体节点的情境。';
+  } else if (repeated.length === 2 && highestCount === 2) {
+    const [app1, app2] = repeated;
+    summary = `你在“${approachNames[app1!]}”和“${approachNames[app2!]}”之间交替较多，同时也尝试了其他做法。`;
+    pattern = `六个节点中，${descriptions[app1!].action}与${descriptions[app2!].action}各出现了 2 次。`;
+    benefits = `【${approachNames[app1!]}】${descriptions[app1!].benefit}\n\n【${approachNames[app2!]}】${descriptions[app2!].benefit}`;
+    costs = `【${approachNames[app1!]}】${descriptions[app1!].cost}\n\n【${approachNames[app2!]}】${descriptions[app2!].cost}`;
+    const exceptionNodes = RAIN_BEFORE_STOP_NODES.filter(
+      (node) => nodeApproaches[node.id] !== app1 && nodeApproaches[node.id] !== app2
+    ).map((node) => `《${node.title}》`);
+    exceptions = `${exceptionNodes.join('、')}中的选择与上述两种做法不同，表明在特定节点你采取了不同策略。`;
+  } else if (repeated.length === 3 && highestCount === 2) {
+    const [app1, app2, app3] = repeated;
+    summary = `你在“${approachNames[app1!]}”、“${approachNames[app2!]}”与“${approachNames[app3!]}”之间均分了选择，没有单一主导做法。`;
+    pattern = `六个节点中，你在“${approachNames[app1!]}”、“${approachNames[app2!]}”与“${approachNames[app3!]}”上各选了 2 次，处理方式较为分散。`;
+    benefits = `【${approachNames[app1!]}】${descriptions[app1!].benefit}\n\n【${approachNames[app2!]}】${descriptions[app2!].benefit}\n\n【${approachNames[app3!]}】${descriptions[app3!].benefit}`;
+    costs = `【${approachNames[app1!]}】${descriptions[app1!].cost}\n\n【${approachNames[app2!]}】${descriptions[app2!].cost}\n\n【${approachNames[app3!]}】${descriptions[app3!].cost}`;
+    exceptions = '六个节点被三种不同的做法均分，没有哪一种做法占据主导地位。选择出现差异；差异的原因需要你补充，不能仅凭这次模拟推断。';
+  } else {
+    // Mathematically unreachable defensive fallback for 6 nodes and 4 choices.
+    // Preserves complete runtime safety and conforms to non-sycophantic language.
+    const top = ranked[0]!;
+    summary = `这次作答整体较为分散，未出现单一主导做法。`;
+    pattern = `六个节点中，你的选择较为分散，未呈现出明显的单一惯性。`;
+    benefits = descriptions[top].benefit;
+    costs = descriptions[top].cost;
+    const exceptionNodes = RAIN_BEFORE_STOP_NODES.filter(
+      (node) => nodeApproaches[node.id] !== top
+    ).map((node) => `《${node.title}》`);
+    exceptions = `${exceptionNodes.join('、')}中的选择各不相同，表明你在不同情境下的处理方式差异较大。`;
   }
 
   return {
     episode_id: GUEST_EPISODE_ID,
     episode_version: GUEST_EPISODE_VERSION,
-    episode_title: '雨停之前',
+    episode_title: GUEST_EPISODE_TITLE,
     evidence_kind: 'simulation',
     science_status: 'candidate_only',
     source_independence_group: `simulation:${GUEST_EPISODE_ID}:${GUEST_EPISODE_VERSION}`,
     summary,
     pattern,
-    benefits: selectedBenefits.join('\n\n') || '本章应对方式较为分散，未呈现单一突出的收益侧重。',
-    costs: selectedCosts.join('\n\n') || '本章应对方式较为分散，未呈现单一突出的潜在代价。',
-    exceptions: exceptionExplanation,
-    unknowns: '心智如流水，因境而生。本章观察仅折射出你在特定任务危机下的瞬时侧影；真实自我永远在动态演变，不被单一模拟所永久定性。在现实生活里，退后半步与主动向前，都是属于你的正当权利。',
+    benefits,
+    costs,
+    exceptions,
+    unknowns: '这是根据单次模拟故事作出的初步观察，不是对你的永久定性。',
+    story_replay,
+    observations,
   };
 }
