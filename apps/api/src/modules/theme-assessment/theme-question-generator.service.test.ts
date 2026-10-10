@@ -126,6 +126,27 @@ describe('ThemeQuestionGeneratorService', () => {
     expect(result!.size).toBe(6);
   });
 
+  it('uses the THEME_AI_* provider first and falls back to the global provider', async () => {
+    process.env.THEME_AI_BASE_URL = 'https://theme-primary.example/v1';
+    process.env.THEME_AI_API_KEY = 'theme-key';
+    process.env.THEME_AI_MODEL = 'theme-model';
+    const calledUrls: string[] = [];
+    global.fetch = vi.fn(async (url) => {
+      calledUrls.push(String(url));
+      if (calledUrls.length === 1) return { ok: false, status: 503, json: async () => ({}) } as Response;
+      return { ok: true, json: async () => ({ choices: [{ message: { content: fullValid } }] }) } as Response;
+    }) as typeof fetch;
+
+    const result = await new ThemeQuestionGeneratorService().generateCoreQuestions(input);
+    expect(calledUrls[0]).toContain('theme-primary.example');
+    expect(calledUrls[1]).toContain('api.example.com'); // global fallback
+    expect(result!.size).toBe(6);
+
+    delete process.env.THEME_AI_BASE_URL;
+    delete process.env.THEME_AI_API_KEY;
+    delete process.env.THEME_AI_MODEL;
+  });
+
   it('returns null after both attempts fail', async () => {
     let calls = 0;
     global.fetch = vi.fn(async () => { calls++; return { ok: false, status: 500, json: async () => ({}) } as Response; }) as typeof fetch;

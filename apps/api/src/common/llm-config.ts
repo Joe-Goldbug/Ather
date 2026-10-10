@@ -29,3 +29,30 @@ export function resolveLlmRuntimeConfig(): LlmRuntimeConfig {
     ),
   };
 }
+
+/**
+ * Provider chain for theme-assessment AI (question generation + insight).
+ * Primary: THEME_AI_BASE_URL/API_KEY/MODEL (all three must be set).
+ * Fallback: the global runtime config — so a primary outage degrades to the
+ * previous provider instead of disabling personalization.
+ */
+export function resolveThemeLlmProviders(): LlmRuntimeConfig[] {
+  const global = resolveLlmRuntimeConfig();
+  const themeBase = process.env.THEME_AI_BASE_URL?.trim();
+  const themeKey = process.env.THEME_AI_API_KEY?.trim();
+  const themeModel = process.env.THEME_AI_MODEL?.trim();
+  const providers: LlmRuntimeConfig[] = [];
+  if (themeBase && themeKey && themeModel) {
+    providers.push({
+      baseUrl: themeBase,
+      apiKey: themeKey,
+      model: themeModel,
+      explicitPath: process.env.THEME_AI_CHAT_COMPLETIONS_PATH?.trim() || undefined,
+    });
+  }
+  const sameAsPrimary = providers.some(
+    (p) => p.baseUrl === global.baseUrl && p.model === global.model,
+  );
+  if (!sameAsPrimary && global.apiKey) providers.push(global);
+  return providers;
+}

@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { FORBIDDEN_THEME_LANGUAGE } from './llm-guards.js';
-import { resolveLlmRuntimeConfig } from '../../common/llm-config.js';
+import { resolveThemeLlmProviders, type LlmRuntimeConfig } from '../../common/llm-config.js';
 import { resolveLlmChatCompletionsUrl } from '../../common/llm-endpoint.js';
 import type { ThemeLens, ThemeRoundResult } from '@eva/core';
 import type { PriorRoundSummary, DiaryDigestEntry } from './theme-question-generator.service.js';
@@ -47,8 +47,9 @@ export class ThemeInsightGeneratorService {
     priorRoundSummaries: PriorRoundSummary[],
     diaryDigest: DiaryDigestEntry[],
   ): Promise<AiInsight | null> {
-    const { baseUrl, apiKey, model, explicitPath } = resolveLlmRuntimeConfig();
-    if (!apiKey) return null;
+    const providers = resolveThemeLlmProviders();
+    if (providers.length === 0) return null;
+    const primary = providers[0]!;
 
     const timeoutMs = Number(process.env.THEME_AI_TIMEOUT_MS);
     if (!Number.isFinite(timeoutMs) || timeoutMs <= 0) return null;
@@ -73,7 +74,7 @@ export class ThemeInsightGeneratorService {
     });
 
     const firstAttempt = await this.attempt(
-      baseUrl, apiKey, model, explicitPath, timeoutMs, false, userPayload, validEvidenceIds,
+      primary, timeoutMs, false, userPayload, validEvidenceIds,
     );
     // null = hard failure (config/HTTP/parse/timeout) → give up; the template copy stands.
     if (firstAttempt === null) return null;
@@ -81,17 +82,21 @@ export class ThemeInsightGeneratorService {
     // Empty = content-level rejection (all paragraphs failed validation).
     // One stricter retry with an explicit banned-word reminder is worth it.
     let paragraphs = firstAttempt;
+    let usedModel = primary.model;
     if (paragraphs.length === 0) {
+      // 重试换 provider 链上的下一家（主题专属失败 → 全局兜底），或同一家加严格提醒
+      const fallback = providers[Math.min(1, providers.length - 1)]!;
       const retry = await this.attempt(
-        baseUrl, apiKey, model, explicitPath, timeoutMs, true, userPayload, validEvidenceIds,
+        fallback, timeoutMs, true, userPayload, validEvidenceIds,
       );
       paragraphs = retry ?? [];
+      if (paragraphs.length > 0) usedModel = fallback.model;
     }
     if (paragraphs.length === 0) return null;
 
     return {
       source: 'ai' as const,
-      model,
+      model: usedModel,
       generated_at: new Date().toISOString(),
       disclaimer: '以下洞察由 AI 基于本轮情境证据生成，非人格结论或诊断，仅供参考。如不准确可在下方反馈纠错。',
       paragraphs,
@@ -102,10 +107,7 @@ export class ThemeInsightGeneratorService {
    *  (config/HTTP/parse/timeout). An empty array means the response arrived but no
    *  paragraph passed validation. */
   private async attempt(
-    baseUrl: string,
-    apiKey: string,
-    model: string,
-    explicitPath: string | undefined,
+    provider: LlmRuntimeConfig,
     timeoutMs: number,
     strict: boolean,
     userPayload: string,
@@ -114,13 +116,13 @@ export class ThemeInsightGeneratorService {
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), timeoutMs);
     try {
-      const url = resolveLlmChatCompletionsUrl(baseUrl, explicitPath);
+      const url = resolveLlmChatCompletionsUrl(provider.baseUrl, provider.explicitPath);
       const response = await fetch(url, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${apiKey}` },
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${provider.apiKey}` },
         signal: controller.signal,
         body: JSON.stringify({
-          model,
+          model: provider.model,
           temperature: 0.3,
           messages: [
             { role: 'system', content: BASE_SYSTEM_PROMPT + (strict ? BANNED_WORD_REMINDER : '') },

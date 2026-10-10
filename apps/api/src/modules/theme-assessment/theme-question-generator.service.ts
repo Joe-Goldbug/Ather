@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { FORBIDDEN_THEME_LANGUAGE } from './llm-guards.js';
-import { resolveLlmRuntimeConfig } from '../../common/llm-config.js';
+import { resolveThemeLlmProviders, type LlmRuntimeConfig } from '../../common/llm-config.js';
 import { resolveLlmChatCompletionsUrl } from '../../common/llm-endpoint.js';
 import type { ThemeLens, RoundApproach } from '@eva/core';
 
@@ -42,7 +42,8 @@ const VALID_FOCUS_KEYS: Record<ThemeLens, string[]> = {
 
 const MIN_PROMPT_LEN = 12;
 const MAX_PROMPT_LEN = 300;
-const MAX_TOKENS = 2000;
+// 6 prompts × (prompt + 4 options) 可达 2000+ tokens（实测 MiniMax M3.1 单题 ~190 tokens）
+const MAX_TOKENS = 3000;
 const MAX_ATTEMPTS = 2;
 
 const BASE_SYSTEM_PROMPT =
@@ -67,8 +68,8 @@ type RawGeneratedPrompt = { focus_key?: unknown; prompt?: unknown; options?: unk
 @Injectable()
 export class ThemeQuestionGeneratorService {
   async generateCoreQuestions(input: CoreQuestionInput): Promise<Map<string, GeneratedQuestion> | null> {
-    const { baseUrl, apiKey, model, explicitPath } = resolveLlmRuntimeConfig();
-    if (!apiKey) return null;
+    const providers = resolveThemeLlmProviders();
+    if (providers.length === 0) return null;
 
     const timeoutMs = Number(process.env.THEME_AI_TIMEOUT_MS);
     if (!Number.isFinite(timeoutMs) || timeoutMs <= 0) return null;
@@ -84,14 +85,16 @@ export class ThemeQuestionGeneratorService {
       used_focus_contexts: input.used_focus_contexts,
     });
 
-    // Attempt 1; then one retry that fills whatever is still missing.
-    // A hard failure (null) on attempt 1 is retried too — a single network
-    // blip must not silently downgrade the whole round to static (observed
-    // in production as generated_count: 0).
+    // Attempt 1 uses the theme-specific primary provider; the retry walks the
+    // provider chain (falls back to the global provider when configured) and
+    // fills whatever is still missing. A hard failure (null) on attempt 1 is
+    // retried too — a single network blip must not silently downgrade the
+    // whole round to static (observed in production as generated_count: 0).
     const merged = new Map<string, GeneratedQuestion>();
     for (let attemptNo = 1; attemptNo <= MAX_ATTEMPTS; attemptNo++) {
+      const provider = providers[Math.min(attemptNo - 1, providers.length - 1)]!;
       const result = await this.attempt(
-        baseUrl, apiKey, model, explicitPath, timeoutMs,
+        provider, timeoutMs,
         attemptNo > 1, userPayload, validKeySet,
       );
       if (result) {
@@ -110,10 +113,7 @@ export class ThemeQuestionGeneratorService {
    *  null on a hard failure (config/HTTP/parse/timeout). An empty map means the
    *  response arrived but nothing passed validation. */
   private async attempt(
-    baseUrl: string,
-    apiKey: string,
-    model: string,
-    explicitPath: string | undefined,
+    provider: LlmRuntimeConfig,
     timeoutMs: number,
     strict: boolean,
     userPayload: string,
@@ -122,13 +122,13 @@ export class ThemeQuestionGeneratorService {
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), timeoutMs);
     try {
-      const url = resolveLlmChatCompletionsUrl(baseUrl, explicitPath);
+      const url = resolveLlmChatCompletionsUrl(provider.baseUrl, provider.explicitPath);
       const response = await fetch(url, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${apiKey}` },
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${provider.apiKey}` },
         signal: controller.signal,
         body: JSON.stringify({
-          model,
+          model: provider.model,
           temperature: 0.3,
           max_tokens: MAX_TOKENS,
           messages: [
