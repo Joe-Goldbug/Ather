@@ -9,6 +9,16 @@ let inFlightController: AbortController | null = null;
 let cached: { user: AuthUser; at: number } | null = null;
 const STALE_MS = 30_000;
 
+/** 会话变更广播：任何组件调用 applySessionUser 后，所有 useSession 实例同步更新 */
+const SESSION_CHANGE_EVENT = 'eva-session-change';
+
+export function applySessionUser(next: AuthUser | null) {
+  cached = next ? { user: next, at: Date.now() } : null;
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new CustomEvent(SESSION_CHANGE_EVENT, { detail: next }));
+  }
+}
+
 async function fetchSession(options: { force?: boolean; signal?: AbortSignal } = {}): Promise<AuthUser | null> {
   // [fix 2026-07-01] Do NOT cache the null/anonymous state: caching "no user"
   // for 30s after a 401 caused the page mount me() probe to suppress the
@@ -80,6 +90,13 @@ export function useSession() {
 
   useEffect(() => {
     void refresh();
+    function onSessionChange(event: Event) {
+      const next = (event as CustomEvent<AuthUser | null>).detail ?? null;
+      setUser(next);
+      setLoading(false);
+    }
+    window.addEventListener(SESSION_CHANGE_EVENT, onSessionChange);
+    return () => window.removeEventListener(SESSION_CHANGE_EVENT, onSessionChange);
   }, [refresh]);
 
   const logout = useCallback(async () => {

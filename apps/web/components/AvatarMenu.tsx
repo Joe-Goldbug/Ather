@@ -8,6 +8,7 @@ import { useRouter } from 'next/navigation';
 import { useAccount, useConnect, useDisconnect } from 'wagmi';
 import { useLocale } from '@/app/providers-impl';
 import { useSession } from '@/hooks/useSession';
+import { API_BASE } from '@/lib/api';
 
 const isTest =
   typeof process !== 'undefined' &&
@@ -124,22 +125,33 @@ export function AvatarMenu() {
         data-testid="avatar-button"
         onClick={() => setOpen((v) => !v)}
       >
-        <svg
-          className="avatar-button__icon"
-          viewBox="0 0 24 24"
-          width="20"
-          height="20"
-          aria-hidden="true"
-        >
-          <circle cx="12" cy="8" r="4" fill="currentColor" />
-          <path
-            d="M4 20c0-4 3.6-6.5 8-6.5s8 2.5 8 6.5"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
+        {user?.avatar_url ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={`${API_BASE}${user.avatar_url}`}
+            alt={displayName}
+            className="avatar-button__icon"
+            style={{ width: '22px', height: '22px', borderRadius: '50%', objectFit: 'cover' }}
+            data-testid="avatar-image"
           />
-        </svg>
+        ) : (
+          <svg
+            className="avatar-button__icon"
+            viewBox="0 0 24 24"
+            width="20"
+            height="20"
+            aria-hidden="true"
+          >
+            <circle cx="12" cy="8" r="4" fill="currentColor" />
+            <path
+              d="M4 20c0-4 3.6-6.5 8-6.5s8 2.5 8 6.5"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+            />
+          </svg>
+        )}
         {user && (
           <span
             className="avatar-button__dot"

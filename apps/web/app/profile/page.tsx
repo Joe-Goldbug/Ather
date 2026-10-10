@@ -1,9 +1,11 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useLocale } from '../providers-impl';
+import { applySessionUser } from '@/hooks/useSession';
 import {
   authApi,
   consentApi,
@@ -173,7 +175,12 @@ export default function ProfilePage() {
         const uploaded = await accountApi.uploadAvatar(avatarFile);
         nextAvatar = uploaded.avatar_url;
       }
-      if (user) setUser({ ...user, name: nextName, avatar_url: nextAvatar });
+      if (user) {
+        const nextUser = { ...user, name: nextName, avatar_url: nextAvatar };
+        setUser(nextUser);
+        // 同步到 useSession 全局缓存，左上角顶栏头像/名称立即刷新
+        applySessionUser(nextUser);
+      }
       setProfileMsg('已保存');
       setAvatarFile(null);
       window.setTimeout(() => setProfileDialogOpen(false), 600);
@@ -272,16 +279,16 @@ export default function ProfilePage() {
                 编辑名称与头像
               </button>
 
-              {profileDialogOpen && (
+              {profileDialogOpen && createPortal(
                 <div
-                  style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.35)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 50 }}
+                  style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.35)', display: 'flex', alignItems: 'flex-start', justifyContent: 'center', paddingTop: '8vh', zIndex: 9999 }}
                   onClick={() => setProfileDialogOpen(false)}
                 >
                   <div
                     role="dialog"
                     aria-label="编辑个人资料"
                     className="section-card handdrawn-box"
-                    style={{ width: 'min(420px, 92vw)' }}
+                    style={{ width: 'min(420px, 92vw)', background: 'var(--paper, #fff)', zIndex: 9999, position: 'relative' }}
                     onClick={(e) => e.stopPropagation()}
                     data-testid="profile-editor-dialog"
                   >
@@ -315,7 +322,8 @@ export default function ProfilePage() {
                       </button>
                     </div>
                   </div>
-                </div>
+                </div>,
+                document.body
               )}
             </div>
 
