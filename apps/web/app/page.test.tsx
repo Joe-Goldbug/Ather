@@ -75,9 +75,8 @@ describe('LandingPage (homepage /)', () => {
     // 应该展示用户问候，绝不展示冷启动游客测试按钮
     expect(markup).toContain('Alex');
     expect(markup).not.toContain('class="hero-cta"');
-    // 应该展示三大核心入口卡片
-    expect(markup).toContain('href="/theme-assessment"');
-    expect(markup).toContain('href="/profile"');
-    expect(markup).toContain('href="/daily-mirror"');
+    // 应该展示免费情景测试横幅入口
+    expect(markup).toContain('href="/play"');
+    expect(markup).toContain('免费情景测试');
   });
 });
