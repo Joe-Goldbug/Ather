@@ -24,12 +24,16 @@ const telemetry = vi.hoisted(() => ({
   emitEvent: vi.fn().mockResolvedValue(undefined),
   submitFeedback: vi.fn().mockResolvedValue(undefined),
 }));
+const understanding = vi.hoisted(() => ({
+  capabilities: vi.fn().mockResolvedValue({ result_followup: false, home_chat: false }),
+}));
 const router = vi.hoisted(() => ({ replace: vi.fn() }));
 const activeLocale = vi.hoisted(() => ({ current: 'zh-CN' as 'zh-CN' | 'en' | 'ja' | 'es' }));
 
 vi.mock('@/lib/api', () => ({
   themeAssessmentApi: api,
   telemetryApi: telemetry,
+  understandingApi: understanding,
   writeActiveRound: api.writeActiveRound,
   clearActiveRound: api.clearActiveRound,
 }));

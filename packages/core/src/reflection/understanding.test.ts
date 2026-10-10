@@ -54,7 +54,7 @@ describe('validateUnderstandingOutput', () => {
     }, evidence, 'summarize')).toThrow('invalid_understanding_output');
   });
 
-  test('requires corrections to identify the earlier understanding they revise', () => {
+  test('requires corrections to identify the exact earlier understanding they revise', () => {
     expect(() => validateUnderstandingOutput({
       kind: 'understanding',
       reaction: {
@@ -64,6 +64,31 @@ describe('validateUnderstandingOutput', () => {
       possible_meaning: null,
       uncertainty: '还需要更多信息。',
       change: { prior_turn_id: '', text: '我调整了理解。', evidence: [] },
-    }, evidence, 'correction')).toThrow('invalid_understanding_output');
+    }, evidence, 'correction', 'turn:earlier')).toThrow('invalid_understanding_output');
+
+    expect(() => validateUnderstandingOutput({
+      kind: 'understanding',
+      reaction: {
+        text: '这次你先确认信息，再决定是否回应。',
+        evidence: [{ source_id: 'theme:r1:q1:choice', quote: '先确认现场的信息' }],
+      },
+      possible_meaning: null,
+      uncertainty: '还需要更多信息。',
+      change: null,
+    }, evidence, 'correction', 'turn:earlier')).toThrow('invalid_understanding_output');
+
+    expect(() => validateUnderstandingOutput({
+      kind: 'understanding',
+      reaction: {
+        text: '这次你先确认信息，再决定是否回应。',
+        evidence: [{ source_id: 'theme:r1:q1:choice', quote: '先确认现场的信息' }],
+      },
+      possible_meaning: null,
+      uncertainty: '还需要更多信息。',
+      change: {
+        prior_turn_id: 'turn:someone-else', text: '我调整了理解。',
+        evidence: [{ source_id: 'turn:t1:user', quote: '继续争论没有意义' }],
+      },
+    }, evidence, 'correction', 'turn:earlier')).toThrow('invalid_understanding_output');
   });
 });

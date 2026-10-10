@@ -29,6 +29,7 @@ import { ProductEventsModule } from './modules/product-events/product-events.mod
 import { ProductFeedbackModule } from './modules/product-feedback/product-feedback.module.js';
 import { CredentialModule } from './modules/credential/credential.module.js';
 import { Web3Module } from './modules/web3/web3.module.js';
+import { UnderstandingModule } from './modules/understanding/understanding.module.js';
 
 const optionalModules = [
   ...(process.env.EVA_LOCAL_MOCK_LLM === '1' ? [MockLlmModule] : []),
@@ -63,6 +64,7 @@ const optionalModules = [
     ThemeAssessmentModule, // Theme-based Track A rounds; no formal portrait writes
     ProductEventsModule, // Authenticated product telemetry for the internal admin
     ProductFeedbackModule, // Authenticated user feedback and its matching event
+    UnderstandingModule, // Bounded, explicitly authorized understanding conversations
     ...optionalModules,
   ],
   controllers: [HealthController],

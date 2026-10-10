@@ -253,7 +253,7 @@ describe('PlayPage guest opening acceptance', () => {
       observation_question_id: 'guest:approach:primary',
       explanation: '这确实符合我的应对方式',
     }));
-    expect(mocks.replace).toHaveBeenCalledWith('/profile');
+    expect(mocks.replace).toHaveBeenCalledWith('/theme-assessment?roundId=round-1');
   });
 
   it('resets feedback state and storage when starting a new assessment run', async () => {

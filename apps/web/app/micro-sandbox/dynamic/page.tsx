@@ -284,6 +284,7 @@ export default function DynamicScriptPage() {
     return (
       <ScriptResultView
         script={session.state.script}
+        generationId={session.state.generationId}
         labels={{
           title: t('dynamic.result_title'),
           narrativeLabel: t('dynamic.narrative_label'),

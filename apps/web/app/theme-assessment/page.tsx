@@ -16,6 +16,7 @@ import {
 } from '@/lib/api';
 import { useLocale } from '../providers-impl';
 import { useSession } from '@/hooks/useSession';
+import { UnderstandingPanel } from '@/components/understanding/understanding-panel';
 
 const THEME_DESCRIPTIONS: Record<ThemeLens, string> = {
   emotion: '看你如何被触发、表达、消化和恢复。',
@@ -557,6 +558,17 @@ export default function ThemeAssessmentPage() {
                     正在保存这条观察的反馈…
                   </p>
                 )}
+                <UnderstandingPanel
+                  title="想继续理解这条反应？"
+                  intro="如果这条观察让你想到一件具体的事，可以把当时的反应和感受写下来。Eva 会只结合这条观察与您的补充，给出可以纠正的初步理解。"
+                  source={{
+                    kind: 'theme_result',
+                    round_id: result.round_id,
+                    result_revision_id: result.result_revision_id,
+                    observation_id: observation.evidence_question_id,
+                    feedback_ids: observationFeedback ? [observationFeedback.response_id] : [],
+                  }}
+                />
               </article>
             );
           })}

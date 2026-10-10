@@ -274,6 +274,7 @@ export class ConsentService {
       'evidence_input_archives', 'theme_assessment_rounds', 'theme_assessment_round_answers',
       'theme_assessment_result_responses', 'dynamic_script_sessions',
       'dynamic_script_generations', 'dynamic_scripts', 'pending_dynamic_script_evidence',
+      'understanding_sessions', 'understanding_turns',
       'continuous_portraits', 'published_observations', 'observation_responses',
       'agent_scope_grants', 'legacy_archetype_references', 'historical_report_references',
       'product_feedback', 'product_events', 'login_events',

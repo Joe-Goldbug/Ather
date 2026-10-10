@@ -44,6 +44,7 @@ import { completeReport, failReport, upsertReport } from './report-persistence.j
 import { recoverStaleReportsOnce } from './report-recovery.js';
 import { runAuthorizedWeeklyReview } from './weekly-review-authorization.js';
 import { pruneExpiredChatTurns } from './chat-retention.js';
+import { pruneExpiredUnderstandingSessions } from './understanding-retention.js';
 import { assertProductionDataPlaneEnvironment } from '../deploy/data-plane-preflight.js';
 import { registerOutboxHandler, startOutboxPolling } from './outbox-poller.js';
 import { createCorrectionWithdrawalHandler } from './correction-withdrawal-handler.js';
@@ -648,6 +649,19 @@ const runChatRetention = () => {
 runChatRetention();
 const chatRetentionTimer = setInterval(runChatRetention, CHAT_RETENTION_INTERVAL_MS);
 
+let understandingRetentionRunning = false;
+const runUnderstandingRetention = () => {
+  if (understandingRetentionRunning) return;
+  understandingRetentionRunning = true;
+  pruneExpiredUnderstandingSessions(pool).then((result) => {
+    if (result.sessions) console.log('[understandingRetention] removed expired unsaved sessions:', result);
+  }).catch((error: unknown) => {
+    console.error('[understandingRetention] prune failed:', error);
+  }).finally(() => { understandingRetentionRunning = false; });
+};
+runUnderstandingRetention();
+const understandingRetentionTimer = setInterval(runUnderstandingRetention, CHAT_RETENTION_INTERVAL_MS);
+
 console.log('[EVA Worker] BullMQ workers started');
 console.log('[EVA Worker] Queues:', Object.values(QUEUE_NAMES).join(', '));
 
@@ -684,6 +698,7 @@ process.on('SIGTERM', async () => {
   console.log('[EVA Worker] Shutting down...');
   clearInterval(reportRecoveryTimer);
   clearInterval(chatRetentionTimer);
+  clearInterval(understandingRetentionTimer);
   await reportRecoveryQueue.close();
   await Promise.all([
     reportWorker.close(),

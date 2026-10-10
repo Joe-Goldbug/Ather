@@ -36,7 +36,7 @@ export default function LandingPage() {
             真实的自我在选择中逐渐清晰。先来一次免费情景测试，或从页面顶部进入你的心智轨迹。
           </p>
 
-          <div className="home-entry-cards home-entry-cards--single">
+          <div className="home-entry-cards">
             <Link href="/play" className="home-entry-card home-entry-card--banner">
               <span className="home-entry-badge">免费体验</span>
               <span className="home-entry-label">免费情景测试</span>
@@ -44,6 +44,14 @@ export default function LandingPage() {
                 无需登录，4-6 分钟完成一次情景模拟，立刻查看分析结果
               </span>
               <span className="home-entry-arrow" aria-hidden="true">开始体验 →</span>
+            </Link>
+            <Link href="/chat" className="home-entry-card home-entry-card--banner">
+              <span className="home-entry-badge">从一件事开始</span>
+              <span className="home-entry-label">和 Eva 聊聊</span>
+              <span className="home-entry-desc">
+                写下近期发生的一件事，了解自己当时的反应和感受，并随时纠正 Eva 的理解
+              </span>
+              <span className="home-entry-arrow" aria-hidden="true">开始聊聊 →</span>
             </Link>
           </div>
         </section>

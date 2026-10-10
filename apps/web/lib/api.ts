@@ -18,7 +18,7 @@ function resolveApiBase(): string {
 
 const API_BASE = resolveApiBase();
 export { API_BASE };
-async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
+export async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
     ...((options.headers as Record<string, string>) ?? {}),
@@ -36,6 +36,45 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   }
   return res.json() as Promise<T>;
 }
+
+// ── Bounded understanding conversations ───────────────────────────────────
+export type UnderstandingSourceRef =
+  | { kind: 'theme_result'; round_id: string; result_revision_id: string; observation_id: string; feedback_ids: string[] }
+  | { kind: 'dynamic_result'; generation_id: string; script_id: string; observation_id: string; playback_hash: string }
+  | { kind: 'free_entry' };
+export type UnderstandingOutput =
+  | { kind: 'question' | 'refocus' | 'safety'; text: string }
+  | {
+    kind: 'understanding';
+    reaction: { text: string; evidence: Array<{ source_id: string; quote: string }> };
+    possible_meaning: { text: string; evidence: Array<{ source_id: string; quote: string }> } | null;
+    uncertainty: string;
+    change: { prior_turn_id: string; text: string; evidence: Array<{ source_id: string; quote: string }> } | null;
+  };
+export interface UnderstandingTurn {
+  id: string; seq: number; action: 'message' | 'correction' | 'summarize' | 'skip'; text: string | null;
+  parent_turn_id: string | null; status: 'pending' | 'generating' | 'complete' | 'failed' | 'cancelled';
+  output: UnderstandingOutput | null; error_code: string | null; created_at: string;
+}
+export interface UnderstandingSession {
+  id: string; source_ref: UnderstandingSourceRef; source_snapshot: { observation_text: string | null; observation_focus: string | null };
+  locale: string; state: 'open' | 'closed'; version: number; revoked_at: string | null; saved_at: string | null;
+  expires_at: string | null; created_at: string; turns?: UnderstandingTurn[];
+  capabilities: { can_generate: boolean; can_save: boolean; can_reopen: boolean };
+}
+export const understandingApi = {
+  capabilities: () => request<{ result_followup: boolean; home_chat: boolean }>('/understandings/capabilities'),
+  create: (body: { operation_id: string; source_ref: UnderstandingSourceRef; locale?: string; processing_consent: boolean }) =>
+    request<UnderstandingSession>('/understandings', { method: 'POST', body: JSON.stringify(body) }),
+  get: (id: string) => request<UnderstandingSession>(`/understandings/${id}`),
+  append: (id: string, body: { operation_id: string; expected_version: number; action: 'message' | 'correction' | 'summarize' | 'skip'; text?: string; parent_turn_id?: string }) =>
+    request<UnderstandingTurn>(`/understandings/${id}/turns`, { method: 'POST', body: JSON.stringify(body) }),
+  generate: (id: string, turnId: string) => request<UnderstandingTurn>(`/understandings/${id}/turns/${turnId}/generate`, { method: 'POST' }),
+  state: (id: string, action: 'close' | 'reopen' | 'save' | 'revoke') =>
+    request<UnderstandingSession>(`/understandings/${id}/${action}`, { method: 'POST' }),
+  remove: (id: string) => request<void>(`/understandings/${id}`, { method: 'DELETE' }),
+  saved: () => request<UnderstandingSession[]>('/understandings?saved=true'),
+};
 
 // ── Auth ──────────────────────────────────────────────────────────────────
 export interface AuthUser {

@@ -53,6 +53,7 @@ export function validateUnderstandingOutput(
   value: unknown,
   evidence: UnderstandingEvidence[],
   action: UnderstandingAction,
+  correctedTurnId?: string,
 ): UnderstandingOutput {
   if (!value || typeof value !== 'object' || !Array.isArray(evidence)) invalid();
   const output = value as UnderstandingOutput;
@@ -69,6 +70,8 @@ export function validateUnderstandingOutput(
     if (!validText(output.change.prior_turn_id, 1, 200) || !validText(output.change.text, 1, 450)) invalid();
     validateCitations(output.change.evidence, sources, true);
   }
-  if (action === 'correction' && output.change !== null && !output.change.prior_turn_id.trim()) invalid();
+  if (action === 'correction') {
+    if (!correctedTurnId || output.change === null || output.change.prior_turn_id !== correctedTurnId) invalid();
+  }
   return output;
 }

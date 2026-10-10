@@ -107,7 +107,7 @@ export default function PlayPage() {
           setSaved(true);
           clearGuestData();
           clearGuestFeedback();
-          router.replace('/profile');
+          router.replace(`/theme-assessment?roundId=${encodeURIComponent(claimed.round_id)}`);
           setLoading(false);
           return;
         } catch {
@@ -184,8 +184,8 @@ export default function PlayPage() {
       setResult(completed.result);
       saveClaimToken(completed.claim_token);
       if (user) {
-        await claim(completed.claim_token);
-        router.replace('/profile');
+        const claimed = await claim(completed.claim_token);
+        router.replace(`/theme-assessment?roundId=${encodeURIComponent(claimed.round_id)}`);
       }
     } catch {
       setError('结算或保存暂时失败。你的选择仍保存在这个浏览器中。');
@@ -386,7 +386,7 @@ export default function PlayPage() {
           {saved ? (
             <>
               <h2>本章记录已保存</h2>
-              <Link href="/profile" className="btn-primary">进入个人主页</Link>
+              <Link href="/theme-assessment" className="btn-primary">查看这次结果</Link>
             </>
           ) : user ? (
             <>
@@ -411,7 +411,7 @@ export default function PlayPage() {
           ) : (
             <>
               <h2>保存你的记录</h2>
-              <p>登录后将本章测试结果关联至个人档案，并进入个人主页。</p>
+              <p>登录后将本章测试结果关联至个人档案，并进入这次结果继续查看或和 Eva 聊聊。</p>
               <Link href="/login?returnTo=%2Fplay" className="btn-primary">注册或登录并保存</Link>
             </>
           )}
