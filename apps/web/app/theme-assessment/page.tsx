@@ -7,6 +7,7 @@ import {
   themeAssessmentApi,
   telemetryApi,
   type ThemeCoverageResponse,
+  type ThemeQuestion,
   type ThemeLens,
   type ThemeRoundNext,
   type ThemeRoundResultResponse,
@@ -79,6 +80,12 @@ export default function ThemeAssessmentPage() {
   const [supplementText, setSupplementText] = useState('');
   const [activeObservationClarifyId, setActiveObservationClarifyId] = useState<string | null>(null);
   const [observationClarifyText, setObservationClarifyText] = useState('');
+  // 显式答题导航：选项只选中、点"下一题"才提交；支持上一题回看与改答案
+  const [selectedChoice, setSelectedChoice] = useState<'A' | 'B' | 'C' | 'D' | null>(null);
+  const [presented, setPresented] = useState<Array<{ item_id: string; question: ThemeQuestion }>>([]);
+  const [savedAnswers, setSavedAnswers] = useState<Record<string, { choice_id: 'A' | 'B' | 'C' | 'D'; free_text?: string }>>({});
+  const [viewIndex, setViewIndex] = useState(0);
+  const [readyToGenerate, setReadyToGenerate] = useState(false);
 
   useEffect(() => {
     if (sessionLoading) return;
@@ -102,10 +109,17 @@ export default function ThemeAssessmentPage() {
           setRoundId(savedRoundId);
           if (savedNext.state === 'question') {
             setNext(savedNext);
+            setPresented(
+              savedNext.item_id && savedNext.question
+                ? [{ item_id: savedNext.item_id, question: savedNext.question }]
+                : []
+            );
+            setViewIndex(0);
+          } else if (savedNext.state === 'ready') {
+            // 恢复到"待生成洞察"状态：不自动 complete，由用户手动触发
+            setReadyToGenerate(true);
           } else {
-            const restored = savedNext.state === 'ready'
-              ? await themeAssessmentApi.complete(savedRoundId)
-              : await themeAssessmentApi.result(savedRoundId);
+            const restored = await themeAssessmentApi.result(savedRoundId);
             if (cancelled) return;
             setResult(restored);
           }
@@ -136,6 +150,15 @@ export default function ThemeAssessmentPage() {
       setFeedbackStatus('');
       setShowSupplement(false);
       setSupplementText('');
+      setSelectedChoice(null);
+      setSavedAnswers({});
+      setViewIndex(0);
+      setReadyToGenerate(false);
+      setPresented(
+        started.next.state === 'question' && started.next.item_id && started.next.question
+          ? [{ item_id: started.next.item_id, question: started.next.question }]
+          : []
+      );
 
       telemetryApi.emitEvent({
         eventId: `evt_${Date.now()}_start`,
@@ -153,25 +176,58 @@ export default function ThemeAssessmentPage() {
     }
   }
 
-  async function answer(choiceId: 'A' | 'B' | 'C' | 'D') {
-    if (!roundId || !next?.item_id || submitting) return;
+  function prefillFromSaved(index: number) {
+    const entry = presented[index];
+    const saved = entry ? savedAnswers[entry.item_id] : undefined;
+    setSelectedChoice(saved?.choice_id ?? null);
+    setFreeText(saved?.free_text ?? '');
+  }
+
+  function goPrev() {
+    if (submitting || viewIndex <= 0) return;
+    setViewIndex(viewIndex - 1);
+    prefillFromSaved(viewIndex - 1);
+    setError('');
+  }
+
+  async function goNext() {
+    if (!roundId || submitting || !selectedChoice) return;
+    const current = presented[viewIndex];
+    if (!current) return;
+    const choiceId = selectedChoice;
+    const saved = savedAnswers[current.item_id];
+    const trimmedText = freeText.trim();
+    const unchanged =
+      saved && saved.choice_id === choiceId && (saved.free_text ?? '') === trimmedText;
+
+    // 已作答且未改动：在回看模式中向前翻页，不重复提交
+    if (unchanged) {
+      if (viewIndex < presented.length - 1) {
+        setViewIndex(viewIndex + 1);
+        prefillFromSaved(viewIndex + 1);
+      } else {
+        setReadyToGenerate(true);
+      }
+      return;
+    }
+
     const startedAt = Date.now();
     setSubmitting(true);
     setPendingChoiceId(choiceId);
     setError('');
     try {
       const opId = operationId();
-      const following = await themeAssessmentApi.answer(roundId, next.item_id, {
+      const following = await themeAssessmentApi.answer(roundId, current.item_id, {
         operation_id: opId,
         choice_id: choiceId,
-        free_text: freeText.trim() || undefined,
+        free_text: trimmedText || undefined,
       });
 
       telemetryApi.emitEvent({
-        eventId: `evt_${Date.now()}_ans_${next.item_id}`,
+        eventId: `evt_${Date.now()}_ans_${current.item_id}`,
         roundId: roundId,
         eventName: 'answer_submitted',
-        nodeId: next.item_id,
+        nodeId: current.item_id,
         choiceId: choiceId,
         occurredAt: new Date().toISOString(),
         contentVersion: '1.0'
@@ -179,21 +235,26 @@ export default function ThemeAssessmentPage() {
 
       await keepActionFeedbackVisible(startedAt);
 
+      // 改核心题答案会使后续追问题与旧报告作废：截断其后的回看缓存
+      const hadSaved = Boolean(saved);
+      setSavedAnswers((prev) => ({
+        ...prev,
+        [current.item_id]: { choice_id: choiceId, free_text: trimmedText || undefined },
+      }));
       setFreeText('');
+      setSelectedChoice(null);
+
       if (following.state === 'ready') {
-        const completedResult = await themeAssessmentApi.complete(roundId);
+        setReadyToGenerate(true);
         setVisibleRoundId(roundId);
-        setResult(completedResult);
-        
-        telemetryApi.emitEvent({
-          eventId: `evt_${Date.now()}_view`,
-          roundId: roundId,
-          eventName: 'result_viewed',
-          occurredAt: new Date().toISOString(),
-          contentVersion: '1.0'
-        });
-      } else {
+      } else if (following.state === 'question' && following.item_id && following.question) {
+        const entry = { item_id: following.item_id, question: following.question };
+        const base = hadSaved ? presented.slice(0, viewIndex + 1) : presented;
+        const updated = base.some((p) => p.item_id === entry.item_id) ? base : [...base, entry];
+        setPresented(updated);
         setNext(following);
+        const idx = updated.findIndex((p) => p.item_id === entry.item_id);
+        setViewIndex(idx >= 0 ? idx : updated.length - 1);
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : '保存这次选择时出现问题。');
@@ -202,6 +263,37 @@ export default function ThemeAssessmentPage() {
       setPendingChoiceId(null);
       setSubmitting(false);
     }
+  }
+
+  async function generateInsightReport() {
+    if (!roundId || submitting) return;
+    const startedAt = Date.now();
+    setSubmitting(true);
+    setError('');
+    try {
+      const completedResult = await themeAssessmentApi.complete(roundId);
+      setVisibleRoundId(roundId);
+      setResult(completedResult);
+      telemetryApi.emitEvent({
+        eventId: `evt_${Date.now()}_view`,
+        roundId: roundId,
+        eventName: 'result_viewed',
+        occurredAt: new Date().toISOString(),
+        contentVersion: '1.0'
+      });
+    } catch (err) {
+      setError(err instanceof Error ? err.message : '生成结果报告时出现问题。');
+    } finally {
+      await keepActionFeedbackVisible(startedAt);
+      setSubmitting(false);
+    }
+  }
+
+  function backToReview() {
+    setReadyToGenerate(false);
+    const lastIndex = Math.max(presented.length - 1, 0);
+    setViewIndex(lastIndex);
+    prefillFromSaved(lastIndex);
   }
 
   async function respond(
@@ -585,32 +677,40 @@ export default function ThemeAssessmentPage() {
     );
   }
 
-  if (roundId && next?.state === 'question' && next.question) {
-    const question = next.question;
+  if (roundId && !readyToGenerate && !result && presented.length > 0 && presented[viewIndex]) {
+    const current = presented[viewIndex]!;
+    const question = current.question;
+    const saved = savedAnswers[current.item_id];
+    // 实时未答题优先展示 API 的序号（刷新恢复后 viewIndex 会重置）
+    const displayIndex =
+      next?.state === 'question' && next.item_id === current.item_id && next.decision_index
+        ? next.decision_index
+        : viewIndex + 1;
     return (
       <main className="report-container theme-assessment-page">
         <header className="report-header">
           <p className="report-date">
-            第 {next.decision_index ?? 1} 个决策点 · 本轮 6～8 个 · {question.context_label} ·{' '}
+            第 {displayIndex} 个决策点 · 本轮 6～8 个 · {question.context_label} ·{' '}
             {question.role === 'core'
               ? '核心情境'
               : question.role === 'counterexample'
                 ? '反例追问'
                 : '澄清追问'}
+            {saved ? ' · 已作答，可修改后重新提交' : ''}
           </p>
-          {next.selection?.status === 'targeted' && next.selection.target
+          {next?.selection?.status === 'targeted' && next.selection.target
             && question.question_id === next.selection.selected_question_id && (
             <p className="report-detail" role="status" data-testid="followup-selection-status">
               {next.selection.reason_zh} 本轮实际选中的问题：{question.focus_label}（{question.context_label}）。
               这表示已安排跟进，不代表异议已经解决。
             </p>
           )}
-          {next.selection?.status === 'target_unavailable' && (
+          {next?.selection?.status === 'target_unavailable' && (
             <p className="report-detail" role="status" data-testid="followup-selection-unavailable">
               {next.selection.reason_zh} 当前题库没有可匹配的同焦点情境，本轮按普通主题继续；这条反馈仍未解决。
             </p>
           )}
-          {next.selection?.status === 'theme_followup' && next.selection.target && (
+          {next?.selection?.status === 'theme_followup' && next.selection.target && (
             <p className="report-detail" role="status" data-testid="theme-followup-status">
               {next.selection.reason_zh} 本轮是主题级跟进，不针对某一条具体观察，也不代表异议已经解决。
             </p>
@@ -619,27 +719,26 @@ export default function ThemeAssessmentPage() {
           <p className="report-description">{question.prompt}</p>
         </header>
         <section className="report-section">
+          {error && (
+            <p className="error" role="alert">
+              {error}
+            </p>
+          )}
           <div className="choices">
             {question.options.map((option) => (
               <button
                 key={option.id}
                 type="button"
                 disabled={submitting}
-                aria-busy={pendingChoiceId === option.id}
-                onClick={() => answer(option.id)}
+                aria-pressed={selectedChoice === option.id}
+                className={selectedChoice === option.id ? 'choice-selected' : undefined}
+                onClick={() => setSelectedChoice(option.id)}
               >
                 <strong className="choice-key">{option.id}.</strong>
                 <span className="choice-text">{option.text}</span>
-                {pendingChoiceId === option.id && <span className="action-loading-spinner" aria-hidden="true" />}
               </button>
             ))}
           </div>
-          {submitting && (
-            <p className="action-loading" role="status" aria-live="polite">
-              <span className="action-loading-spinner" aria-hidden="true" />
-              正在记录选择并载入下一题…
-            </p>
-          )}
           <label className="report-detail" htmlFor="theme-round-context">
             如果愿意，可以说说你为什么会这样选，或当时发生了什么。细节越具体，接下来的问题就越贴近你的真实情况。
           </label>
@@ -650,7 +749,81 @@ export default function ThemeAssessmentPage() {
             maxLength={500}
             placeholder="可选：这件事发生在什么关系、什么时间或什么压力下？"
           />
+          <div className="question-nav">
+            <button
+              type="button"
+              className="btn-secondary"
+              disabled={submitting || viewIndex === 0}
+              onClick={goPrev}
+            >
+              上一题
+            </button>
+            <button
+              type="button"
+              className="btn-primary"
+              disabled={submitting || !selectedChoice}
+              aria-busy={submitting}
+              onClick={goNext}
+            >
+              {submitting && pendingChoiceId ? (
+                <>
+                  <span className="action-loading-spinner" aria-hidden="true" />
+                  正在保存这一题的回答…
+                </>
+              ) : (
+                '下一题'
+              )}
+            </button>
+          </div>
+          {submitting && !pendingChoiceId && (
+            <p className="action-loading" role="status" aria-live="polite">
+              <span className="action-loading-spinner" aria-hidden="true" />
+              正在生成结果报告…
+            </p>
+          )}
         </section>
+      </main>
+    );
+  }
+
+  if (roundId && readyToGenerate && !result) {
+    return (
+      <main className="report-container theme-assessment-page">
+        <header className="report-header">
+          <p className="report-date">本轮作答完成</p>
+          <h1>准备生成这一轮的观察报告</h1>
+          <p className="report-description" data-testid="ready-summary">
+            你已完成 {Object.keys(savedAnswers).length} 个决策点。生成洞察需要几秒钟；
+            报告里的每条观察都能回看情境依据，也支持纠错。
+          </p>
+        </header>
+        {error && (
+          <p className="error" role="alert">
+            {error}
+          </p>
+        )}
+        <div className="report-actions">
+          <button
+            type="button"
+            className="btn-primary"
+            disabled={submitting}
+            aria-busy={submitting}
+            data-testid="generate-insight"
+            onClick={generateInsightReport}
+          >
+            {submitting ? (
+              <>
+                <span className="action-loading-spinner" aria-hidden="true" />
+                正在生成结果报告…
+              </>
+            ) : (
+              '生成洞察报告'
+            )}
+          </button>
+          <button type="button" className="btn-secondary" disabled={submitting} onClick={backToReview}>
+            返回检查答案
+          </button>
+        </div>
       </main>
     );
   }

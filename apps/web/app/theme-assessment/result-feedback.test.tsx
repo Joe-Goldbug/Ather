@@ -83,6 +83,13 @@ async function reachResult() {
   await act(async () => {
     fireEvent.click(option);
   });
+  await act(async () => {
+    fireEvent.click(screen.getByRole('button', { name: '下一题' }));
+  });
+  const generateButton = await screen.findByRole('button', { name: '生成洞察报告' });
+  await act(async () => {
+    fireEvent.click(generateButton);
+  });
   await screen.findByRole('heading', { name: '这和你真实吗？' });
   await waitFor(() =>
     expect(screen.getByRole('button', { name: '我想补充' })).toHaveProperty('disabled', false)
@@ -207,18 +214,26 @@ describe('theme result feedback', () => {
     expect(performance.now() - startedAt).toBeGreaterThanOrEqual(380);
   });
 
-  it('shows answer submission feedback and goes straight to the next question', async () => {
+  it('submits the answer only when the user clicks 下一题, then advances', async () => {
     let resolveAnswer!: (value: any) => void;
     api.answer.mockReturnValue(new Promise((resolve) => { resolveAnswer = resolve; }));
     render(<ThemeAssessmentPage />);
     fireEvent.click(await screen.findByRole('button', { name: '从这个主题开始' }));
     const firstQuestion = await screen.findByRole('heading', { name: '触发' });
 
+    // 选中选项不提交：answer 未被调用，自由文本可以先填
     fireEvent.click(screen.getByRole('button', { name: /选项 A/ }));
+    expect(api.answer).not.toHaveBeenCalled();
+    fireEvent.change(screen.getByLabelText(/如果愿意，可以说说你为什么会这样选/), {
+      target: { value: '昨晚刚发生过' },
+    });
 
-    expect(screen.getByRole('status')).toHaveTextContent('正在记录选择并载入下一题…');
-    expect(screen.getByRole('button', { name: /选项 A/ })).toBeDisabled();
-    expect(document.querySelector('.action-loading-spinner')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: '下一题' }));
+    expect(screen.getByRole('button', { name: /正在保存这一题的回答…/ })).toBeDisabled();
+    expect(api.answer).toHaveBeenCalledWith('round-1', 'item-1', expect.objectContaining({
+      choice_id: 'A',
+      free_text: '昨晚刚发生过',
+    }));
 
     await act(async () => {
       resolveAnswer({
@@ -230,10 +245,27 @@ describe('theme result feedback', () => {
     });
     expect(await screen.findByRole('heading', { name: '恢复' })).toBeInTheDocument();
     expect(firstQuestion).toHaveTextContent('恢复');
-    expect(screen.queryByText('继续')).toBeNull();
   });
 
-  it('keeps loading visible when an answer request resolves immediately, then advances without a continue screen', async () => {
+  it('shows a ready screen with 生成洞察报告 after the last decision point', async () => {
+    api.answer.mockResolvedValue({ state: 'ready' });
+    render(<ThemeAssessmentPage />);
+    fireEvent.click(await screen.findByRole('button', { name: '从这个主题开始' }));
+    await screen.findByRole('heading', { name: '触发' });
+
+    fireEvent.click(screen.getByRole('button', { name: /选项 A/ }));
+    fireEvent.click(screen.getByRole('button', { name: '下一题' }));
+
+    // 不再自动 complete：等待用户手动触发
+    expect(await screen.findByTestId('ready-summary')).toBeInTheDocument();
+    expect(api.complete).not.toHaveBeenCalled();
+
+    fireEvent.click(screen.getByTestId('generate-insight'));
+    expect(await screen.findByRole('heading', { name: '这和你真实吗？' })).toBeInTheDocument();
+    expect(api.complete).toHaveBeenCalledWith('round-1');
+  });
+
+  it('keeps loading visible when an answer request resolves immediately, then advances', async () => {
     api.answer.mockResolvedValue({
       ...question,
       item_id: 'item-2',
@@ -246,35 +278,64 @@ describe('theme result feedback', () => {
 
     const startedAt = performance.now();
     fireEvent.click(screen.getByRole('button', { name: /选项 A/ }));
+    fireEvent.click(screen.getByRole('button', { name: '下一题' }));
 
-    expect(screen.getByRole('status')).toHaveTextContent('正在记录选择并载入下一题…');
-    expect(screen.getByRole('button', { name: /选项 A/ })).toBeDisabled();
+    expect(screen.getByRole('button', { name: /正在保存这一题的回答…/ })).toBeDisabled();
     expect(firstQuestion).toHaveTextContent('触发');
 
     expect(await screen.findByRole('heading', { name: '恢复' })).toBeInTheDocument();
     expect(performance.now() - startedAt).toBeGreaterThanOrEqual(650);
     expect(screen.queryByRole('status')).toBeNull();
-    expect(screen.queryByText('继续')).toBeNull();
   });
 
-  it('keeps the final question visible while the result is being prepared', async () => {
+  it('keeps the ready screen interactive while the result is being prepared', async () => {
     const completedResult = await api.complete();
     api.answer.mockResolvedValue({ state: 'ready' });
     let resolveComplete!: (value: unknown) => void;
     api.complete.mockReturnValue(new Promise((resolve) => { resolveComplete = resolve; }));
     render(<ThemeAssessmentPage />);
     fireEvent.click(await screen.findByRole('button', { name: '从这个主题开始' }));
-    const finalQuestion = await screen.findByRole('heading', { name: '触发' });
+    await screen.findByRole('heading', { name: '触发' });
 
     fireEvent.click(screen.getByRole('button', { name: /选项 A/ }));
-    await waitFor(() => expect(api.complete).toHaveBeenCalled());
+    fireEvent.click(screen.getByRole('button', { name: '下一题' }));
+    fireEvent.click(await screen.findByTestId('generate-insight'));
 
-    expect(finalQuestion).toBeInTheDocument();
-    expect(screen.getByRole('status')).toHaveTextContent('正在记录选择并载入下一题…');
+    expect(await screen.findByText('正在生成结果报告…')).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: '从这个主题开始' })).toBeNull();
 
     await act(async () => { resolveComplete(completedResult); });
     expect(await screen.findByRole('heading', { name: '这份结果已被你标记为不符合' })).toBeInTheDocument();
+  });
+
+  it('prefills the saved answer when navigating back with 上一题', async () => {
+    api.answer.mockResolvedValue({
+      ...question,
+      item_id: 'item-2',
+      decision_index: 2,
+      question: { ...question.question, question_id: 'emotion-recovery-v1', focus_label: '恢复' },
+    });
+    render(<ThemeAssessmentPage />);
+    fireEvent.click(await screen.findByRole('button', { name: '从这个主题开始' }));
+    await screen.findByRole('heading', { name: '触发' });
+
+    fireEvent.change(screen.getByLabelText(/如果愿意，可以说说你为什么会这样选/), {
+      target: { value: '真实情境说明' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: /选项 B/ }));
+    fireEvent.click(screen.getByRole('button', { name: '下一题' }));
+    expect(await screen.findByRole('heading', { name: '恢复' })).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: '上一题' }));
+
+    expect(await screen.findByRole('heading', { name: '触发' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /选项 B/ })).toHaveAttribute('aria-pressed', 'true');
+    expect(screen.getByLabelText(/如果愿意，可以说说你为什么会这样选/)).toHaveValue('真实情境说明');
+    // 未改动作答再点下一题：直接前进到第二题，不重复提交
+    const answerCallsBefore = api.answer.mock.calls.length;
+    fireEvent.click(screen.getByRole('button', { name: '下一题' }));
+    expect(await screen.findByRole('heading', { name: '恢复' })).toBeInTheDocument();
+    expect(api.answer.mock.calls.length).toBe(answerCallsBefore);
   });
 
   it('opens the supplement editor without submitting feedback', async () => {
@@ -528,8 +589,9 @@ describe('theme result feedback', () => {
     await act(async () => { fireEvent.click(startButton); });
     expect(await screen.findByRole('heading', { name: '触发' })).toBeInTheDocument();
     expect(window.location.search).toBe('?roundId=round-1');
-    const option = await screen.findByText('选项 A');
+    const option = await screen.findByRole('button', { name: /选项 A/ });
     await act(async () => { fireEvent.click(option); });
+    await act(async () => { fireEvent.click(screen.getByRole('button', { name: '下一题' })); });
     expect(await screen.findByText(/第 2 个决策点/)).toBeDefined();
     view.unmount();
 
