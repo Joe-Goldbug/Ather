@@ -1,481 +1,215 @@
-// apps/web/app/daily-mirror/page.tsx — "记录" page (Task 26: captures + archive timeline)
-// Replaces the old diary submission flow with CaptureForm.
-// Timeline merges captures (new, editable) + legacy diary archive (old, read-only).
-// Supports one-day-many-entries (no daily limit).
-// Requirements: 5.1, 5.2, 5.3, 5.4, 5.5
-
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import Link from 'next/link';
 import { useLocale } from '../providers-impl';
-import { getIntlLocale } from '@/lib/i18n';
-import {
-  capturesApi,
-  diaryApi,
-  type CaptureRecord,
-  type DiaryEntry,
-} from '@/lib/api';
+import { capturesApi, diaryApi, type CaptureRecord, type DiaryEntry, type NoteReview } from '@/lib/api';
 import { useSession } from '@/hooks/useSession';
 import { CaptureForm } from './capture-form';
+import { NoteReviewPanel } from './note-review-panel';
+import { notesCopy } from './notes-copy';
 
-// ── Timeline Item Types ──────────────────────────────────────────────────────
-
-interface TimelineCapture {
-  kind: 'capture';
-  id: string;
-  date: string; // ISO or YYYY-MM-DD
-  timestamp: number;
-  data: CaptureRecord;
-}
-
-interface TimelineDiary {
-  kind: 'legacy_diary';
-  id: string;
-  date: string;
-  timestamp: number;
-  data: DiaryEntry;
-}
-
-type TimelineItem = TimelineCapture | TimelineDiary;
-
-const CAPTURE_PAGE_SIZE = 50;
-const LEGACY_PAGE_SIZE = 50;
-
-// ── Helper: group timeline items by local date ───────────────────────────────
-
-function groupByDate(items: TimelineItem[]): Map<string, TimelineItem[]> {
-  const grouped = new Map<string, TimelineItem[]>();
-  for (const item of items) {
-    const dateKey = item.date.slice(0, 10); // YYYY-MM-DD
-    const existing = grouped.get(dateKey) ?? [];
-    existing.push(item);
-    grouped.set(dateKey, existing);
-  }
-  return grouped;
-}
-
-// ── Entry type labels ────────────────────────────────────────────────────────
-
-// ── Main Page ────────────────────────────────────────────────────────────────
+type NoteTab = 'write' | 'records' | 'review';
+const PAGE_SIZE = 50;
 
 export default function DailyMirrorPage() {
-  const { locale, t } = useLocale();
+  const { locale } = useLocale();
+  const copy = notesCopy(locale);
   const { user, loading: sessionLoading } = useSession();
-  const [mounted, setMounted] = useState(false);
-
-  // Timeline data
+  const [tab, setTab] = useState<NoteTab>('write');
   const [captures, setCaptures] = useState<CaptureRecord[]>([]);
-  const [legacyDiaryEntries, setLegacyDiaryEntries] = useState<DiaryEntry[]>([]);
-  const [timelineLoading, setTimelineLoading] = useState(true);
-  const [timelineError, setTimelineError] = useState(false);
-  const [hasMoreCaptures, setHasMoreCaptures] = useState(false);
-  const [hasMoreLegacy, setHasMoreLegacy] = useState(false);
+  const [archive, setArchive] = useState<DiaryEntry[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
   const [moreError, setMoreError] = useState(false);
-  const [activeCaptureId, setActiveCaptureId] = useState<string | null>(null);
+  const [moreCaptures, setMoreCaptures] = useState(false);
+  const [moreArchive, setMoreArchive] = useState(false);
+  const [openId, setOpenId] = useState<string | null>(null);
+  const [selected, setSelected] = useState<string[]>([]);
+  const owner = useRef(user?.id);
+  const localWrites = useRef(new Map<string, CaptureRecord>());
+  const captureOffset = useRef(0);
+  const archiveOffset = useRef(0);
+  owner.current = user?.id;
 
-  useEffect(() => {
-    setMounted(true);
-  }, []);
-
-  // Fetch captures and archived diary entries
-  const fetchTimeline = useCallback(async () => {
+  const fetchRecords = useCallback(async () => {
     if (!user) return;
-    setTimelineLoading(true);
-    setTimelineError(false);
-    try {
-      const [captureResult, legacyDiaryResult] = await Promise.allSettled([
-        capturesApi.list(CAPTURE_PAGE_SIZE + 1),
-        diaryApi.recent(LEGACY_PAGE_SIZE + 1),
-      ]);
-      if (captureResult.status === 'fulfilled') {
-        setCaptures(captureResult.value.slice(0, CAPTURE_PAGE_SIZE));
-        setHasMoreCaptures(captureResult.value.length > CAPTURE_PAGE_SIZE);
-      }
-      if (legacyDiaryResult.status === 'fulfilled') {
-        setLegacyDiaryEntries(legacyDiaryResult.value.slice(0, LEGACY_PAGE_SIZE));
-        setHasMoreLegacy(legacyDiaryResult.value.length > LEGACY_PAGE_SIZE);
-      }
-      setTimelineError(captureResult.status === 'rejected' || legacyDiaryResult.status === 'rejected');
-    } finally {
-      setTimelineLoading(false);
+    const userId = user.id;
+    setLoading(true); setError(false);
+    const [notes, old] = await Promise.allSettled([capturesApi.list(PAGE_SIZE + 1), diaryApi.recent(PAGE_SIZE + 1)]);
+    if (owner.current !== userId) return;
+    if (notes.status === 'fulfilled') {
+      captureOffset.current = Math.min(notes.value.length, PAGE_SIZE);
+      const loaded = new Map(notes.value.slice(0, PAGE_SIZE).map((note) => [note.id, note]));
+      for (const [id, note] of localWrites.current) loaded.set(id, note);
+      setCaptures(Array.from(loaded.values()).sort((a, b) => new Date(b.captured_at).getTime() - new Date(a.captured_at).getTime()));
+      setMoreCaptures(notes.value.length > PAGE_SIZE);
     }
-  }, [user]);
+    if (old.status === 'fulfilled') {
+      archiveOffset.current = Math.min(old.value.length, PAGE_SIZE);
+      setArchive(old.value.slice(0, PAGE_SIZE)); setMoreArchive(old.value.length > PAGE_SIZE);
+    }
+    setError(notes.status === 'rejected' || old.status === 'rejected'); setLoading(false);
+  }, [user?.id]);
 
   useEffect(() => {
-    void fetchTimeline();
-  }, [fetchTimeline]);
+    localWrites.current.clear();
+    setCaptures([]); setArchive([]); setOpenId(null); setSelected([]);
+    void fetchRecords();
+  }, [fetchRecords]);
 
-  // Build merged timeline
-  const timelineItems: TimelineItem[] = [
-    ...captures.map((c): TimelineCapture => ({
-      kind: 'capture',
-      id: c.id,
-      date: c.local_date || c.captured_at,
-      timestamp: new Date(c.captured_at).getTime(),
-      data: c,
-    })),
-    ...legacyDiaryEntries.map((d): TimelineDiary => ({
-      kind: 'legacy_diary',
-      id: d.id,
-      date: d.entry_date || d.created_at,
-      timestamp: new Date(d.created_at).getTime(),
-      data: d,
-    })),
-  ].sort((a, b) => b.timestamp - a.timestamp);
-
-  const grouped = groupByDate(timelineItems);
-
-  // Handle new capture added
-  function handleCaptured(capture: CaptureRecord): void {
-    setActiveCaptureId(capture.id);
-    setCaptures((prev) => [capture, ...prev]);
-  }
-
-  async function loadMore(): Promise<void> {
-    if (loadingMore) return;
-    setLoadingMore(true);
-    setMoreError(false);
-    const loadCaptures = hasMoreCaptures;
-    const loadLegacy = hasMoreLegacy;
+  async function loadMore() {
+    if (loadingMore || !user) return;
+    const userId = user.id;
+    setLoadingMore(true); setMoreError(false);
     try {
-      const [captureResult, legacyResult] = await Promise.allSettled([
-        loadCaptures ? capturesApi.list(CAPTURE_PAGE_SIZE + 1, captures.length) : Promise.resolve([] as CaptureRecord[]),
-        loadLegacy ? diaryApi.recent(LEGACY_PAGE_SIZE + 1, legacyDiaryEntries.length) : Promise.resolve([] as DiaryEntry[]),
+      const [notes, old] = await Promise.allSettled([
+        moreCaptures ? capturesApi.list(PAGE_SIZE + 1, captureOffset.current) : Promise.resolve([]),
+        moreArchive ? diaryApi.recent(PAGE_SIZE + 1, archiveOffset.current) : Promise.resolve([]),
       ]);
-      if (loadCaptures && captureResult.status === 'fulfilled') {
-        const page = captureResult.value.slice(0, CAPTURE_PAGE_SIZE);
-        setCaptures((current) => {
-          const known = new Set(current.map((entry) => entry.id));
-          return [...current, ...page.filter((entry) => !known.has(entry.id))];
-        });
-        setHasMoreCaptures(captureResult.value.length > CAPTURE_PAGE_SIZE);
+      if (owner.current !== userId) return;
+      if (moreCaptures && notes.status === 'fulfilled') {
+        captureOffset.current += Math.min(notes.value.length, PAGE_SIZE);
+        setCaptures((current) => [...current, ...notes.value.slice(0, PAGE_SIZE).filter((row) => !current.some((note) => note.id === row.id))]);
+        setMoreCaptures(notes.value.length > PAGE_SIZE);
       }
-      if (loadLegacy && legacyResult.status === 'fulfilled') {
-        const page = legacyResult.value.slice(0, LEGACY_PAGE_SIZE);
-        setLegacyDiaryEntries((current) => {
-          const known = new Set(current.map((entry) => entry.id));
-          return [...current, ...page.filter((entry) => !known.has(entry.id))];
-        });
-        setHasMoreLegacy(legacyResult.value.length > LEGACY_PAGE_SIZE);
+      if (moreArchive && old.status === 'fulfilled') {
+        archiveOffset.current += Math.min(old.value.length, PAGE_SIZE);
+        setArchive((current) => [...current, ...old.value.slice(0, PAGE_SIZE).filter((row) => !current.some((note) => note.id === row.id))]);
+        setMoreArchive(old.value.length > PAGE_SIZE);
       }
-      setMoreError((loadCaptures && captureResult.status === 'rejected') ||
-        (loadLegacy && legacyResult.status === 'rejected'));
-    } finally {
-      setLoadingMore(false);
-    }
+      setMoreError(notes.status === 'rejected' || old.status === 'rejected');
+    } finally { setLoadingMore(false); }
   }
 
-  const localeDate = mounted
-    ? new Date().toLocaleDateString(getIntlLocale(locale), {
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric',
-      })
-    : '';
-
-  if (sessionLoading) {
-    return (
-      <main className="diary-container">
-        <p>{t('common.loading')}</p>
-      </main>
-    );
+  function saveReview(review: NoteReview) {
+    if (owner.current !== user?.id) return;
+    setCaptures((current) => current.map((capture) => capture.id === review.source_ids[0]
+      ? (() => {
+          const updated = { ...capture, note_reviews: [...(capture.note_reviews ?? []).filter((item) => item.id !== review.id), review] };
+          localWrites.current.set(capture.id, updated);
+          return updated;
+        })()
+      : capture));
   }
-
-  if (!user) {
-    return (
-      <main className="diary-container">
-        <p>{t('diary.auth_required')}</p>
-        <Link href="/login?returnTo=%2Fdaily-mirror" className="btn-primary">
-          {t('micro_sandbox.btn_login')} →
-        </Link>
-      </main>
-    );
+  async function openComparison(review: NoteReview) {
+    if (loadingMore || !user) return;
+    const userId = user.id;
+    setLoadingMore(true); setMoreError(false);
+    try {
+      const missing = await Promise.all(review.source_ids.filter((id) => !captures.some((note) => note.id === id)).map((id) => capturesApi.get(id)));
+      if (owner.current !== userId) return;
+      setCaptures((current) => [...current, ...missing.filter((note) => !current.some((row) => row.id === note.id))]);
+      setSelected(review.source_ids);
+    } catch { setMoreError(true); }
+    finally { setLoadingMore(false); }
   }
+  const detail = captures.find((capture) => capture.id === openId);
+  const sources = captures.filter((capture) => selected.includes(capture.id)).sort((a, b) => a.id.localeCompare(b.id));
+  const allComparisons = captures.flatMap((capture) => capture.note_reviews ?? []).filter((review) => review.kind === 'comparison');
+  const comparisonReviews = allComparisons.filter((review) => review.source_ids.join(',') === sources.map((source) => source.id).join(','));
+  const comparisonGroups = new Map<string, NoteReview>();
+  for (const review of allComparisons) {
+    const key = review.source_ids.join(',');
+    if ((comparisonGroups.get(key)?.revision ?? 0) < review.revision) comparisonGroups.set(key, review);
+  }
+  const tabs: NoteTab[] = ['write', 'records', 'review'];
+  const listControls = (
+    <>
+      {loading && <p role="status">{copy.loading}</p>}
+      {!loading && error && <div role="alert"><p>{copy.incomplete}</p><button type="button" onClick={() => void fetchRecords()}>{copy.retry}</button></div>}
+      {!loading && (moreCaptures || moreArchive) && <button type="button" disabled={loadingMore} onClick={() => void loadMore()}>{loadingMore ? copy.loading : copy.more}</button>}
+      {moreError && <p role="alert">{copy.incomplete}</p>}
+    </>
+  );
+
+  if (sessionLoading) return <main className="eva-notes"><p>{copy.loading}</p></main>;
+  if (!user) return <main className="eva-notes"><Link href="/login?returnTo=%2Fdaily-mirror">{copy.loginRequired}</Link></main>;
 
   return (
-    <main className="diary-container">
-      <header className="diary-header">
-        <h1>{t('diary.page_title')}</h1>
-        <p className="diary-hint">{t('diary.page_hint')}</p>
-        <p className="diary-date">{localeDate}</p>
-      </header>
-
-      {/* Capture Form */}
-      <section aria-label={t('diary.new_entry_label')}>
-        <CaptureForm
-          onCaptured={handleCaptured}
-          onCaptureUpdated={(updated) => setCaptures((current) => current.map((capture) =>
-            capture.id === updated.id ? updated : capture))}
-        />
+    <main className="eva-notes">
+      <header className="eva-notes-heading"><h1>{copy.title}</h1><p>{copy.subtitle}</p></header>
+      <div className="eva-notes-tabs" role="tablist" aria-label={copy.title}>
+        {tabs.map((name, index) => (
+          <button key={name} id={`note-tab-${name}`} role="tab" type="button"
+            aria-selected={tab === name} aria-controls={`note-panel-${name}`} tabIndex={tab === name ? 0 : -1}
+            onClick={() => setTab(name)}
+            onKeyDown={(event) => {
+              let next = index;
+              if (event.key === 'ArrowRight') next = (index + 1) % tabs.length;
+              else if (event.key === 'ArrowLeft') next = (index + tabs.length - 1) % tabs.length;
+              else if (event.key === 'Home') next = 0;
+              else if (event.key === 'End') next = tabs.length - 1;
+              else return;
+              event.preventDefault(); setTab(tabs[next]); document.getElementById(`note-tab-${tabs[next]}`)?.focus();
+            }}>{copy[name]}</button>
+        ))}
+      </div>
+      <section hidden={tab !== 'write'} id="note-panel-write" role="tabpanel" aria-labelledby="note-tab-write">
+        <CaptureForm key={user.id} onCaptured={(capture) => {
+          if (owner.current !== user.id) return;
+          localWrites.current.set(capture.id, capture);
+          setCaptures((current) => [capture, ...current.filter((item) => item.id !== capture.id)]);
+          setOpenId(capture.id); setTab('records');
+        }} />
       </section>
-
-      {/* Timeline */}
-      <section className="capture-timeline" aria-label={t('diary.timeline_label')}>
-        <h2 className="timeline-title">{t('diary.timeline_title')}</h2>
-
-        {timelineLoading && <p className="timeline-loading">{t('common.loading')}</p>}
-
-        {!timelineLoading && timelineError && (
-          <div role="alert">
-            <p>{t('diary.timeline_load_failed')}</p>
-            <button type="button" onClick={() => void fetchTimeline()}>{t('diary.timeline_retry')}</button>
-          </div>
+      <section hidden={tab !== 'records'} id="note-panel-records" role="tabpanel" aria-labelledby="note-tab-records">
+        {detail ? (
+          <article className="eva-notes-detail">
+            <button type="button" className="eva-notes-link" onClick={() => setOpenId(null)}>{copy.back}</button>
+            <p className="eva-notes-muted">{String(detail.local_date ?? detail.captured_at).slice(0, 10)}</p>
+            <h2>{copy.original}</h2><blockquote className="eva-notes-original">{detail.raw_text}</blockquote>
+            <NoteReviewPanel key={detail.id} reviews={(detail.note_reviews ?? []).filter((item) => item.kind === 'single')}
+              sources={[detail]} onSaved={saveReview} />
+            {!!detail.interpretations?.length && <details><summary>{copy.oldCues}</summary>
+              {detail.interpretations.map((cue) => <p key={cue.id}>{cue.ai_explanation}</p>)}
+            </details>}
+          </article>
+        ) : (
+          <>
+            {!loading && !error && !captures.length && !archive.length && <p>{copy.empty}</p>}
+            {captures.map((capture) => {
+              const latest = [...(capture.note_reviews ?? [])].filter((review) => review.kind === 'single').sort((a, b) => b.revision - a.revision)[0];
+              return <article className="eva-notes-entry" key={capture.id}>
+              <div className="eva-notes-row"><time>{String(capture.local_date ?? capture.captured_at).slice(0, 10)}</time>
+                <span className="eva-notes-tag">{!latest ? copy.noAnalysis : latest.feedback.some((feedback) => feedback.response === 'wrong') ? copy.disputed : copy.pending}</span></div>
+              <p className="eva-notes-excerpt">{capture.raw_text}</p>
+              <button type="button" className="eva-notes-link" onClick={() => setOpenId(capture.id)}>{copy.open} →</button>
+            </article>;
+            })}
+            {archive.map((entry) => <article className="eva-notes-entry" key={entry.id}>
+              <time>{String(entry.entry_date ?? entry.created_at).slice(0, 10)}</time>
+              <p>{entry.content?.detail || entry.content?.high_point || entry.content?.low_point || entry.content?.pattern_noticed}</p>
+            </article>)}
+            {listControls}
+          </>
         )}
-
-        {!timelineLoading && !timelineError && timelineItems.length === 0 && (
-          <p className="timeline-empty">{t('diary.timeline_empty')}</p>
-        )}
-
-        {!timelineLoading &&
-          Array.from(grouped.entries()).map(([dateKey, items]) => (
-            <div key={dateKey} className="timeline-day">
-              <h3 className="timeline-day-label">
-                {mounted
-                  ? new Date(dateKey + 'T00:00:00').toLocaleDateString(getIntlLocale(locale), {
-                      month: 'short',
-                      day: 'numeric',
-                      weekday: 'short',
-                    })
-                  : dateKey}
-              </h3>
-              <div className="timeline-items">
-                {items.map((item) =>
-                  item.kind === 'capture' ? (
-                    <CaptureTimelineCard
-                      key={item.id}
-                      capture={item.data}
-                      showInterpretations={item.id !== activeCaptureId}
-                      onCaptureUpdated={(updated) => setCaptures((current) =>
-                        current.map((capture) => capture.id === updated.id ? updated : capture))}
-                    />
-                  ) : (
-                    <DiaryTimelineCard key={item.id} entry={item.data} />
-                  ),
-                )}
-              </div>
-            </div>
-          ))}
-        {!timelineLoading && !timelineError && (hasMoreCaptures || hasMoreLegacy) && (
-          <button type="button" disabled={loadingMore} onClick={() => void loadMore()}>
-            {loadingMore ? t('common.loading') : t('diary.timeline_load_more')}
-          </button>
-        )}
-        {moreError && <p role="alert">{t('diary.timeline_more_failed')}</p>}
+      </section>
+      <section hidden={tab !== 'review'} id="note-panel-review" role="tabpanel" aria-labelledby="note-tab-review">
+        <h2>{copy.choose}</h2><p className="eva-notes-muted">{copy.chooseHint}</p>
+        <div className="eva-notes-selection">
+          {captures.map((capture) => <label key={capture.id}>
+            <input type="checkbox" checked={selected.includes(capture.id)}
+              disabled={selected.length >= 4 && !selected.includes(capture.id)}
+              onChange={(event) => setSelected((current) => event.target.checked
+                ? [...current, capture.id] : current.filter((id) => id !== capture.id))} />
+            <span><time>{String(capture.local_date ?? capture.captured_at).slice(0, 10)}</time><span className="eva-notes-excerpt">{capture.raw_text}</span></span>
+          </label>)}
+        </div>
+        <p className="eva-notes-muted">{selected.length} {copy.selection}</p>
+        {sources.length >= 2 && sources.length === selected.length ? <div className="eva-notes-detail">
+          <div className="eva-notes-source-grid">{sources.map((source) => <blockquote key={source.id}>
+            <time>{String(source.local_date ?? source.captured_at).slice(0, 10)}</time><p>{source.raw_text}</p>
+          </blockquote>)}</div>
+          <NoteReviewPanel key={sources.map((source) => source.id).join(',')} sources={sources} reviews={comparisonReviews} onSaved={saveReview} />
+        </div> : <p>{copy.noReview}</p>}
+        {!!comparisonGroups.size && <details><summary>{copy.savedReviews}</summary>
+          {Array.from(comparisonGroups.values()).map((review) => <button key={review.id} type="button" className="eva-notes-entry"
+            disabled={loadingMore} onClick={() => void openComparison(review)}>{review.content.reaction.text}</button>)}
+        </details>}
+        {listControls}
       </section>
     </main>
-  );
-}
-
-// ── Capture Timeline Card ────────────────────────────────────────────────────
-
-function CaptureTimelineCard({
-  capture,
-  showInterpretations,
-  onCaptureUpdated,
-}: {
-  capture: CaptureRecord;
-  showInterpretations: boolean;
-  onCaptureUpdated: (capture: CaptureRecord) => void;
-}) {
-  const { t, locale } = useLocale();
-  const [analyzing, setAnalyzing] = useState(false);
-  const [analysisError, setAnalysisError] = useState(false);
-  const [savingPermission, setSavingPermission] = useState(false);
-  const [permissionError, setPermissionError] = useState(false);
-  const [confirmingId, setConfirmingId] = useState<string | null>(null);
-  const [confirmErrorId, setConfirmErrorId] = useState<string | null>(null);
-  const [refutingId, setRefutingId] = useState<string | null>(null);
-  const [refuteErrorId, setRefuteErrorId] = useState<string | null>(null);
-  const typeLabel =
-    capture.entry_type === 'quick_fragment'
-      ? t('diary.entry_type_quick_fragment')
-      : capture.entry_type === 'emotion_log'
-        ? t('diary.entry_type_emotion_log')
-        : capture.entry_type === 'decision_log'
-          ? t('diary.entry_type_decision_log')
-          : capture.entry_type;
-  const time = new Date(capture.captured_at).toLocaleTimeString([], {
-    hour: '2-digit',
-    minute: '2-digit',
-  });
-
-  return (
-    <article className="timeline-card timeline-card-capture" aria-label={t('diary.capture_card_label', { type: typeLabel })}>
-      <div className="timeline-card-header">
-        <span className={`timeline-badge badge-${capture.entry_type}`}>{typeLabel}</span>
-        <time className="timeline-time">{time}</time>
-      </div>
-      <p className="timeline-card-text">{capture.raw_text}</p>
-      {capture.mood_label && (
-        <p className="timeline-card-mood">
-          {capture.mood_label}
-          {capture.mood_intensity ? ` · ${t('diary.mood_intensity', { value: capture.mood_intensity })}` : ''}
-        </p>
-      )}
-      {capture.summary && (
-        <p className="timeline-card-summary">{t('diary.summary_prefix')} {capture.summary}</p>
-      )}
-      {capture.process_mode === 'save_only' && (
-        <div className="timeline-card-actions">
-          <button
-            type="button"
-            className="text-toggle"
-            disabled={analyzing}
-            onClick={async () => {
-              setAnalyzing(true);
-              setAnalysisError(false);
-              try {
-                onCaptureUpdated(await capturesApi.analyze(capture.id));
-              } catch {
-                setAnalysisError(true);
-              } finally {
-                setAnalyzing(false);
-              }
-            }}
-          >
-            {analyzing ? t('common.loading') : t('diary.analyze_this_note')}
-          </button>
-          <p className="timeline-card-boundary">{t('diary.single_note_analysis_boundary')}</p>
-          {analysisError && <p role="alert">{t('diary.analysis_failed')}</p>}
-        </div>
-      )}
-      {showInterpretations && capture.interpretations && capture.interpretations.length > 0 && (
-        <div className="capture-result-interpretations">
-          <strong>{t('diary.interpretations_label')}</strong>
-          <p>{t('diary.interpretation_scope')}</p>
-          {capture.interpretations.map((interp) => (
-            <div key={interp.id} className="interpretation-card">
-              <p className="interpretation-dim">{interp.dimension}</p>
-              <p className="interpretation-text">{interp.ai_explanation}</p>
-              <span className={`interpretation-status status-${interp.status}`}>
-                {interp.status === 'pending' ? t('diary.interpretation_pending') : interp.status === 'confirmed' ? t('diary.interpretation_confirmed') : t('diary.interpretation_rejected')}
-              </span>
-              {interp.status === 'pending' && (
-                <button
-                  type="button"
-                  className="btn-confirm-interp"
-                  disabled={confirmingId !== null || refutingId !== null}
-                  aria-busy={confirmingId === interp.id}
-                  onClick={async () => {
-                    setConfirmingId(interp.id);
-                    setConfirmErrorId(null);
-                    try {
-                      await capturesApi.confirmInterpretation(capture.id, interp.id);
-                      onCaptureUpdated({
-                        ...capture,
-                        interpretations: capture.interpretations?.map((item) =>
-                          item.id === interp.id ? { ...item, status: 'confirmed' as const } : item),
-                      });
-                    } catch {
-                      setConfirmErrorId(interp.id);
-                    } finally {
-                      setConfirmingId(null);
-                    }
-                  }}
-                >
-                  {confirmingId === interp.id && <span className="action-loading-spinner" aria-hidden="true" />}
-                  {confirmingId === interp.id ? t('common.loading') : t('common.confirm')}
-                </button>
-              )}
-              {interp.status !== 'refuted' && (
-                <button
-                  type="button"
-                  disabled={confirmingId !== null || refutingId !== null}
-                  aria-busy={refutingId === interp.id}
-                  onClick={async () => {
-                    setRefutingId(interp.id);
-                    setRefuteErrorId(null);
-                    try {
-                      await capturesApi.refuteInterpretation(capture.id, interp.id);
-                      onCaptureUpdated({
-                        ...capture,
-                        interpretations: capture.interpretations?.map((item) =>
-                          item.id === interp.id ? { ...item, status: 'refuted' as const } : item),
-                      });
-                    } catch {
-                      setRefuteErrorId(interp.id);
-                    } finally {
-                      setRefutingId(null);
-                    }
-                  }}
-                >
-                  {refutingId === interp.id && <span className="action-loading-spinner" aria-hidden="true" />}
-                  {refutingId === interp.id ? t('common.loading') : t('diary.interpretation_refute')}
-                </button>
-              )}
-              {confirmErrorId === interp.id && <p className="capture-error" role="alert">{t('diary.interpretation_confirm_failed')}</p>}
-              {refuteErrorId === interp.id && <p className="capture-error" role="alert">{t('diary.interpretation_refute_failed')}</p>}
-            </div>
-          ))}
-        </div>
-      )}
-      {capture.process_mode !== 'save_only' && (
-        <button
-          type="button"
-          className="text-toggle"
-          disabled={savingPermission}
-          aria-busy={savingPermission}
-          onClick={async () => {
-            setSavingPermission(true);
-            setPermissionError(false);
-            try {
-              const updated = await capturesApi.setWeeklyReviewPermission(capture.id, !capture.allow_weekly_review);
-              onCaptureUpdated({ ...updated, interpretations: capture.interpretations });
-            } catch {
-              setPermissionError(true);
-            } finally {
-              setSavingPermission(false);
-            }
-          }}
-        >
-          {savingPermission && <span className="action-loading-spinner" aria-hidden="true" />}
-          {savingPermission
-            ? t('common.loading')
-            : locale === 'en'
-            ? `AI weekly review: ${capture.allow_weekly_review ? 'allowed, click to revoke' : 'off, click to allow'}`
-            : locale === 'es'
-              ? `Resumen semanal con IA: ${capture.allow_weekly_review ? 'permitido, pulsa para revocar' : 'desactivado, pulsa para permitir'}`
-              : locale === 'ja'
-                ? `AI週間レビュー: ${capture.allow_weekly_review ? '許可中、押すと取り消し' : 'オフ、押すと許可'}`
-                : `AI 周回看：${capture.allow_weekly_review ? '已允许，点击撤回' : '未允许，点击授权'}`}
-        </button>
-      )}
-      {permissionError && <p role="alert">{locale === 'zh-CN' ? '权限更新失败，请重试。' : 'Permission update failed.'}</p>}
-      {capture.interpretations && capture.interpretations.length > 0 && (
-        <div className="timeline-card-interps">
-          {capture.interpretations.map((interp) => (
-            <span
-              key={interp.id}
-              className={`interp-badge status-${interp.status}`}
-            >
-              {interp.dimension}: {interp.status === 'confirmed' ? t('diary.status_confirmed') : interp.status === 'pending' ? t('diary.status_pending') : t('diary.status_rejected')}
-            </span>
-          ))}
-        </div>
-      )}
-    </article>
-  );
-}
-
-// ── Diary Timeline Card (read-only archive) ──────────────────────────────────
-
-function DiaryTimelineCard({ entry }: { entry: DiaryEntry }) {
-  const { t } = useLocale();
-  const content = entry.content ?? {};
-  const text = content.detail || content.high_point || content.low_point || content.pattern_noticed || '';
-
-  return (
-    <article className="timeline-card timeline-card-diary" aria-label={t('diary.archive_card_label')}>
-      <div className="timeline-card-header">
-        <span className="timeline-badge badge-diary">{t('diary.archive_badge')}</span>
-        <span className="badge-readonly" aria-label={t('diary.readonly_badge')}>{t('diary.readonly_badge')}</span>
-      </div>
-      {text && <p className="timeline-card-text">{text}</p>}
-      {content.event_type && (
-        <span className="timeline-card-tag">{content.event_type}</span>
-      )}
-    </article>
   );
 }

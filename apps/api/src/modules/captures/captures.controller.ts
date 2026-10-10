@@ -7,6 +7,8 @@ import { AuthGuard } from '../auth/auth.guard.js';
 import { CapturesService, type CreateCaptureBody } from './captures.service.js';
 import type { AuthUser } from '../auth/auth.service.js';
 import { parseLimit, parseOffset } from '../../common/pagination.js';
+import { NoteReviewService } from './note-review.service.js';
+import type { NoteFeedback } from './note-review.js';
 
 type CreateCaptureBodyCompat = CreateCaptureBody & {
   entry_type?: CreateCaptureBody['entryType'];
@@ -37,7 +39,31 @@ function normalizeCreateCaptureBody(body: CreateCaptureBodyCompat): CreateCaptur
 @Controller('captures')
 @UseGuards(AuthGuard)
 export class CapturesController {
-  constructor(private readonly captures: CapturesService) {}
+  constructor(private readonly captures: CapturesService, private readonly reviews: NoteReviewService) {}
+
+  @Post('compare')
+  compare(@Body() body: { source_ids: string[]; locale?: string; parent_id?: string }, @Req() req: { user: AuthUser }) {
+    if (!Array.isArray(body?.source_ids) || body.source_ids.length < 2) {
+      throw new HttpException('Choose 2–4 records to compare', HttpStatus.BAD_REQUEST);
+    }
+    return this.reviews.generate(req.user.id, body?.source_ids, body?.locale, body?.parent_id);
+  }
+
+  @Get(':id')
+  get(@Param('id') id: string, @Req() req: { user: AuthUser }) {
+    return this.captures.get(req.user.id, id);
+  }
+
+  @Post(':id/review')
+  review(@Param('id') id: string, @Body() body: { locale?: string; parent_id?: string }, @Req() req: { user: AuthUser }) {
+    return this.reviews.generate(req.user.id, [id], body?.locale, body?.parent_id);
+  }
+
+  @Post(':id/reviews/:reviewId/feedback')
+  feedback(@Param('id') id: string, @Param('reviewId') reviewId: string,
+    @Body() body: { response: NoteFeedback['response']; note?: string }, @Req() req: { user: AuthUser }) {
+    return this.reviews.feedback(req.user.id, id, reviewId, body?.response, body?.note ?? '');
+  }
 
   /**
    * POST /captures

@@ -2564,6 +2564,63 @@ input:focus, textarea:focus {
   margin-bottom: 2rem;
 }
 
+.eva-notes {
+  width: min(100%, 1040px);
+  margin: 0 auto;
+  padding: 32px 28px 60px;
+  color: var(--foreground);
+}
+.eva-notes [hidden] { display: none !important; }
+.eva-notes-heading { margin-bottom: 24px; }
+.eva-notes-heading h1 { font-size: 30px; margin: 0 0 6px; }
+.eva-notes-heading p { margin: 0; }
+.eva-notes h2 { font-size: 20px; margin: 0 0 12px; }
+.eva-notes h3 { font-size: 17px; margin: 16px 0 8px; }
+.eva-notes p { line-height: 1.75; }
+.eva-notes-muted, .eva-notes time, .eva-notes small { color: var(--text-secondary, #646960); font-size: 14px; }
+.eva-notes button { min-height: 44px; padding: 9px 16px; border-radius: 7px !important; border-color: var(--border-light) !important; }
+.eva-notes button:focus-visible, .eva-notes textarea:focus-visible, .eva-notes input:focus-visible {
+  outline: 2px solid var(--foreground); outline-offset: 3px;
+}
+.eva-notes-tabs { display: flex; gap: 8px; margin-bottom: 30px; flex-wrap: wrap; }
+.eva-notes-tabs button { border: 1px solid var(--border-light, #d9dcd3); background: var(--background); }
+.eva-notes-tabs button[aria-selected=true], .eva-notes-feedback button[aria-pressed=true], .eva-notes .btn-primary:not(:disabled) {
+  background: var(--foreground) !important; color: var(--background) !important;
+}
+.eva-notes-compose { display: grid; grid-template-columns: minmax(0, 1fr) 225px; gap: 36px; }
+.eva-notes-editor textarea, .eva-notes-feedback textarea {
+  width: 100%; border: 1px solid var(--border-light, #d9dcd3); border-radius: 10px;
+  padding: 18px; background: var(--background); color: var(--foreground); font: inherit;
+  line-height: 1.8; resize: vertical; margin: 12px 0; box-sizing: border-box;
+}
+.eva-notes-editor textarea { min-height: 220px; }
+.eva-notes-prompts { border-left: 1px solid var(--border-light, #d9dcd3); padding-left: 24px; }
+.eva-notes-prompts h3 { margin-top: 0; }
+.eva-notes-prompts p { padding: 12px 0; border-bottom: 1px solid var(--border-light, #d9dcd3); }
+.eva-notes-actions { display: flex; flex-wrap: wrap; gap: 10px; margin: 16px 0; }
+.eva-notes details summary { cursor: pointer; min-height: 44px; padding: 10px 0; }
+.eva-notes-detail { max-width: 740px; }
+.eva-notes-original { white-space: pre-wrap; border-left: 3px solid var(--border-light, #d9dcd3); margin: 18px 0; padding: 8px 18px; line-height: 1.8; }
+.eva-notes-entry { padding: 18px 0; border-bottom: 1px solid var(--border-light, #d9dcd3); }
+.eva-notes-excerpt { display: block; white-space: pre-wrap; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; line-height: 1.7; }
+.eva-notes-row { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+.eva-notes-tag { border: 1px solid var(--border-light, #d9dcd3); border-radius: 5px; padding: 2px 8px; font-size: 12px; }
+.eva-notes button.eva-notes-link { padding: 8px 0; border: 0 !important; background: transparent !important; color: var(--foreground) !important; text-decoration: underline; text-underline-offset: 4px; }
+.eva-notes-insight { background: var(--surface-muted, #f0f2e9); border-radius: 8px; padding: 22px; margin: 22px 0; }
+.eva-notes-reading-section blockquote { margin: 8px 0; padding: 8px 14px; border-left: 2px solid var(--border-light, #d9dcd3); }
+.eva-notes-feedback { border: 0; padding: 0; margin-top: 20px; }
+.eva-notes-saved-feedback { border-left: 2px solid var(--border-light, #d9dcd3); padding-left: 16px; }
+.eva-notes-selection { max-width: 740px; }
+.eva-notes-selection label { display: flex; gap: 14px; align-items: flex-start; border-bottom: 1px solid var(--border-light, #d9dcd3); padding: 16px 0; }
+.eva-notes-selection input { margin-top: 6px; width: 18px; height: 18px; }
+.eva-notes-source-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; }
+.eva-notes-source-grid blockquote { margin: 0; border-left: 2px solid var(--border-light, #d9dcd3); padding-left: 16px; white-space: pre-wrap; }
+@media(max-width: 680px) {
+  .eva-notes { padding: 22px 18px 40px; }
+  .eva-notes-compose, .eva-notes-source-grid { grid-template-columns: 1fr; }
+  .eva-notes-prompts { border-left: 0; border-top: 1px solid var(--border-light, #d9dcd3); padding: 20px 0 0; }
+}
+
 .note-form {
   gap: 1rem;
 }

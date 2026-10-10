@@ -15,6 +15,7 @@ import {
   type InterpretationResult,
 } from '@eva/core';
 import { Database } from '../../common/database.js';
+import { NOTE_REVIEW_DIMENSION, parseNoteReview } from './note-review.js';
 
 export interface CreateCaptureBody {
   entryType: EntryType;
@@ -349,6 +350,9 @@ export class CapturesService {
       }
 
       const interp = interpResult.rows[0];
+      if (interp.dimension === NOTE_REVIEW_DIMENSION) {
+        throw new BadRequestException({ code: 'note_review_is_not_trait_evidence' });
+      }
 
       if (interp.status === 'confirmed') {
         if (!interp.emitted_evidence_id) {
@@ -481,11 +485,20 @@ export class CapturesService {
       [userId, limit, offset],
     );
 
-    if (result.rows.length === 0) {
-      return result.rows;
-    }
+    return this.withInterpretations(userId, result.rows);
+  }
 
-    const captureIds = result.rows.map((row) => row.id);
+  async get(userId: string, captureId: string): Promise<CaptureRow> {
+    if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(captureId)) throw new BadRequestException({ code: 'invalid_capture_id' });
+    const result = await this.db.pool.query<CaptureRow>('SELECT * FROM captures WHERE user_id = $1 AND id = $2', [userId, captureId]);
+    if (!result.rows[0]) throw new NotFoundException({ code: 'capture_not_found' });
+    return (await this.withInterpretations(userId, result.rows))[0];
+  }
+
+  private async withInterpretations(userId: string, rows: CaptureRow[]): Promise<CaptureRow[]> {
+    if (rows.length === 0) return rows;
+
+    const captureIds = rows.map((row) => row.id);
     const interpretationsResult = await this.db.pool.query<InterpretationRow>(
       `SELECT * FROM capture_interpretations
        WHERE user_id = $1 AND capture_id = ANY($2::uuid[])
@@ -500,9 +513,11 @@ export class CapturesService {
       groupedInterpretations.set(interpretation.capture_id, existing);
     }
 
-    return result.rows.map((capture) => ({
+    return rows.map((capture) => ({
       ...capture,
-      interpretations: groupedInterpretations.get(capture.id) ?? [],
+      interpretations: (groupedInterpretations.get(capture.id) ?? []).filter((row) => row.dimension !== NOTE_REVIEW_DIMENSION),
+      note_reviews: (groupedInterpretations.get(capture.id) ?? []).filter((row) => row.dimension === NOTE_REVIEW_DIMENSION)
+        .flatMap((row) => { const doc = parseNoteReview(row.ai_explanation); return doc ? [{ ...doc, id: row.id, created_at: row.created_at }] : []; }),
     }));
   }
 }

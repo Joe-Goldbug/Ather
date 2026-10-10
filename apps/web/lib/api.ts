@@ -714,6 +714,24 @@ export interface CaptureInterpretation {
   support_count: number;
 }
 
+export interface NoteParagraph {
+  text: string;
+  evidence: Array<{ source_id: string; quote: string }>;
+}
+export interface NoteReview {
+  id: string;
+  schema: 'eva-note-review-v1';
+  kind: 'single' | 'comparison';
+  source_ids: string[];
+  revision: number;
+  parent_id: string | null;
+  content: { reaction: NoteParagraph; impact: NoteParagraph; uncertainty: NoteParagraph; question: string };
+  feedback: Array<{ response: 'fits' | 'partly' | 'wrong' | 'supplement'; note: string; created_at: string }>;
+  supplements: Array<{ id: string; text: string }>;
+  model: string;
+  created_at: string;
+}
+
 export interface CaptureRecord {
   id: string;
   entry_type: CaptureEntryType;
@@ -727,6 +745,7 @@ export interface CaptureRecord {
   captured_at: string;
   summary?: string | null;
   interpretations?: CaptureInterpretation[];
+  note_reviews?: NoteReview[];
 }
 
 type RawCaptureRecord = {
@@ -742,6 +761,7 @@ type RawCaptureRecord = {
   captured_at: string;
   interpretations?: CaptureInterpretation[];
   summary?: string | null;
+  note_reviews?: NoteReview[];
 };
 
 type RawCaptureCreateResponse = {
@@ -772,10 +792,24 @@ function normalizeCaptureRecord(
     captured_at: capture.captured_at,
     summary: summary ?? capture.summary ?? null,
     interpretations: interpretations ?? capture.interpretations ?? [],
+    note_reviews: capture.note_reviews ?? [],
   };
 }
 
 export const capturesApi = {
+  get: async (captureId: string) => normalizeCaptureRecord(await request<RawCaptureRecord>(`/captures/${captureId}`)),
+  review: (captureId: string, locale: string, parentId?: string) =>
+    request<NoteReview>(`/captures/${captureId}/review`, {
+      method: 'POST', body: JSON.stringify({ locale, ...(parentId ? { parent_id: parentId } : {}) }),
+    }),
+  compare: (sourceIds: string[], locale: string, parentId?: string) =>
+    request<NoteReview>('/captures/compare', {
+      method: 'POST', body: JSON.stringify({ source_ids: sourceIds, locale, ...(parentId ? { parent_id: parentId } : {}) }),
+    }),
+  reviewFeedback: (captureId: string, reviewId: string, response: NoteReview['feedback'][number]['response'], note: string) =>
+    request<NoteReview>(`/captures/${captureId}/reviews/${reviewId}/feedback`, {
+      method: 'POST', body: JSON.stringify({ response, note }),
+    }),
   create: async (body: CreateCaptureDto) => {
     const raw = await request<RawCaptureCreateResponse>('/captures', {
       method: 'POST',

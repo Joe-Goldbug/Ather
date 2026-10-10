@@ -4,13 +4,14 @@
 import { Module } from '@nestjs/common';
 import { CapturesController } from './captures.controller.js';
 import { CapturesService } from './captures.service.js';
+import { NoteReviewService } from './note-review.service.js';
 import { AuthModule } from '../auth/auth.module.js';
 import { DatabaseModule } from '../../common/database.js';
 
 @Module({
   imports: [AuthModule, DatabaseModule],
   controllers: [CapturesController],
-  providers: [CapturesService],
+  providers: [CapturesService, NoteReviewService],
   exports: [CapturesService],
 })
 export class CapturesModule {}
