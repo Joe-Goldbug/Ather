@@ -5,9 +5,7 @@
  * without a real provider.
  */
 
-const FALLBACK_PROMPT = '你正处在一个需要做决定的日常情境里，身边的人在等你回应。';
-
-/** Builds a {"prompts":[{focus_key,prompt}]} payload from the request's focus_keys. */
+/** Builds a {"prompts":[{focus_key,prompt,options[]}]} payload from the request's focus_keys. */
 export function buildThemeQuestionsJson(user: string): string {
   let focusKeys: string[] = [];
   try {
@@ -21,6 +19,12 @@ export function buildThemeQuestionsJson(user: string): string {
   const prompts = focusKeys.map((focus_key, index) => ({
     focus_key,
     prompt: `[mock] 情境${index + 1}：你遇到一件与「${focus_key}」有关的日常小事，需要决定接下来怎么做。`,
+    options: [
+      '[mock] 主动靠近，把这件事说清楚。',
+      '[mock] 先守住边界，不急着表态。',
+      '[mock] 先弄清发生了什么再回应。',
+      '[mock] 先暂停一下，给自己留空间。',
+    ],
   }));
   return JSON.stringify({ prompts });
 }

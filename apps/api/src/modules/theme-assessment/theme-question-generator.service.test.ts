@@ -1,15 +1,29 @@
 import { ThemeQuestionGeneratorService } from './theme-question-generator.service.js';
 
-const validPromptsJson = JSON.stringify({
-  prompts: [
-    { focus_key: 'trigger', prompt: '你正在埋头赶一个重要的方案，同事突然走过来说了句让你不舒服的话。' },
-    { focus_key: 'expression', prompt: '开会时你发现领导误解了你的意思，会议还在继续。' },
-    { focus_key: 'regulation', prompt: '你期待很久的旅行因为天气临时取消，今晚原本要出发。' },
-    { focus_key: 'recovery', prompt: '一场激烈的争论结束后，你独自回到工位坐下。' },
-    { focus_key: 'self_blame', prompt: '你发现一个团队失误其实和你上周的一个小决定有关。' },
-    { focus_key: 'help_seeking', prompt: '你状态很差已经好几天了，一个你信任的人恰好问起你。' },
-  ],
-});
+const FOCUS_KEYS = ['trigger', 'expression', 'regulation', 'recovery', 'self_blame', 'help_seeking'];
+
+const OPTIONS = [
+  '先把感受说出来，再和对方确认一件事。',
+  '先把情绪收住，观察一下现场的反应。',
+  '先弄清这件事为什么会发生，再决定回应。',
+  '先离开现场，等自己平静下来再说。',
+];
+
+function promptJson(entries: Array<{ focus_key: string; prompt: string; options?: string[] }>) {
+  return JSON.stringify({ prompts: entries });
+}
+
+const fullValid = promptJson(FOCUS_KEYS.map((focus_key, i) => ({
+  focus_key,
+  prompt: `情境${i + 1}：你正在经历一件与「${focus_key}」有关的日常小事，需要决定接下来怎么做才符合你的习惯。`,
+  options: OPTIONS,
+})));
+
+const partialValid = promptJson(FOCUS_KEYS.slice(0, 3).map((focus_key, i) => ({
+  focus_key,
+  prompt: `部分情境${i + 1}：你遇到一件与「${focus_key}」有关的突发小事，需要立刻决定怎么回应它。`,
+  options: OPTIONS,
+})));
 
 describe('ThemeQuestionGeneratorService', () => {
   let originalFetch: typeof fetch;
@@ -23,6 +37,10 @@ describe('ThemeQuestionGeneratorService', () => {
       LLM_MODEL: process.env.LLM_MODEL,
       THEME_AI_TIMEOUT_MS: process.env.THEME_AI_TIMEOUT_MS,
     };
+    process.env.LLM_BASE_URL = 'https://api.example.com/v1';
+    process.env.LLM_API_KEY = 'test-key';
+    process.env.LLM_MODEL = 'test-model';
+    process.env.THEME_AI_TIMEOUT_MS = '5000';
   });
 
   afterEach(() => {
@@ -37,13 +55,13 @@ describe('ThemeQuestionGeneratorService', () => {
     theme_lens: 'emotion' as const,
     prior_rounds: [
       {
-        dominant_approach: 'protect',
+        dominant_approach: 'protect' as const,
         approach_counts: { approach: 1, protect: 3, analyze: 1, withdraw: 1 },
         observation_focuses: ['trigger', 'expression', 'regulation'],
       },
     ],
     diary_digest: [
-      { entry_type: 'emotion_log', mood_label: '焦虑', text: '今天被领导批评了方案。', captured_at: '2026-10-08T10:00:00Z' },
+      { entry_type: 'emotion_log', mood_label: '紧张', text: '今天被领导批评了方案。', captured_at: '2026-10-08T10:00:00Z' },
     ],
     used_focus_contexts: ['trigger.daily', 'expression.daily'],
   };
@@ -52,167 +70,137 @@ describe('ThemeQuestionGeneratorService', () => {
     delete process.env.LLM_BASE_URL;
     delete process.env.LLM_API_KEY;
     delete process.env.LLM_MODEL;
+    let calls = 0;
+    global.fetch = vi.fn(async () => { calls++; return { ok: true, json: async () => ({ choices: [] }) } as Response; });
     const svc = new ThemeQuestionGeneratorService();
     await expect(svc.generateCoreQuestions(input)).resolves.toBeNull();
+    expect(calls).toBe(0);
   });
 
-  it('returns a Map of focus_key → prompt on valid JSON response', async () => {
-    process.env.LLM_BASE_URL = 'https://api.example.com/v1';
-    process.env.LLM_API_KEY = 'test-key';
-    process.env.LLM_MODEL = 'test-model';
-    process.env.THEME_AI_TIMEOUT_MS = '5000';
+  it('returns Map of focus_key → {prompt, options} on valid JSON response', async () => {
     global.fetch = vi.fn(async () => ({
       ok: true,
-      json: async () => ({
-        choices: [{ message: { content: '```json\n' + validPromptsJson + '\n```' } }],
-      }),
+      json: async () => ({ choices: [{ message: { content: '```json\n' + fullValid + '\n```' } }] }),
     }) as typeof fetch);
 
     const result = await new ThemeQuestionGeneratorService().generateCoreQuestions(input);
     expect(result).toBeInstanceOf(Map);
     expect(result!.size).toBe(6);
-    expect(result!.get('trigger')).toContain('不舒服的话');
-    // Each prompt should be a non-empty string
-    for (const [, prompt] of result!) {
-      expect(typeof prompt).toBe('string');
-      expect(prompt.length).toBeGreaterThan(10);
-      expect(prompt.length).toBeLessThan(300);
-    }
+    const first = result!.get('trigger')!;
+    expect(first.prompt).toContain('情境1');
+    expect(first.options).toEqual(OPTIONS);
   });
 
-  it('strips ```json fence before parsing', async () => {
-    process.env.LLM_BASE_URL = 'https://api.example.com/v1';
-    process.env.LLM_API_KEY = 'test-key';
-    process.env.LLM_MODEL = 'test-model';
-    process.env.THEME_AI_TIMEOUT_MS = '5000';
-    global.fetch = vi.fn(async () => ({
-      ok: true,
-      json: async () => ({
-        choices: [{ message: { content: validPromptsJson } }],
-      }),
-    }) as typeof fetch);
+  it('retries once and merges missing focus_keys when the first attempt is partial', async () => {
+    let calls = 0;
+    let secondSystem = '';
+    global.fetch = vi.fn(async (_url, init) => {
+      calls++;
+      if (calls === 1) {
+        return { ok: true, json: async () => ({ choices: [{ message: { content: partialValid } }] }) } as Response;
+      }
+      const body = JSON.parse(String(init?.body ?? '{}')) as { messages?: Array<{ content: string }> };
+      secondSystem = body.messages?.[0]?.content ?? '';
+      return { ok: true, json: async () => ({ choices: [{ message: { content: fullValid } }] }) } as Response;
+    }) as typeof fetch;
 
     const result = await new ThemeQuestionGeneratorService().generateCoreQuestions(input);
-    expect(result).not.toBeNull();
+    expect(calls).toBe(2);
+    expect(secondSystem).toContain('焦虑');
+    expect(result!.size).toBe(6);
+    // First three came from attempt 1, last three filled by attempt 2.
+    expect(result!.get('trigger')!.prompt).toContain('部分情境1');
+    expect(result!.get('recovery')!.prompt).toContain('情境4');
+  });
+
+  it('retries once on hard failure (HTTP error) before giving up', async () => {
+    let calls = 0;
+    global.fetch = vi.fn(async () => {
+      calls++;
+      if (calls === 1) return { ok: false, status: 500, json: async () => ({}) } as Response;
+      return { ok: true, json: async () => ({ choices: [{ message: { content: fullValid } }] }) } as Response;
+    }) as typeof fetch;
+
+    const result = await new ThemeQuestionGeneratorService().generateCoreQuestions(input);
+    expect(calls).toBe(2);
     expect(result!.size).toBe(6);
   });
 
-  it('returns null when HTTP response is not ok', async () => {
-    process.env.LLM_BASE_URL = 'https://api.example.com/v1';
-    process.env.LLM_API_KEY = 'test-key';
-    process.env.LLM_MODEL = 'test-model';
-    process.env.THEME_AI_TIMEOUT_MS = '5000';
-    global.fetch = vi.fn(async () => ({
-      ok: false,
-      status: 500,
-      json: async () => ({}),
-    }) as typeof fetch);
+  it('returns null after both attempts fail', async () => {
+    let calls = 0;
+    global.fetch = vi.fn(async () => { calls++; return { ok: false, status: 500, json: async () => ({}) } as Response; }) as typeof fetch;
 
     await expect(new ThemeQuestionGeneratorService().generateCoreQuestions(input)).resolves.toBeNull();
+    expect(calls).toBe(2);
   });
 
-  it('returns null when response has no parseable JSON', async () => {
-    process.env.LLM_BASE_URL = 'https://api.example.com/v1';
-    process.env.LLM_API_KEY = 'test-key';
-    process.env.LLM_MODEL = 'test-model';
-    process.env.THEME_AI_TIMEOUT_MS = '5000';
-    global.fetch = vi.fn(async () => ({
-      ok: true,
-      json: async () => ({
-        choices: [{ message: { content: '抱歉，我无法生成题目。' } }],
-      }),
-    }) as typeof fetch);
+  it('keeps partial results when the retry also fails', async () => {
+    let calls = 0;
+    global.fetch = vi.fn(async () => {
+      calls++;
+      if (calls === 1) return { ok: true, json: async () => ({ choices: [{ message: { content: partialValid } }] }) } as Response;
+      return { ok: false, status: 500, json: async () => ({}) } as Response;
+    }) as typeof fetch;
 
-    await expect(new ThemeQuestionGeneratorService().generateCoreQuestions(input)).resolves.toBeNull();
+    const result = await new ThemeQuestionGeneratorService().generateCoreQuestions(input);
+    expect(calls).toBe(2);
+    expect(result!.size).toBe(3);
   });
 
-  it('skips prompts that contain forbidden language', async () => {
-    process.env.LLM_BASE_URL = 'https://api.example.com/v1';
-    process.env.LLM_API_KEY = 'test-key';
-    process.env.LLM_MODEL = 'test-model';
-    process.env.THEME_AI_TIMEOUT_MS = '5000';
+  it('drops options that are not exactly 4 usable strings, keeps the prompt', async () => {
+    const badOptionsJson = promptJson([
+      { focus_key: 'trigger', prompt: '你在会议上被当众指出方案里的一处数据错误，需要当场回应。', options: ['只有三个选项', '第二个', '第三个'] },
+      { focus_key: 'expression', prompt: '讨论还在继续，你的观点和在场所有人都不同，需要表态。', options: OPTIONS },
+    ]);
     global.fetch = vi.fn(async () => ({
       ok: true,
-      json: async () => ({
-        choices: [{ message: { content: JSON.stringify({
-          prompts: [
-            { focus_key: 'trigger', prompt: '这可能是焦虑症的表现，你突然感到不舒服。' },
-            { focus_key: 'expression', prompt: '开会时你发现领导误解了你的意思。' },
-            { focus_key: 'regulation', prompt: '你期待很久的旅行临时取消。' },
-            { focus_key: 'recovery', prompt: '一场争论结束后你独自坐下。' },
-            { focus_key: 'self_blame', prompt: '你发现一个团队失误和你有关。' },
-            { focus_key: 'help_seeking', prompt: '你状态很差，有人问起你。' },
-          ],
-        }) }}],
-      }),
+      json: async () => ({ choices: [{ message: { content: badOptionsJson } }] }),
     }) as typeof fetch);
 
     const result = await new ThemeQuestionGeneratorService().generateCoreQuestions(input);
-    expect(result).not.toBeNull();
-    // 'trigger' had forbidden word '焦虑' → excluded
-    expect(result!.has('trigger')).toBe(false);
-    expect(result!.size).toBe(5);
+    expect(result!.get('trigger')!.prompt).toContain('数据错误');
+    expect(result!.get('trigger')!.options).toBeUndefined();
+    expect(result!.get('expression')!.options).toEqual(OPTIONS);
   });
 
-  it('skips prompts that are too short or too long', async () => {
-    process.env.LLM_BASE_URL = 'https://api.example.com/v1';
-    process.env.LLM_API_KEY = 'test-key';
-    process.env.LLM_MODEL = 'test-model';
-    process.env.THEME_AI_TIMEOUT_MS = '5000';
+  it('drops options containing forbidden language, keeps the prompt', async () => {
+    const forbiddenOptions = promptJson([
+      { focus_key: 'trigger', prompt: '你突然感到强烈的不适，需要决定接下来怎么处理它。', options: ['先承认自己焦虑发作了', '先压住情绪', '先分析原因', '先离开'] },
+    ]);
     global.fetch = vi.fn(async () => ({
       ok: true,
-      json: async () => ({
-        choices: [{ message: { content: JSON.stringify({
-          prompts: [
-            { focus_key: 'trigger', prompt: '太短' },
-            { focus_key: 'expression', prompt: '开会时你发现领导误解了你的意思。' },
-            { focus_key: 'regulation', prompt: '你期待很久的旅行临时取消。' },
-            { focus_key: 'recovery', prompt: '一场争论结束后你独自坐下。' },
-            { focus_key: 'self_blame', prompt: '你发现一个团队失误和你有关。' },
-            { focus_key: 'help_seeking', prompt: '你状态很差，有人问起你。' },
-          ],
-        }) }}],
-      }),
+      json: async () => ({ choices: [{ message: { content: forbiddenOptions } }] }),
     }) as typeof fetch);
 
     const result = await new ThemeQuestionGeneratorService().generateCoreQuestions(input);
-    expect(result).not.toBeNull();
-    expect(result!.has('trigger')).toBe(false);
-    expect(result!.size).toBe(5);
+    expect(result!.get('trigger')!.prompt).toBeTruthy();
+    expect(result!.get('trigger')!.options).toBeUndefined();
   });
 
-  it('sends theme, prior rounds and diary digest in the request body', async () => {
-    process.env.LLM_BASE_URL = 'https://api.example.com/v1';
-    process.env.LLM_API_KEY = 'test-key';
-    process.env.LLM_MODEL = 'test-model';
-    process.env.THEME_AI_TIMEOUT_MS = '5000';
+  it('sends theme, focus_keys, diary digest and explicit max_tokens in the request body', async () => {
     let capturedBody = '';
     global.fetch = vi.fn(async (_url, init) => {
       capturedBody = String(init?.body ?? '');
-      return {
-        ok: true,
-        json: async () => ({
-          choices: [{ message: { content: validPromptsJson } }],
-        }),
-      } as Response;
+      return { ok: true, json: async () => ({ choices: [{ message: { content: fullValid } }] }) } as Response;
     }) as typeof fetch;
 
     await new ThemeQuestionGeneratorService().generateCoreQuestions(input);
 
+    const body = JSON.parse(capturedBody) as { max_tokens?: number; messages: Array<{ content: string }> };
+    expect(body.max_tokens).toBeGreaterThanOrEqual(2000);
+    const system = body.messages[0]!.content;
+    expect(system).toContain('approach');
+    expect(system).toContain('焦虑');
     expect(capturedBody).toContain('emotion');
     expect(capturedBody).toContain('protect');
-    expect(capturedBody).toContain('焦虑');
+    expect(capturedBody).toContain('紧张');
   });
 
-  it('returns null on abort/timeout', async () => {
-    process.env.LLM_BASE_URL = 'https://api.example.com/v1';
-    process.env.LLM_API_KEY = 'test-key';
-    process.env.LLM_MODEL = 'test-model';
+  it('returns null on timeout', async () => {
     process.env.THEME_AI_TIMEOUT_MS = '100';
     global.fetch = vi.fn(async (_url, init) => {
-      const signal = init?.signal;
-      if (signal) {
-        const err = new Error('The operation was aborted');
+      if (init?.signal) {
+        const err = new Error('aborted');
         err.name = 'AbortError';
         throw err;
       }

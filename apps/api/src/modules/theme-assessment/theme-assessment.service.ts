@@ -455,14 +455,23 @@ export class ThemeAssessmentService {
       let generatedCount = 0;
       if (generated && generated.size > 0) {
         for (const [index, question] of core.entries()) {
-          const promptText = generated.get(question.focus_key);
-          if (promptText) {
+          const generatedEntry = generated.get(question.focus_key);
+          if (generatedEntry) {
             generatedCount++;
             core[index] = {
               ...question,
               question_id: `${question.theme_lens}.${question.focus_key}.${question.context}.dyn${roundOrdinal}`,
               source: 'dynamic' as const,
-              prompt: promptText,
+              prompt: generatedEntry.prompt,
+              // LLM options arrive in the fixed approach order (approach/protect/
+              // analyze/withdraw), matching the static options' index order — only
+              // the copy is replaced, the scoring mapping stays deterministic.
+              options: generatedEntry.options
+                ? question.options.map((option, optionIndex) => ({
+                    ...option,
+                    text: generatedEntry.options![optionIndex] ?? option.text,
+                  }))
+                : question.options,
             };
           }
         }
