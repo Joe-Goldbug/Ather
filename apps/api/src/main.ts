@@ -2,6 +2,8 @@
 import 'dotenv/config'; // Add dotenv config to automatically load .env
 import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
+import * as express from 'express';
+import * as path from 'node:path';
 import { AppModule } from './app.module.js';
 import cookieParser from 'cookie-parser';
 import { resolveListenHost } from './common/listen-host.js';
@@ -41,6 +43,11 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
   app.use(cookieParser());
+
+  // 头像等用户上传文件的静态服务：/uploads/* ← EVA_UPLOAD_DIR（默认 <cwd>/uploads）
+  const uploadRoot = process.env.EVA_UPLOAD_DIR
+    ?? path.resolve(process.cwd(), 'uploads');
+  app.use('/uploads', express.static(uploadRoot, { maxAge: '30d', immutable: true }));
 
   // Global ValidationPipe — enforces DTO class-validator decorators
   // (@IsUUID / @MinLength / @MaxLength / @IsIn / etc.) on every route

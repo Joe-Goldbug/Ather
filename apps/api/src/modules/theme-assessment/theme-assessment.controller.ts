@@ -48,6 +48,11 @@ export class ThemeAssessmentController {
     return this.rounds.complete(req.user.id, roundId);
   }
 
+  @Post('assessment-rounds/:roundId/abandon')
+  abandon(@Req() req: { user: AuthUser }, @Param('roundId') roundId: string) {
+    return this.rounds.abandon(req.user.id, roundId);
+  }
+
   @Get('assessment-rounds/:roundId/result')
   result(@Req() req: { user: AuthUser }, @Param('roundId') roundId: string) {
     return this.rounds.getResult(req.user.id, roundId);

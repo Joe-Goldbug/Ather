@@ -521,6 +521,15 @@ export class ThemeAssessmentService {
     const client = await this.db.pool.connect();
     try {
       await client.query('BEGIN');
+      // 单活跃轮约束：开始新一轮前，把该用户遗留的未完成轮次全部标记为 abandoned。
+      // 进行中的轮次只是临时工作区（前端 localStorage 持有续玩入口），
+      // 不作为历史记录长期占用数据库或出现在总览列表里。
+      await client.query(
+        `UPDATE theme_assessment_rounds
+         SET status = 'abandoned', updated_at = NOW()
+         WHERE user_id = $1 AND status IN ('in_progress', 'ready_to_complete')`,
+        [userId]
+      );
       const roundResult = await client.query<RoundRow>(
         `INSERT INTO theme_assessment_rounds
            (user_id, theme_lens, locale, question_bank_version, selection_decision)
@@ -1175,7 +1184,7 @@ export class ThemeAssessmentService {
          ) responses
          WHERE target_rank = 1
        ) feedback ON TRUE
-       WHERE round.user_id = $1
+       WHERE round.user_id = $1 AND round.status <> 'abandoned'
        ORDER BY COALESCE(round.completed_at, round.created_at) DESC
        LIMIT 30`,
       [userId]
@@ -1194,6 +1203,25 @@ export class ThemeAssessmentService {
       whole_result_refuted: row.whole_result_feedback_action === 'refute',
       latest_feedback_action: row.latest_feedback_action,
     }));
+  }
+
+  /**
+   * 放弃一个未完成的轮次：仅允许放弃 in_progress / ready_to_complete 状态，
+   * completed / withheld / abandoned 轮次不受影响。
+   */
+  async abandon(userId: string, roundId: string) {
+    const result = await this.db.pool.query<{ id: string; status: RoundStatus }>(
+      `UPDATE theme_assessment_rounds
+       SET status = 'abandoned', updated_at = NOW()
+       WHERE id = $1 AND user_id = $2 AND status IN ('in_progress', 'ready_to_complete')
+       RETURNING id, status`,
+      [roundId, userId]
+    );
+    if (!result.rows[0]) {
+      // 轮次不存在、不属于该用户，或已是完成/终态 —— 统一按 404 处理，避免泄露他人轮次。
+      throw new NotFoundException({ code: 'round_not_abandonable' });
+    }
+    return { round: result.rows[0] };
   }
 
   /**

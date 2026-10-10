@@ -16,6 +16,8 @@ export interface AuthUser {
   id: string;
   email: string;
   created_at: Date;
+  name?: string | null;
+  avatar_url?: string | null;
 }
 
 export type EntitlementTier = 'free' | 'paid';
@@ -156,7 +158,7 @@ export class AuthService {
   ): Promise<AuthUser | null> {
     const deletionPredicate = options.includeDeleting ? '' : 'AND u.deletion_requested_at IS NULL';
     const result = await this.db.pool.query<AuthUser>(
-      `SELECT u.id, u.email, u.created_at
+      `SELECT u.id, u.email, u.created_at, u.name, u.avatar_url
        FROM users u
        JOIN session_tokens st ON st.user_id = u.id
        WHERE st.token = $1 AND st.expires_at > NOW() AND (st.revoked IS NULL OR st.revoked = false)

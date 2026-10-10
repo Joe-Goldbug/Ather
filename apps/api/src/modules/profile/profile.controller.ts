@@ -1,4 +1,5 @@
-import { Controller, Get, Param, Post, Req, UseGuards } from '@nestjs/common';
+import { BadRequestException, Body, Controller, Get, Param, Patch, Post, Req, UploadedFile, UseGuards, UseInterceptors } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
 import { AuthGuard } from '../auth/auth.guard.js';
 import type { AuthUser } from '../auth/auth.service.js';
 import { ProfileService } from './profile.service.js';
@@ -46,5 +47,30 @@ export class ProfileController {
     @Param('evidenceId') evidenceId: string,
   ) {
     return this.profileService.getEvidenceSource(req.user.id, evidenceId);
+  }
+
+  /** 更新个人资料（昵称） */
+  @Patch('me')
+  async updateMe(@Req() req: { user: AuthUser }, @Body() body: { name?: string }) {
+    return this.profileService.updateMe(req.user.id, body ?? {});
+  }
+
+  /** 上传头像（multipart/form-data，字段名 file，≤2MB，jpeg/png/webp/gif） */
+  @Post('avatar')
+  @UseInterceptors(FileInterceptor('file', {
+    limits: { fileSize: 2 * 1024 * 1024 },
+  }))
+  async uploadAvatar(
+    @Req() req: { user: AuthUser },
+    @UploadedFile() file?: { buffer: Buffer; mimetype: string; size: number; originalname?: string },
+  ) {
+    if (!file) {
+      throw new BadRequestException({ code: 'avatar_file_missing' });
+    }
+    return this.profileService.updateAvatar(req.user.id, {
+      buffer: file.buffer,
+      mimetype: file.mimetype,
+      size: file.size,
+    });
   }
 }

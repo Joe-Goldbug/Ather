@@ -1,4 +1,6 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import { promises as fsPromises } from 'node:fs';
+import * as path from 'node:path';
 import type { EvidenceEventRow } from '@eva/core';
 import { buildDiaryEntryFields, normalizeDiaryEventType } from '@eva/core';
 import { Database } from '../../common/database.js';
@@ -34,6 +36,18 @@ const CORE_DIMENSIONS = [
  * 注意：开启前应确认算法依据与阈值已获批准。
  */
 const PROFILE_SCORES_ENABLED = process.env.EVA_PROFILE_SCORES_ENABLED === '1';
+
+/** 头像上传目录（可用 EVA_UPLOAD_DIR 覆盖）；URL 以 /uploads 前缀对外提供 */
+export const AVATAR_UPLOAD_DIR = process.env.EVA_UPLOAD_DIR
+  ?? path.resolve(process.cwd(), 'uploads', 'avatars');
+
+const AVATAR_MIME_EXT: Record<string, string> = {
+  'image/jpeg': 'jpg',
+  'image/png': 'png',
+  'image/webp': 'webp',
+  'image/gif': 'gif',
+};
+const AVATAR_MAX_BYTES = 2 * 1024 * 1024;
 
 /** Response shape for GET /profile/portrait */
 export interface ProfilePortraitResponse {
@@ -348,5 +362,42 @@ export class ProfileService {
       content_text: contentText,
       fragment,
     };
+  }
+
+  /**
+   * 更新用户资料（目前支持昵称）。只写 users.name；邮箱不可改。
+   */
+  async updateMe(userId: string, input: { name?: string }) {
+    if (input.name !== undefined) {
+      const name = input.name.trim();
+      if (name.length < 1 || name.length > 30) {
+        throw new BadRequestException({ code: 'invalid_name_length' });
+      }
+      await this.db.pool.query(`UPDATE users SET name = $1 WHERE id = $2`, [name, userId]);
+    }
+    const rows = await this.db.pool.query<{ id: string; email: string; name: string | null; avatar_url: string | null }>(
+      `SELECT id, email, name, avatar_url FROM users WHERE id = $1 LIMIT 1`,
+      [userId],
+    );
+    if (!rows.rows[0]) throw new NotFoundException({ code: 'user_not_found' });
+    return rows.rows[0];
+  }
+
+  /**
+   * 上传头像：图片写入 AVATAR_UPLOAD_DIR/<userId>-<ts>.<ext>，
+   * users.avatar_url 存对外路径 /uploads/avatars/<file>（由 API 静态服务暴露）。
+   */
+  async updateAvatar(userId: string, file: { buffer: Buffer; mimetype: string; size: number }) {
+    const ext = AVATAR_MIME_EXT[file.mimetype];
+    if (!ext) throw new BadRequestException({ code: 'unsupported_avatar_type' });
+    if (file.size > AVATAR_MAX_BYTES) throw new BadRequestException({ code: 'avatar_too_large' });
+
+    await fsPromises.mkdir(AVATAR_UPLOAD_DIR, { recursive: true });
+    const filename = `${userId}-${Date.now()}.${ext}`;
+    await fsPromises.writeFile(path.join(AVATAR_UPLOAD_DIR, filename), file.buffer);
+
+    const avatarUrl = `/uploads/avatars/${filename}`;
+    await this.db.pool.query(`UPDATE users SET avatar_url = $1 WHERE id = $2`, [avatarUrl, userId]);
+    return { avatar_url: avatarUrl };
   }
 }

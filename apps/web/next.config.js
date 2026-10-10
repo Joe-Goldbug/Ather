@@ -46,6 +46,11 @@ const nextConfig = {
         source: '/api/:path*',
         destination: `${apiBase}/:path*`,
       },
+      {
+        // 用户头像等上传文件的静态资源代理（API /uploads/*）
+        source: '/uploads/:path*',
+        destination: `${apiBase}/uploads/:path*`,
+      },
     ];
   },
 };

@@ -17,6 +17,7 @@ function resolveApiBase(): string {
 }
 
 const API_BASE = resolveApiBase();
+export { API_BASE };
 async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
@@ -40,9 +41,10 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
 export interface AuthUser {
   id: string;
   email: string;
-  name?: string;
+  name?: string | null;
   username?: string;
   display_name?: string;
+  avatar_url?: string | null;
   created_at?: string;
   baseline_completed?: boolean;
   sandbox_completed_today?: boolean;
@@ -52,6 +54,30 @@ export interface AuthUser {
     canContinueTesting: boolean;
   };
 }
+
+// ── 个人资料（昵称/头像） ─────────────────────────────────────────────────
+export const accountApi = {
+  updateName: (name: string) =>
+    request<{ id: string; email: string; name: string | null; avatar_url: string | null }>(
+      '/profile/me',
+      { method: 'PATCH', body: JSON.stringify({ name }) }
+    ),
+  uploadAvatar: (file: File) => {
+    const form = new FormData();
+    form.append('file', file);
+    return fetch(`${API_BASE}/profile/avatar`, {
+      method: 'POST',
+      body: form,
+      credentials: 'include',
+    }).then(async (res) => {
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({ message: res.statusText }));
+        throw new Error(err.message ?? `HTTP ${res.status}`);
+      }
+      return res.json() as Promise<{ avatar_url: string }>;
+    });
+  },
+};
 
 export const authApi = {
   me: (signal?: AbortSignal) => request<AuthUser>('/auth/me', { signal }),
@@ -409,6 +435,44 @@ export interface ThemeRoundHistoryItem {
   latest_feedback_action: ThemeResultFeedback['action'] | null;
 }
 
+/** 进行中轮次的浏览器端暂存：只存续玩入口，不存答案数据（答案仍在服务端） */
+export const ACTIVE_ROUND_STORAGE_KEY = 'eva_active_round';
+
+export interface ActiveRoundRef {
+  roundId: string;
+  themeTitle: string;
+  updatedAt: string;
+}
+
+export function writeActiveRound(round: { roundId: string; themeTitle: string }) {
+  try {
+    const payload: ActiveRoundRef = { ...round, updatedAt: new Date().toISOString() };
+    window.localStorage.setItem(ACTIVE_ROUND_STORAGE_KEY, JSON.stringify(payload));
+  } catch {}
+}
+
+export function readActiveRound(): ActiveRoundRef | null {
+  try {
+    const raw = window.localStorage.getItem(ACTIVE_ROUND_STORAGE_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as Partial<ActiveRoundRef>;
+    if (!parsed?.roundId) return null;
+    return {
+      roundId: parsed.roundId,
+      themeTitle: parsed.themeTitle ?? '主题测试',
+      updatedAt: parsed.updatedAt ?? '',
+    };
+  } catch {
+    return null;
+  }
+}
+
+export function clearActiveRound() {
+  try {
+    window.localStorage.removeItem(ACTIVE_ROUND_STORAGE_KEY);
+  } catch {}
+}
+
 export const themeAssessmentApi = {
   coverage: () => request<ThemeCoverageResponse>('/v1/assessment-themes/coverage'),
   history: () => request<ThemeRoundHistoryItem[]>('/v1/assessment-rounds'),
@@ -423,6 +487,11 @@ export const themeAssessmentApi = {
       body: JSON.stringify(dto),
     }),
   next: (roundId: string) => request<ThemeRoundNext>(`/v1/assessment-rounds/${roundId}/next`),
+  abandon: (roundId: string) =>
+    request<{ round: { id: string; status: string } }>(
+      `/v1/assessment-rounds/${roundId}/abandon`,
+      { method: 'POST' }
+    ),
   answer: (
     roundId: string,
     itemId: string,

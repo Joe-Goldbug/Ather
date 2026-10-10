@@ -6,6 +6,8 @@ import { useRouter } from 'next/navigation';
 import {
   themeAssessmentApi,
   telemetryApi,
+  writeActiveRound,
+  clearActiveRound,
   type ThemeCoverageResponse,
   type ThemeQuestion,
   type ThemeLens,
@@ -141,6 +143,12 @@ export default function ThemeAssessmentPage() {
     setError('');
     try {
       const started = await themeAssessmentApi.start({ theme, locale });
+      // 进行中轮次写入浏览器本地暂存（Profile「进行中」标签从这里读，不占服务端历史记录）
+      const activeLens = started.round.theme_lens;
+      writeActiveRound({
+        roundId: started.round.id,
+        themeTitle: coverage?.themes?.find((entry) => entry.theme_lens === activeLens)?.title ?? '主题测试',
+      });
       await keepActionFeedbackVisible(startedAt);
       setVisibleRoundId(started.round.id);
       setRoundId(started.round.id);
@@ -272,6 +280,8 @@ export default function ThemeAssessmentPage() {
     setError('');
     try {
       const completedResult = await themeAssessmentApi.complete(roundId);
+      // 轮次已完成：清除本地"进行中"暂存
+      clearActiveRound();
       setVisibleRoundId(roundId);
       setResult(completedResult);
       telemetryApi.emitEvent({

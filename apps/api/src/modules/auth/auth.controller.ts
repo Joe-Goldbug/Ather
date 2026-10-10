@@ -44,6 +44,8 @@ export class AuthController {
       id: req.user.id,
       email: req.user.email,
       created_at: req.user.created_at,
+      name: req.user.name ?? null,
+      avatar_url: req.user.avatar_url ?? null,
       baseline_completed,
       sandbox_completed_today,
       entitlement_tier,

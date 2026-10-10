@@ -60,4 +60,9 @@ apps/web/app/chat/*.md
 AGENTS.md
 CLAUDE.md
 
+<<<<<<< Updated upstream
 
+=======
+apps/api/uploads/
+apps/api/uploads/
+>>>>>>> Stashed changes
