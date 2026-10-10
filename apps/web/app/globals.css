@@ -5005,6 +5005,53 @@ textarea:focus {
   color: #ffffff;
 }
 
+/* 单卡横幅：水平平铺在 hero 文案下方，与标题/文案同宽对齐 */
+.home-entry-cards--single {
+  grid-template-columns: 1fr;
+  max-width: none;
+}
+
+.home-entry-card--banner {
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.9rem 1.4rem;
+  padding: 1.25rem 1.75rem;
+  text-align: left;
+}
+
+.home-entry-card--banner .home-entry-badge {
+  margin-bottom: 0;
+  flex-shrink: 0;
+}
+
+.home-entry-card--banner .home-entry-label {
+  margin-bottom: 0;
+  white-space: nowrap;
+}
+
+.home-entry-card--banner .home-entry-desc {
+  margin-bottom: 0;
+  flex: 1 1 260px;
+  min-width: 0;
+}
+
+.home-entry-card--banner .home-entry-arrow {
+  margin-left: auto;
+  flex-shrink: 0;
+}
+
+@media (max-width: 768px) {
+  .home-entry-card--banner {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .home-entry-card--banner .home-entry-arrow {
+    margin-left: 0;
+  }
+}
+
 .home-entry-badge {
   align-self: flex-start;
   font-size: 0.75rem;

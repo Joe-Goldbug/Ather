@@ -36,8 +36,8 @@ export default function LandingPage() {
             真实的自我在选择中逐渐清晰。先来一次免费情景测试，或从页面顶部进入你的心智轨迹。
           </p>
 
-          <div className="home-entry-cards">
-            <Link href="/play" className="home-entry-card home-entry-card--highlight">
+          <div className="home-entry-cards home-entry-cards--single">
+            <Link href="/play" className="home-entry-card home-entry-card--highlight home-entry-card--banner">
               <span className="home-entry-badge">免费体验</span>
               <span className="home-entry-label">免费情景测试</span>
               <span className="home-entry-desc">
