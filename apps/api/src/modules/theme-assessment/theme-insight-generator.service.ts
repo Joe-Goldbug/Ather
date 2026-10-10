@@ -31,7 +31,9 @@ const BASE_SYSTEM_PROMPT =
   ' Each paragraph must be 10-200 chars.' +
   ' Do not diagnose, mention personality types, neural states, or clinical terms.' +
   ' Compare with prior rounds if available.' +
-  ' Frame observations as tendencies, not permanent traits.';
+  ' Address the user directly: describe what they did in a named situation before naming any pattern.' +
+  ' Do not invent emotion, motive, or an off-screen consequence. When the reason is unknown, ask one optional question instead.' +
+  ' Frame observations as tendencies in this evidence, not permanent traits.';
 
 /** Added only on the retry pass, when the first attempt produced no usable paragraph. */
 const BANNED_WORD_REMINDER =
@@ -66,6 +68,7 @@ export class ThemeInsightGeneratorService {
           question_id: entry.question_id,
           focus: entry.focus_label,
           context: entry.context_label,
+          choice_text: entry.choice_text,
           approach: entry.approach,
         })),
       },

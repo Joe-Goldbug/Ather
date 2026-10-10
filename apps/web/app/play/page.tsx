@@ -264,12 +264,7 @@ export default function PlayPage() {
           <p className="report-description">{result.pattern}</p>
         </header>
         <section className="report-section">
-          {result.story_replay && <div className="report-insight"><h2 className="insight-label">这段故事里发生了什么</h2><p>{result.story_replay}</p></div>}
-          <div className="report-insight"><h2 className="insight-label">应对方式的主要作用</h2><p>{result.benefits}</p></div>
-          <div className="report-insight"><h2 className="insight-label">可能付出的潜在代价</h2><p>{result.costs}</p></div>
-          <div className="report-insight"><h2 className="insight-label">不同情境下的变化与例外</h2><p>{result.exceptions}</p></div>
-          <p className="report-detail">{result.unknowns}</p>
-          <p className="report-detail">这是模拟情境中的观察反馈，不是诊断，也不是对你的永久定义。</p>
+          <h2>这次的你，怎样面对事情</h2>
 
           {result.observations.map((observation) => {
             const feedback = feedbackByObservation[observation.id];
@@ -305,7 +300,7 @@ export default function PlayPage() {
                 }}
                 onClick={() => updateFeedback(observation.id, 'confirm', feedback?.note ?? '')}
               >
-                {feedback?.action === 'confirm' ? '✓ 符合我的习惯' : '符合我的习惯'}
+                {feedback?.action === 'confirm' ? '✓ 像这次的我' : '像这次的我'}
               </button>
               <button
                 type="button"
@@ -320,7 +315,7 @@ export default function PlayPage() {
                 }}
                 onClick={() => updateFeedback(observation.id, 'partial', feedback?.note ?? '')}
               >
-                {feedback?.action === 'partial' ? '✓ 部分符合' : '部分符合'}
+                {feedback?.action === 'partial' ? '✓ 有一部分像' : '有一部分像'}
               </button>
               <button
                 type="button"
@@ -335,7 +330,7 @@ export default function PlayPage() {
                 }}
                 onClick={() => updateFeedback(observation.id, 'dispute', feedback?.note ?? '')}
               >
-                {feedback?.action === 'dispute' ? '✓ 不符合 / 存疑' : '不符合 / 存疑'}
+                {feedback?.action === 'dispute' ? '✓ 这里说得不对' : '这里说得不对'}
               </button>
             </div>
             <p className="report-detail" style={{ marginBottom: '0.5rem' }}>{observation.reflection_question}</p>
@@ -350,9 +345,9 @@ export default function PlayPage() {
             {feedback && (
               <div style={{ marginTop: '8px' }}>
                 <p className="report-detail" style={{ color: feedback.action === 'dispute' ? '#dc2626' : 'inherit' }}>
-                  {feedback.action === 'confirm' && '已标记为符合真实习惯。'}
-                  {feedback.action === 'partial' && '已标记为部分符合，保留待细化状态。'}
-                  {feedback.action === 'dispute' && '已标记存疑，登录保存后会作为有争议记录保留。'}
+                  {feedback.action === 'confirm' && '已记下：这条像你这次的反应。'}
+                  {feedback.action === 'partial' && '已记下：这条只说中了你的一部分。'}
+                  {feedback.action === 'dispute' && '已记下：这条需要重新理解，登录保存后会保留你的异议。'}
                 </p>
                 <div style={{ marginTop: '6px' }}>
                   <input
@@ -379,6 +374,13 @@ export default function PlayPage() {
             )}
           </div>;
           })}
+          {result.story_replay && (
+            <details className="report-detail" style={{ marginTop: '1.5rem' }}>
+              <summary>回看我在这段故事里的全部选择</summary>
+              <p>{result.story_replay}</p>
+            </details>
+          )}
+          <p className="report-detail" style={{ marginTop: '1rem' }}>{result.unknowns}</p>
         </section>
         <section className="report-section">
           {saved ? (

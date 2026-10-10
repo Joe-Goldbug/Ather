@@ -376,7 +376,7 @@ export interface ThemeRoundResult {
   theme_title: string;
   headline: string;
   summary: string;
-  observations: Array<{ focus: string; text: string; evidence_question_id: string }>;
+  observations: Array<{ focus: string; text: string; evidence_question_id: string; evidence_question_ids?: string[] }>;
   strength: string;
   watchout: string;
   counterevidence: string;
@@ -780,6 +780,12 @@ export const capturesApi = {
     const raw = await request<RawCaptureCreateResponse>('/captures', {
       method: 'POST',
       body: JSON.stringify(body),
+    });
+    return normalizeCaptureRecord(raw.capture, raw.interpretations, raw.summary);
+  },
+  analyze: async (captureId: string) => {
+    const raw = await request<RawCaptureCreateResponse>(`/captures/${captureId}/analyze`, {
+      method: 'POST',
     });
     return normalizeCaptureRecord(raw.capture, raw.interpretations, raw.summary);
   },

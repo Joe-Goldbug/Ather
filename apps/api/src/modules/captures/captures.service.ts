@@ -95,36 +95,36 @@ export class CapturesService {
     const hasAny = (patterns: string[]) => patterns.some((pattern) => normalized.includes(pattern));
 
     if (hasAny(['边界', '拒绝', '说不', 'no ', 'boundary', 'trust'])) {
-      pushInterpretation('trustBoundaries', 'This fragment may reflect how you set trust and boundary thresholds.', 4, 0.62);
+      pushInterpretation('trustBoundaries', '这段记录提到了拒绝、信任或边界。你可以回看当时是怎样说明自己能承担的范围。', 2, 0.52);
     }
     if (hasAny(['冲突', '争吵', '对质', 'conflict', 'argu', 'fight'])) {
-      pushInterpretation('conflictResponse', 'This fragment may reflect your default response under interpersonal conflict.', 4, 0.6);
+      pushInterpretation('conflictResponse', '这段记录提到了冲突或争吵。它记录的是一次具体经历，还不能说明你平时总会怎样面对分歧。', 2, 0.52);
     }
     if (hasAny(['不回', '冷淡', '忽略', 'ghost', 'ignored', 'rejected'])) {
-      pushInterpretation('attachment', 'This fragment may reflect how you interpret distance or rejection in relationships.', 4, 0.58);
+      pushInterpretation('attachment', '这段记录提到了距离、忽略或被拒绝。你可以补充：当时发生了什么，以及这对你意味着什么。', 2, 0.5);
     }
     if (hasAny(['焦虑', '崩溃', '平静', '愤怒', '情绪', 'anxious', 'overwhelmed', 'angry', 'calm'])) {
-      pushInterpretation('emotionRegulation', 'This fragment may reflect how you notice, label, or regulate emotion in the moment.', 3, 0.57);
+      pushInterpretation('emotionRegulation', '这段记录出现了情绪词。它能帮助你回看当时的感受，不能单独说明你的情绪习惯。', 2, 0.5);
     }
     if (hasAny(['压力', '睡不着', 'deadline', 'stress', 'burnout', '疲惫'])) {
-      pushInterpretation('stressResponse', 'This fragment may reflect your stress response under load or uncertainty.', 4, 0.61);
+      pushInterpretation('stressResponse', '这段记录提到了压力、疲惫或时间限制。你可以回看自己当时先做了什么来应对。', 2, 0.52);
     }
     if (hasAny(['目标', '绩效', '完美', '工作', 'goal', 'deadline', 'performance', 'perfect'])) {
-      pushInterpretation('achievementMotivation', 'This fragment may reflect the standards or performance pressure guiding your decisions.', 3, 0.56);
+      pushInterpretation('achievementMotivation', '这段记录提到了目标、工作或标准。它只提示这里可能有压力来源，需要结合你的说明理解。', 2, 0.5);
     }
     if (hasAny(['我是不是', '自我', '怀疑自己', 'who am i', 'self-worth', 'identity'])) {
-      pushInterpretation('selfCognition', 'This fragment may reflect how stable or self-critical your self-understanding feels.', 3, 0.55);
+      pushInterpretation('selfCognition', '这段记录包含了关于自己的疑问。你可以补充：你当时想确认的，究竟是哪一件事。', 2, 0.5);
     }
     if (hasAny(['社交', '朋友', '聚会', '独处', 'party', 'friends', 'alone', 'social'])) {
-      pushInterpretation('socialEnergy', 'This fragment may reflect whether social contact gives or drains your energy.', 3, 0.55);
+      pushInterpretation('socialEnergy', '这段记录提到了社交或独处。一次记录不足以说明你的社交习惯，但可以成为你回看的起点。', 2, 0.5);
     }
 
     if (entryType === 'emotion_log' && interpretations.length === 0 && moodLabel) {
-      pushInterpretation('emotionRegulation', `This emotion log may reflect your recent emotional regulation pattern around "${moodLabel}".`, 2, 0.52);
+      pushInterpretation('emotionRegulation', `你把当时的感受记为“${moodLabel}”。这是一条关于那一刻的记录，想的话可以补充发生了什么。`, 1, 0.5);
     }
 
     if (entryType === 'decision_log' && interpretations.length === 0) {
-      pushInterpretation('selfCognition', 'This decision log may reflect an emerging decision-making pattern worth verifying.', 2, 0.5);
+      pushInterpretation('selfCognition', '这是一条关于具体事情的记录。单独一条还不能形成模式，想的话可以写下当时最在意什么。', 1, 0.5);
     }
 
     return interpretations.slice(0, 2);
@@ -228,6 +228,92 @@ export class CapturesService {
     );
     if (!result.rows[0]) throw new NotFoundException({ code: 'capture_not_found_or_ineligible' });
     return result.rows[0];
+  }
+
+  /**
+   * Analyze an already-saved record only after its owner explicitly asks for it.
+   * A repeat request returns the existing cues instead of writing duplicate ones.
+   */
+  async analyze(userId: string, captureId: string): Promise<{
+    capture: CaptureRow;
+    interpretations: InterpretationRow[];
+    summary?: string;
+  }> {
+    const client = await this.db.pool.connect();
+    try {
+      await client.query('BEGIN');
+      const currentResult = await client.query<CaptureRow>(
+        `SELECT * FROM captures
+         WHERE id = $1 AND user_id = $2
+         FOR UPDATE`,
+        [captureId, userId],
+      );
+      const current = currentResult.rows[0];
+      if (!current) throw new NotFoundException({ code: 'capture_not_found' });
+      if (!current.raw_text?.trim()) {
+        throw new BadRequestException({ code: 'capture_has_no_text_to_analyze' });
+      }
+
+      if (current.process_mode === 'analyze') {
+        const existing = await client.query<InterpretationRow>(
+          `SELECT * FROM capture_interpretations
+           WHERE capture_id = $1 AND user_id = $2
+           ORDER BY created_at ASC`,
+          [captureId, userId],
+        );
+        await client.query('COMMIT');
+        return { capture: current, interpretations: existing.rows };
+      }
+
+      const updatedResult = await client.query<CaptureRow>(
+        `UPDATE captures
+         SET process_mode = 'analyze', updated_at = NOW()
+         WHERE id = $1 AND user_id = $2
+         RETURNING *`,
+        [captureId, userId],
+      );
+      const capture = updatedResult.rows[0];
+      const input: CaptureInput = {
+        userId,
+        entryType: capture.entry_type as EntryType,
+        processMode: 'analyze',
+        modality: capture.modality as Modality,
+        rawText: capture.raw_text,
+        mediaUrl: capture.media_url ?? undefined,
+        moodLabel: capture.mood_label ?? undefined,
+        moodIntensity: capture.mood_intensity ?? undefined,
+        localDate: capture.local_date ?? undefined,
+        timezone: capture.timezone ?? undefined,
+      };
+      const result = processCapture(input, (text: string) =>
+        this.interpretRawText(text, input.entryType, input.moodLabel),
+      );
+      const interpretations: InterpretationRow[] = [];
+      for (const interpretation of result.interpretations) {
+        const inserted = await client.query<InterpretationRow>(
+          `INSERT INTO capture_interpretations (capture_id, user_id, dimension, ai_explanation, proposed_delta, ai_confidence, status)
+           VALUES ($1, $2, $3, $4, $5, $6, $7)
+           RETURNING *`,
+          [
+            capture.id,
+            userId,
+            interpretation.dimension,
+            interpretation.aiExplanation,
+            interpretation.proposedDelta,
+            interpretation.aiConfidence,
+            'pending',
+          ],
+        );
+        interpretations.push(inserted.rows[0]);
+      }
+      await client.query('COMMIT');
+      return { capture, interpretations, summary: result.summary };
+    } catch (error) {
+      await client.query('ROLLBACK').catch(() => {});
+      throw error;
+    } finally {
+      client.release();
+    }
   }
 
   /**

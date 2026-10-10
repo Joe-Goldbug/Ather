@@ -34,4 +34,73 @@ describe('capture weekly review permission', () => {
     expect(query.mock.calls[0][0]).toContain('user_id = $2');
     expect(query.mock.calls[0][1]).toEqual(['capture-1', 'user-1', false]);
   });
+
+  it('locks and upgrades an owned saved record only after an explicit analysis request', async () => {
+    const saved = {
+      id: 'capture-1', user_id: 'user-1', entry_type: 'quick_fragment', process_mode: 'save_only',
+      modality: 'text', raw_text: '我感到压力', media_url: null, mood_label: null,
+      mood_intensity: null, local_date: '2026-10-10', timezone: 'Asia/Shanghai',
+    };
+    const analyzed = { ...saved, process_mode: 'analyze' };
+    const query = jest.fn()
+      .mockResolvedValueOnce({ rows: [] })
+      .mockResolvedValueOnce({ rows: [saved] })
+      .mockResolvedValueOnce({ rows: [analyzed] })
+      .mockResolvedValueOnce({ rows: [{ id: 'cue-1', capture_id: 'capture-1' }] })
+      .mockResolvedValueOnce({ rows: [] });
+    const release = jest.fn();
+    const service = new CapturesService({ pool: { connect: jest.fn().mockResolvedValue({ query, release }) } } as never);
+
+    const result = await service.analyze('user-1', 'capture-1');
+
+    expect(query.mock.calls[1][0]).toContain('FOR UPDATE');
+    expect(query.mock.calls[1][1]).toEqual(['capture-1', 'user-1']);
+    expect(query.mock.calls[2][0]).toContain("SET process_mode = 'analyze'");
+    expect(result.capture.process_mode).toBe('analyze');
+    expect(result.interpretations).toHaveLength(1);
+    expect(release).toHaveBeenCalled();
+  });
+
+  it('returns existing cues for a repeated analysis request without inserting duplicates', async () => {
+    const analyzed = {
+      id: 'capture-1', user_id: 'user-1', entry_type: 'quick_fragment', process_mode: 'analyze',
+      modality: 'text', raw_text: '我感到压力', media_url: null, mood_label: null,
+      mood_intensity: null, local_date: '2026-10-10', timezone: 'Asia/Shanghai',
+    };
+    const query = jest.fn()
+      .mockResolvedValueOnce({ rows: [] })
+      .mockResolvedValueOnce({ rows: [analyzed] })
+      .mockResolvedValueOnce({ rows: [{ id: 'cue-1', capture_id: 'capture-1' }] })
+      .mockResolvedValueOnce({ rows: [] });
+    const service = new CapturesService({ pool: { connect: jest.fn().mockResolvedValue({ query, release: jest.fn() }) } } as never);
+
+    const result = await service.analyze('user-1', 'capture-1');
+
+    expect(result.interpretations).toEqual([{ id: 'cue-1', capture_id: 'capture-1' }]);
+    expect(query.mock.calls.some(([sql]) => String(sql).includes('INSERT INTO capture_interpretations'))).toBe(false);
+  });
+
+  it('rejects an analysis request when the record is not owned by the requester', async () => {
+    const query = jest.fn()
+      .mockResolvedValueOnce({ rows: [] })
+      .mockResolvedValueOnce({ rows: [] })
+      .mockResolvedValue({ rows: [] });
+    const service = new CapturesService({ pool: { connect: jest.fn().mockResolvedValue({ query, release: jest.fn() }) } } as never);
+
+    await expect(service.analyze('user-1', 'someone-else-capture'))
+      .rejects.toMatchObject({ response: { code: 'capture_not_found' } });
+    expect(query.mock.calls[1][1]).toEqual(['someone-else-capture', 'user-1']);
+  });
+
+  it('rejects a saved record without text instead of creating a cue from nothing', async () => {
+    const query = jest.fn()
+      .mockResolvedValueOnce({ rows: [] })
+      .mockResolvedValueOnce({ rows: [{ id: 'capture-1', user_id: 'user-1', raw_text: '   ' }] })
+      .mockResolvedValue({ rows: [] });
+    const service = new CapturesService({ pool: { connect: jest.fn().mockResolvedValue({ query, release: jest.fn() }) } } as never);
+
+    await expect(service.analyze('user-1', 'capture-1'))
+      .rejects.toMatchObject({ response: { code: 'capture_has_no_text_to_analyze' } });
+    expect(query.mock.calls.some(([sql]) => String(sql).includes("SET process_mode = 'analyze'"))).toBe(false);
+  });
 });

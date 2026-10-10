@@ -259,7 +259,7 @@ describe('PublishedObservationResponseSection', () => {
     }]} />);
 
     fireEvent.click(screen.getByRole('button', { name: '回应这条观察' }));
-    fireEvent.click(screen.getByRole('button', { name: '不符合' }));
+    fireEvent.click(screen.getByRole('button', { name: '这里说得不对' }));
     fireEvent.change(screen.getByPlaceholderText('请说明是什么情境、哪里不符合，或缺少了什么。'), {
       target: { value: '在熟悉团队里不符合。' },
     });
@@ -281,7 +281,7 @@ describe('PublishedObservationResponseSection', () => {
     }]} />);
 
     fireEvent.click(screen.getByRole('button', { name: '回应这条观察' }));
-    fireEvent.click(screen.getByRole('button', { name: '不符合' }));
+    fireEvent.click(screen.getByRole('button', { name: '这里说得不对' }));
     const input = screen.getByPlaceholderText('请说明是什么情境、哪里不符合，或缺少了什么。');
     fireEvent.change(input, { target: { value: '初稿' } });
     fireEvent.click(screen.getByRole('button', { name: '提交回应' }));
@@ -308,7 +308,7 @@ describe('PublishedObservationResponseSection', () => {
     );
 
     fireEvent.click(screen.getByRole('button', { name: '回应这条观察' }));
-    fireEvent.click(screen.getByRole('button', { name: '不符合' }));
+    fireEvent.click(screen.getByRole('button', { name: '这里说得不对' }));
     fireEvent.change(screen.getByPlaceholderText('请说明是什么情境、哪里不符合，或缺少了什么。'), {
       target: { value: '我在熟悉的团队里会直接说出不同意见。' },
     });
@@ -346,7 +346,7 @@ describe('PublishedObservationResponseSection', () => {
     }]} />);
 
     fireEvent.click(screen.getByRole('button', { name: '回应这条观察' }));
-    fireEvent.click(screen.getByRole('button', { name: '符合' }));
+    fireEvent.click(screen.getByRole('button', { name: '像我' }));
     await waitFor(() => expect(screen.queryByText(/你已回应这条观察/)).toBeNull());
   });
 

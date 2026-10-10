@@ -160,41 +160,39 @@ export function buildGuestEpisodeResult(answers: GuestEpisodeAnswer[]): GuestEpi
     approach: 0, protect: 0, analyze: 0, withdraw: 0
   };
 
-  const nodeApproaches: Record<string, RoundApproach> = {};
   const orderedFacts = answers.map((answer) => {
     const node = RAIN_BEFORE_STOP_NODES.find((item) => item.id === answer.node_id)!;
     const option = node.options.find((item) => item.id === answer.choice_id)!;
     counts[option.approach]++;
-    nodeApproaches[node.id] = option.approach;
     return { node, option };
   });
   const approachNames: Record<RoundApproach, string> = {
-    approach: '主动沟通',
-    protect: '明确界限',
-    analyze: '核查依据',
-    withdraw: '暂缓避险',
+    approach: '把问题带到台面上处理',
+    protect: '把责任和范围说清楚',
+    analyze: '先把事情弄清楚',
+    withdraw: '先从当前拉扯里退开',
   };
 
   const descriptions: Record<RoundApproach, { action: string; benefit: string; cost: string }> = {
     approach: {
-      action: '主动沟通并推动共同处理',
-      benefit: '让信息更快流动，推动事情往前走，避免问题被搁置。',
-      cost: '容易替别人承担原本不需要负责的协调压力，并在事情不顺时较早成为被追责的对象。',
+      action: '把担心和分工带到台面上，试着推动共同处理',
+      benefit: '让信息更快流动，问题不必一直被搁置。',
+      cost: '也可能让你先接住原本不该由你独自承担的协调压力。',
     },
     protect: {
-      action: '明确职责界限，先说明自己能负责的部分',
-      benefit: '守住自己的工作边界，避免无端承担不属于自己的责任。',
-      cost: '容易拉开与同伴的距离，可能让现场紧急问题暂时悬空，并在需要协同配合时显得防备较重。',
+      action: '先说明自己能负责什么、不愿独自承担什么',
+      benefit: '让责任的边界更清楚，避免把不属于你的后果一并接下。',
+      cost: '现场的问题仍需要有人继续接手，关系也可能因此暂时变得更疏离。',
     },
     analyze: {
-      action: '先核查事实依据与现有数据，再决定下一步',
-      benefit: '减少在混乱中凭直觉盲动，使后续处理更有依据。',
-      cost: '核查过程会消耗现场有限的行动时间，可能让急于得到回应的同伴感到迟疑与距离。',
+      action: '先核对信息、时间和条件，再决定下一步',
+      benefit: '让行动有更清楚的依据，少一点在混乱里凭感觉接下事情。',
+      cost: '等你把事情理顺时，急着得到回应的人可能已经感到等待。',
     },
     withdraw: {
-      action: '暂缓表态、退出当前冲突或先做不需要配合的事',
-      benefit: '避免在情绪最高点激化正面冲突，保护自己的注意力和节奏。',
-      cost: '没有真正解决面前的分歧与隐患，把现场决定权留给了别人，也容易被误解为回避问题。',
+      action: '先不继续拉扯，暂缓表态或把注意力放回自己能做的部分',
+      benefit: '避免在当下把冲突推得更高，也给自己留出空间。',
+      cost: '你的担心和意见会暂时留在后面，现场可能仍沿着你并不认同的方向继续。',
     },
   };
 
@@ -217,36 +215,37 @@ export function buildGuestEpisodeResult(answers: GuestEpisodeAnswer[]): GuestEpi
     node_title: node.title,
     choice_text: option.text,
   }));
-  const replayFacts = orderedFacts.slice(0, 3).map(({ node, option }) => `在“${node.title}”时，你选择了“${option.text}”`).join('；');
-  const laterFacts = orderedFacts.slice(3).map(({ node, option }) => `随后在“${node.title}”时，你选择了“${option.text}”`).join('；');
-  const story_replay = `${replayFacts}。${laterFacts}。这六次选择构成了同一段协作压力逐步上升的故事：从消息迟到、工作临时增加，到公开归责和后续安排。它们可以帮助你回看自己在不同压力点怎样行动；它们不能证明你在现实里一定会这样做，也不能替你解释选择背后的原因。`;
+  const replayFacts = orderedFacts.map(({ node, option }) => `“${node.title}”：${option.text}`).join('；');
+  const story_replay = `这六个选择记录的是你在这段协作故事中的行动：${replayFacts}。完整选择留在这里供你回看；下面只挑其中几处，看看这次的你怎样面对事情。`;
   const primaryObservation: GuestEpisodeObservation = {
     id: `guest:${top}:primary`,
-    title: `这次最常见的做法：${approachNames[top]}`,
-    text: `在${topFacts.map(({ node }) => `“${node.title}”`).join('、')}等 ${topFacts.length} 个节点里，你选择${descriptions[top].action}。在协作出现空白、责任不清或场面紧张时，这种做法会让${descriptions[top].benefit.replace('。', '')}。它的代价也很具体：${descriptions[top].cost.replace('。', '')}。这不是对你好坏的评价，而是在提醒你，同一种处理方式既能解决眼前问题，也可能把系统原本的问题压到你身上。这里描述的是这段模拟中的可见选择和可能后果，不是在判断你的动机。`,
+    title: repeated.length === 1 ? `你更常${approachNames[top]}` : `这次你也会${approachNames[top]}`,
+    text: `在${topFacts.map(({ node }) => `“${node.title}”`).join('、')}里，你${descriptions[top].action}。这样做可能${descriptions[top].benefit.replace('。', '')}；同时，${descriptions[top].cost.replace('。', '')}。`,
     evidence_node_ids: topFacts.map(({ node }) => node.id),
     evidence: observationEvidence(topFacts),
-    reflection_question: `你在这些节点里这样做，更多是因为这符合你的习惯、当时信息不足，还是这只是你希望做到的处理方式？`,
+    reflection_question: `这更像你平时会做的事，还是这次故事里你希望做到的处理方式？`,
   };
   const observations: GuestEpisodeObservation[] = [primaryObservation];
   if (firstChange && priorFact) {
     observations.push({
       id: 'guest:transition:first-change',
-      title: '第一次改变做法的地方',
-      text: `你从“${priorFact.node.title}”中的${approachNames[priorFact.option.approach]}，转到“${firstChange.node.title}”中的${approachNames[firstChange.option.approach]}。这只能说明这两个节点的选择不同；是因为责任、时间、关系还是精力发生了变化，需要由你补充，不能从选择本身确定原因。`,
+      title: `到了“${firstChange.node.title}”，你换了一种做法`,
+      text: `前一段你选择${approachNames[priorFact.option.approach]}；到了这里，你改为${approachNames[firstChange.option.approach]}。这个变化是这段故事里真实出现的，但为什么会变，需要听你自己的解释。`,
       evidence_node_ids: [priorFact.node.id, firstChange.node.id],
       evidence: observationEvidence([priorFact, firstChange]),
-      reflection_question: `从“${priorFact.node.title}”到“${firstChange.node.title}”，什么信息或感受让你改变了做法？`,
+      reflection_question: `从“${priorFact.node.title}”到这里，什么信息、关系或感受让你换了做法？`,
     });
   }
-  if (repeated.length > 1 || highestCount < 4) {
+  const nonTopFacts = orderedFacts.filter((fact) => fact.option.approach !== top);
+  if (nonTopFacts.length > 0 && observations.length < 3) {
+    const contrast = nonTopFacts.find(({ node }) => node.id === 'node-5') ?? nonTopFacts[0]!;
     observations.push({
-      id: 'guest:variation:distribution',
-      title: '这次没有单一固定的应对方式',
-      text: `六个节点的选择没有完全收敛到一种做法。${repeated.map((approach) => `“${approachNames[approach]}”`).join('、')}在这次作答中同样突出。不同情境下换做法可以是在权衡，也可能只是故事条件不同；这份结果不能把变化自动解释成成熟、摇摆或人格特征。`,
-      evidence_node_ids: orderedFacts.map(({ node }) => node.id),
-      evidence: observationEvidence(orderedFacts),
-      reflection_question: '回看这些节点时，哪一次选择最不像现实中的你？为什么？',
+      id: 'guest:variation:contrast',
+      title: `“${contrast.node.title}”里，你用了另一种做法`,
+      text: `在这里，你选择${descriptions[contrast.option.approach].action}。这说明这次作答里的你并不是只会用一种办法：当情境改变时，你会调整回应。这个调整本身不等于成熟、退缩或某种固定特质。`,
+      evidence_node_ids: [contrast.node.id],
+      evidence: observationEvidence([contrast]),
+      reflection_question: `回看这一处，它像现实中的你吗？如果不像，真实的你会怎样处理？`,
     });
   }
 
@@ -256,58 +255,18 @@ export function buildGuestEpisodeResult(answers: GuestEpisodeAnswer[]): GuestEpi
   let costs = '';
   let exceptions = '';
 
-  if (highestCount === 6) {
-    summary = `面对突发协作与冲突，你六次都选择${descriptions[top].action}。`;
-    pattern = `六个情境节点中，你的选择方向完全一致，始终倾向于${descriptions[top].action}。`;
-    benefits = descriptions[top].benefit;
-    costs = descriptions[top].cost;
-    exceptions = '六个节点都选择了相同方向，这次模拟中没有出现反向的例外选择。';
-  } else if (repeated.length === 1 && highestCount >= 3) {
-    summary = `面对突发协作与冲突，你更常选择${descriptions[top].action}。`;
-    pattern = `六个节点中，你有 ${highestCount} 次选择${descriptions[top].action}，这是本章最主要的做法。`;
-    benefits = descriptions[top].benefit;
-    costs = descriptions[top].cost;
-    const exceptionNodes = RAIN_BEFORE_STOP_NODES.filter(
-      (node) => nodeApproaches[node.id] !== top
-    ).map((node) => `《${node.title}》`);
-    exceptions = `${exceptionNodes.join('、')}中的选择与主要做法不同，表明在特定情境下你改变了反应策略。`;
-  } else if (repeated.length === 2 && highestCount === 3) {
-    const [app1, app2] = repeated;
-    summary = `你在“${approachNames[app1!]}”和“${approachNames[app2!]}”之间各做了一半选择，没有单一主导做法。`;
-    pattern = `六个节点中，你各有 3 次选择${descriptions[app1!].action}与${descriptions[app2!].action}。`;
-    benefits = `【${approachNames[app1!]}】${descriptions[app1!].benefit}\n\n【${approachNames[app2!]}】${descriptions[app2!].benefit}`;
-    costs = `【${approachNames[app1!]}】${descriptions[app1!].cost}\n\n【${approachNames[app2!]}】${descriptions[app2!].cost}`;
-    exceptions = '六个节点被这两种做法平分，没有出现第三种应对方式。这两种做法的切换取决于具体节点的情境。';
-  } else if (repeated.length === 2 && highestCount === 2) {
-    const [app1, app2] = repeated;
-    summary = `你在“${approachNames[app1!]}”和“${approachNames[app2!]}”之间交替较多，同时也尝试了其他做法。`;
-    pattern = `六个节点中，${descriptions[app1!].action}与${descriptions[app2!].action}各出现了 2 次。`;
-    benefits = `【${approachNames[app1!]}】${descriptions[app1!].benefit}\n\n【${approachNames[app2!]}】${descriptions[app2!].benefit}`;
-    costs = `【${approachNames[app1!]}】${descriptions[app1!].cost}\n\n【${approachNames[app2!]}】${descriptions[app2!].cost}`;
-    const exceptionNodes = RAIN_BEFORE_STOP_NODES.filter(
-      (node) => nodeApproaches[node.id] !== app1 && nodeApproaches[node.id] !== app2
-    ).map((node) => `《${node.title}》`);
-    exceptions = `${exceptionNodes.join('、')}中的选择与上述两种做法不同，表明在特定节点你采取了不同策略。`;
-  } else if (repeated.length === 3 && highestCount === 2) {
-    const [app1, app2, app3] = repeated;
-    summary = `你在“${approachNames[app1!]}”、“${approachNames[app2!]}”与“${approachNames[app3!]}”之间均分了选择，没有单一主导做法。`;
-    pattern = `六个节点中，你在“${approachNames[app1!]}”、“${approachNames[app2!]}”与“${approachNames[app3!]}”上各选了 2 次，处理方式较为分散。`;
-    benefits = `【${approachNames[app1!]}】${descriptions[app1!].benefit}\n\n【${approachNames[app2!]}】${descriptions[app2!].benefit}\n\n【${approachNames[app3!]}】${descriptions[app3!].benefit}`;
-    costs = `【${approachNames[app1!]}】${descriptions[app1!].cost}\n\n【${approachNames[app2!]}】${descriptions[app2!].cost}\n\n【${approachNames[app3!]}】${descriptions[app3!].cost}`;
-    exceptions = '六个节点被三种不同的做法均分，没有哪一种做法占据主导地位。选择出现差异；差异的原因需要你补充，不能仅凭这次模拟推断。';
-  } else {
-    // Mathematically unreachable defensive fallback for 6 nodes and 4 choices.
-    // Preserves complete runtime safety and conforms to non-sycophantic language.
-    const top = ranked[0]!;
-    summary = `这次作答整体较为分散，未出现单一主导做法。`;
-    pattern = `六个节点中，你的选择较为分散，未呈现出明显的单一惯性。`;
-    benefits = descriptions[top].benefit;
-    costs = descriptions[top].cost;
-    const exceptionNodes = RAIN_BEFORE_STOP_NODES.filter(
-      (node) => nodeApproaches[node.id] !== top
-    ).map((node) => `《${node.title}》`);
-    exceptions = `${exceptionNodes.join('、')}中的选择各不相同，表明你在不同情境下的处理方式差异较大。`;
-  }
+  const tied = repeated.length > 1;
+  summary = tied
+    ? '这次的你，会依事情和关系的变化调整做法。'
+    : `这次的你，更常${approachNames[top]}。`;
+  pattern = tied
+    ? '六个节点没有收敛成一种固定做法；你在不同压力点用不同方式保护事情、关系或自己。'
+    : `在六个节点里，你有 ${highestCount} 次选择${approachNames[top]}；另外的选择让这份结果保留了情境差异。`;
+  benefits = descriptions[top].benefit;
+  costs = descriptions[top].cost;
+  exceptions = nonTopFacts.length
+    ? `在${nonTopFacts.map(({ node }) => `《${node.title}》`).join('、')}里，你改用了别的做法。差异需要结合当时的感受与条件来理解。`
+    : '六个节点里，你都使用了相近的做法；这仍只说明这段故事中的选择。';
 
   return {
     episode_id: GUEST_EPISODE_ID,

@@ -68,6 +68,7 @@ export interface ThemeRoundObservation {
   focus: string;
   text: string;
   evidence_question_id: string;
+  evidence_question_ids?: string[];
 }
 
 export interface ThemeRoundResult {
@@ -733,31 +734,42 @@ export function buildThemeRoundResult(
   )[0]!.approach;
   const topCount = Math.max(...counts.map((item) => item.count));
   const hasSingleDominant = counts.filter((item) => item.count === topCount).length === 1;
-  const observations = evidence.slice(0, 4).map((item) => ({
-    focus: item.focus_label,
-    evidence_question_id: item.question_id,
-    text: `在${item.context_label}的「${item.focus_label}」模拟情境中，你选择了「${item.choice_text}」；Eva 将此归类为${definition.approach_summary[item.approach]}的应对倾向。`,
-  }));
   const varied = new Set(evidence.map((item) => item.approach)).size > 1;
+  const dominantEvidence = evidence.filter((item) => item.approach === dominant);
+  const firstAlternative = evidence.find((item) => item.approach !== dominant);
+  const observations: ThemeRoundObservation[] = [{
+    focus: hasSingleDominant ? `这轮你更常${definition.approach_summary[dominant]}` : `这轮你也会${definition.approach_summary[dominant]}`,
+    evidence_question_id: dominantEvidence[0]!.question_id,
+    evidence_question_ids: dominantEvidence.map((item) => item.question_id),
+    text: `在${dominantEvidence.map((item) => `“${item.focus_label}”`).join('、')}这些情境里，你选择了${dominantEvidence.map((item) => `“${item.choice_text}”`).join('、')}。${hasSingleDominant ? `这轮的你更常${definition.approach_summary[dominant]}` : '这是你这轮用到的回应方式之一，出现次数与其他方式并列'}。`,
+  }];
+  if (firstAlternative) {
+    observations.push({
+      focus: `在“${firstAlternative.focus_label}”，你用了另一种回应`,
+      evidence_question_id: firstAlternative.question_id,
+      evidence_question_ids: [firstAlternative.question_id],
+      text: `这里你选择了“${firstAlternative.choice_text}”，和上面提到的回应方式不同。这个差异与你当时在意什么、有什么感受有关吗？需要听你自己的解释。`,
+    });
+  }
   return {
     result_version: 'theme-round-result-2026-07-30-v1',
     theme_lens: lens,
     theme_title: `本轮${definition.title}`,
     headline: hasSingleDominant
-      ? `这轮${definition.title}里，你更常${definition.approach_summary[dominant]}。`
-      : `这轮${definition.title}里，你在不同情境中采用了不同的应对方式。`,
-    summary: `这是基于当前模拟情境互动中你的行为选择归纳出的应对倾向，区分于你现实生活中的内在动机与背景自述。下面每一条都能回看情境依据，并支持补充纠正。`,
+      ? `这轮的你，更常${definition.approach_summary[dominant]}。`
+      : `这轮的你，会随着情境改变回应方式。`,
+    summary: `下面写的是你在这轮情境里怎样回应，不替你猜测现实中的动机。你可以回看每条依据，也可以补充或纠正。`,
     observations,
     strength: hasSingleDominant
-      ? definition.strength[dominant]
-      : '你在这轮不同情境中保留了多种回应方式。',
+      ? `这次这样回应，${definition.strength[dominant]}`
+      : '你没有把所有情境都用同一种方式处理。',
     watchout: hasSingleDominant
-      ? definition.watchout[dominant]
-      : '目前没有单一方向，不能据此推断稳定倾向。',
+      ? `你可以留意：${definition.watchout[dominant]}`
+      : '这些变化本身不能被自动解释成某种稳定特点。',
     counterevidence: varied
       ? '你在不同情境里并不是同一种反应。这个差异值得保留，下一轮可以继续看什么条件会让你靠近、保护、分析或后退。'
       : '这轮选择比较集中，但还不能说明这会在所有关系、时间和压力情境里都一样。',
-    boundary: '这是本轮主题测试留下的可回看线索，不是对你的永久人格定义，亦不预设现实生活中的内在动机。',
+    boundary: '这是你在本轮情境中留下的初步线索，不是对你的永久定义。',
     evidence,
   };
 }

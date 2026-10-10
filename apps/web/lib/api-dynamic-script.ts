@@ -182,6 +182,13 @@ export interface CompleteDynamicSuccessResponse {
     };
   };
   psychological_narrative: string;
+  observations?: Array<{
+    id: string;
+    title: string;
+    text: string;
+    question: string;
+    evidence: { scene_id: string; choice_id: string; situation: string; choice_text: string };
+  }>;
   comparison_summary?: string;
   validation_report: unknown;
   revised: boolean;

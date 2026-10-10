@@ -1114,9 +1114,9 @@ export function PublishedObservationResponseSection({
         <div className="correction-panel">
           <p className="correction-prompt">你正在回应：{selected.text || '这条正式观察'}</p>
           <div className="correction-buttons">
-            <button type="button" className="btn-note" disabled={status === 'submitting'} onClick={() => void submit('confirm')}>符合</button>
-            <button type="button" className="btn-partial" disabled={status === 'submitting'} onClick={() => setAction('partial')}>部分符合</button>
-            <button type="button" className="btn-incorrect" disabled={status === 'submitting'} onClick={() => setAction('refute')}>不符合</button>
+            <button type="button" className="btn-note" disabled={status === 'submitting'} onClick={() => void submit('confirm')}>像我</button>
+            <button type="button" className="btn-partial" disabled={status === 'submitting'} onClick={() => setAction('partial')}>有一部分像</button>
+            <button type="button" className="btn-incorrect" disabled={status === 'submitting'} onClick={() => setAction('refute')}>这里说得不对</button>
             <button type="button" className="btn-note" disabled={status === 'submitting'} onClick={() => setAction('clarify')}>补充情境</button>
           </div>
           {action && (
@@ -1128,10 +1128,10 @@ export function PublishedObservationResponseSection({
                 rows={3}
               />
               <div className="correction-actions">
-                <button type="button" className="btn-cancel" onClick={() => setAction(null)}>取消</button>
                 <button type="button" className="btn-primary" disabled={status === 'submitting'} onClick={() => void submit(action)}>
                   {status === 'submitting' ? '提交中…' : '提交回应'}
                 </button>
+                <button type="button" className="btn-cancel" onClick={() => setAction(null)}>取消</button>
               </div>
             </div>
           )}

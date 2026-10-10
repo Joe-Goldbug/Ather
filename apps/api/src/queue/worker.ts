@@ -229,23 +229,22 @@ const weeklyWorker = new Worker<WeeklyReviewJob>(
       .join('\n');
 
     // 2. Build weekly review prompt
-    const systemPrompt = `你是 EVA，一个理智冷静的朋友。每周回顾请：
-1. 识别本周主导情绪和话题模式
-2. 只描述本周记录；没有上周可比输入，不判断变化趋势
-3. 用证据引用方式描述发现
-4. 保持犀利、不鸡汤的语言风格
-5. 句子短，不超过3行一段`;
+    const systemPrompt = `你是 Eva，帮助用户回看这一周真实记录的心智镜子。每周回顾请：
+1. 先说用户在什么记录里做了什么、感受了什么，再说可回看的共同点
+2. 只描述本周记录；没有上周可比输入，不判断变化趋势，也不把次数写成固定性格
+3. 不补写用户没有记录的情绪、动机、他人反应或后果
+4. 语言直接、具体，不鸡汤；锋芒只能针对记录中可看见的做法
+5. 结尾只留一个可跳过的回看问题，不替用户下结论`;
 
     const userPrompt = `这是本周用户允许用于周回看的记录（格式是 日期｜来源｜情绪+强度｜内容）：
 
 ${weeklyRecordText}
 
 请生成一份个性化周回顾，格式如下：
-## 本周主导情绪
-## 本周情绪线索（不判断跨周趋势）
-## 发现的行为模式
-## 值得讨论的本周情境
-## 下周建议（1条）`;
+## 这一周的你
+## 你反复遇到的情境
+## 值得你自己回看的地方
+## 一个可选问题`;
 
     const selectedIds = captureRows.rows.map((row) => row.id);
     const generated = await runAuthorizedWeeklyReview(pool, userId, selectedIds, () => callLLM({

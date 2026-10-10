@@ -2564,6 +2564,72 @@ input:focus, textarea:focus {
   margin-bottom: 2rem;
 }
 
+.note-form {
+  gap: 1rem;
+}
+
+.note-form-intro h2 {
+  margin: 0;
+  font-size: 1.2rem;
+}
+
+.note-form-intro p,
+.note-form-privacy,
+.note-result-boundary,
+.timeline-card-boundary,
+.note-weekly-permission p {
+  margin: 0.35rem 0 0;
+  color: var(--text-secondary, #64748b);
+  font-size: 0.85rem;
+  line-height: 1.55;
+}
+
+.note-writing-prompts {
+  color: var(--text-secondary, #64748b);
+  font-size: 0.9rem;
+}
+
+.note-writing-prompts summary {
+  cursor: pointer;
+}
+
+.note-writing-prompts ul {
+  margin: 0.55rem 0 0;
+  padding-left: 1.25rem;
+}
+
+.note-result {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+
+.note-result-original {
+  white-space: pre-wrap;
+  line-height: 1.65;
+  margin: 0;
+}
+
+.note-result-next-step,
+.note-weekly-permission {
+  padding: 0.85rem;
+  border-radius: 6px;
+  background: var(--surface-muted, #f8fafc);
+}
+
+.note-result-next-step > p:first-child {
+  margin-top: 0;
+  margin-bottom: 0.6rem;
+}
+
+.note-weekly-permission {
+  margin-top: 0.5rem;
+}
+
+.timeline-card-actions {
+  margin-top: 0.75rem;
+}
+
 .capture-tabs {
   display: flex;
   gap: 0.5rem;

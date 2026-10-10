@@ -94,7 +94,7 @@ async function reachResult() {
   await act(async () => {
     fireEvent.click(generateButton);
   });
-  await screen.findByRole('heading', { name: '这和你真实吗？' });
+  await screen.findByRole('heading', { name: '这里写出的你，像真实的你吗？' });
   await waitFor(() =>
     expect(screen.getByRole('button', { name: '我想补充' })).toHaveProperty('disabled', false)
   );
@@ -195,7 +195,7 @@ describe('theme result feedback', () => {
     await reachResult();
     const startedAt = performance.now();
 
-    fireEvent.click(screen.getByRole('button', { name: '大致符合' }));
+    fireEvent.click(screen.getAllByRole('button', { name: '像这次的我' }).at(-1)!);
 
     expect(await screen.findByText('正在保存反馈…')).toBeInTheDocument();
     const nextRoundButton = screen.getByRole('button', { name: '继续下一轮' });
@@ -265,7 +265,7 @@ describe('theme result feedback', () => {
     expect(api.complete).not.toHaveBeenCalled();
 
     fireEvent.click(screen.getByTestId('generate-insight'));
-    expect(await screen.findByRole('heading', { name: '这和你真实吗？' })).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { name: '这里写出的你，像真实的你吗？' })).toBeInTheDocument();
     expect(api.complete).toHaveBeenCalledWith('round-1');
   });
 
@@ -479,7 +479,7 @@ describe('theme result feedback', () => {
     });
     await reachResult();
 
-    fireEvent.click(screen.getByRole('button', { name: '不太符合' }));
+    fireEvent.click(screen.getAllByRole('button', { name: '这里说得不对' }).at(-1)!);
 
     expect(await screen.findByRole('heading', { name: messages['zh-CN'].theme_round.whole_refuted_heading })).toBeDefined();
     expect(screen.getByRole('group', { name: messages['zh-CN'].theme_round.historical_result_label }))
@@ -543,7 +543,7 @@ describe('theme result feedback', () => {
       recommendation_reason: 'verify_disagreement',
     });
 
-    fireEvent.click(screen.getByRole('button', { name: '不太符合' }));
+    fireEvent.click(screen.getAllByRole('button', { name: '这里说得不对' }).at(-1)!);
 
     expect(await screen.findByTestId('next-round-recommendation')).toHaveTextContent('换个情境继续核对');
     expect(screen.getByRole('button', { name: '继续下一轮' })).toBeDefined();
@@ -625,7 +625,7 @@ describe('theme result feedback', () => {
     });
     await reachResult();
 
-    fireEvent.click(screen.getAllByRole('button', { name: '不太符合' })[0]);
+    fireEvent.click(screen.getAllByRole('button', { name: '这里说得不对' })[0]);
 
     expect(await screen.findByTestId('observation-feedback-q1')).toHaveTextContent('这条观察不符合');
     expect(screen.getByText('已提出异议 · 不作为无争议结论使用')).toBeDefined();

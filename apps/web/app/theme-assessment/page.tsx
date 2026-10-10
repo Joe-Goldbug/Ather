@@ -419,19 +419,21 @@ export default function ThemeAssessmentPage() {
         <p className="report-description">{portrait.summary}</p>
         {portrait.guest_report && (
           <section className="report-section">
-            <h2>这段故事里发生了什么</h2>
-            <p>{portrait.guest_report.story_replay}</p>
-            <div className="report-insight"><h3 className="insight-label">应对方式的主要作用</h3><p>{portrait.guest_report.benefits}</p></div>
-            <div className="report-insight"><h3 className="insight-label">可能付出的潜在代价</h3><p>{portrait.guest_report.costs}</p></div>
-            <div className="report-insight"><h3 className="insight-label">不同情境下的变化与例外</h3><p>{portrait.guest_report.exceptions}</p></div>
+            <details className="report-detail">
+              <summary>回看这段故事里的全部选择</summary>
+              <p>{portrait.guest_report.story_replay}</p>
+            </details>
           </section>
         )}
         <section className="report-section">
-          <h2>这轮具体看到了什么</h2>
+          <h2>这次的你，怎样回应</h2>
           {portrait.observations.map((observation) => {
             const observationFeedback = result.observation_feedback?.[observation.evidence_question_id];
             const guestObservation = portrait.guest_report?.observations.find(
               (item) => item.id === observation.evidence_question_id
+            );
+            const linkedEvidence = portrait.evidence.filter((item) =>
+              (observation.evidence_question_ids ?? [observation.evidence_question_id]).includes(item.question_id)
             );
             return (
               <article
@@ -468,6 +470,13 @@ export default function ThemeAssessmentPage() {
                       ))}
                     </ul>
                   </details>
+                ) : linkedEvidence.length ? (
+                  <details className="report-detail" style={{ marginTop: '8px' }}>
+                    <summary>回看这条观察依据的情境与选择</summary>
+                    <ul>{linkedEvidence.map((item) => (
+                      <li key={item.question_id}>“{item.focus_label} · {item.context_label}”：{item.choice_text}</li>
+                    ))}</ul>
+                  </details>
                 ) : null}
                 {observationFeedback && (
                   <p className="report-detail" data-testid={`observation-feedback-${observation.evidence_question_id}`}>
@@ -482,13 +491,13 @@ export default function ThemeAssessmentPage() {
                 )}
                 <div className="report-actions report-actions--per-observation">
                   <button type="button" disabled={submitting} onClick={() => respond('confirm', observation.evidence_question_id)}>
-                    这条符合
+                    像这次的我
                   </button>
                   <button type="button" disabled={submitting} onClick={() => respond('partial', observation.evidence_question_id)}>
-                    部分符合
+                    有一部分像
                   </button>
                   <button type="button" disabled={submitting} onClick={() => respond('refute', observation.evidence_question_id)}>
-                    不太符合
+                    这里说得不对
                   </button>
                   <button
                     type="button"
@@ -554,15 +563,15 @@ export default function ThemeAssessmentPage() {
         </section>
         <section className="report-section">
           <div className="report-insight">
-            <h2 className="insight-label">这轮的优势</h2>
+            <h2 className="insight-label">这样做，帮你守住了什么</h2>
             <p>{portrait.strength}</p>
           </div>
           <div className="report-insight">
-            <h2 className="insight-label">值得留意的代价</h2>
+            <h2 className="insight-label">你可能忽略的地方</h2>
             <p>{portrait.watchout}</p>
           </div>
           <div className="report-insight">
-            <h2 className="insight-label">情境差异</h2>
+            <h2 className="insight-label">你在什么情境下会不同</h2>
             <p>{portrait.counterevidence}</p>
           </div>
           <p className="report-detail">{portrait.boundary}</p>
@@ -570,7 +579,7 @@ export default function ThemeAssessmentPage() {
         {portrait.ai_insight && (
           <section className="report-section ai-insight-section">
             <div className="ai-insight-header">
-              <h2 className="insight-label">AI 洞察参考</h2>
+              <h2 className="insight-label">结合你这轮选择的补充观察</h2>
               <span className="ai-insight-badge">AI 生成</span>
             </div>
             {portrait.ai_insight.paragraphs.map((paragraph, index) => {
@@ -596,16 +605,16 @@ export default function ThemeAssessmentPage() {
         )}
         </div>
         <section className="report-section">
-          <h2>这和你真实吗？</h2>
+          <h2>这里写出的你，像真实的你吗？</h2>
           <div className="report-actions">
             <button type="button" disabled={submitting} onClick={() => respond('confirm')}>
-              大致符合
+              像这次的我
             </button>
             <button type="button" disabled={submitting} onClick={() => respond('partial')}>
-              部分符合
+              有一部分像
             </button>
             <button type="button" disabled={submitting} onClick={() => respond('refute')}>
-              不太符合
+              这里说得不对
             </button>
             <button
               type="button"

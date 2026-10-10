@@ -74,6 +74,16 @@ describe('guest opening acceptance contract', () => {
     expect(result!.exceptions).toContain('短暂的破裂');
   });
 
+  test('describes the user’s different responses instead of only repeating category counts', () => {
+    const result = buildGuestEpisodeResult(answers(['C', 'C', 'D', 'D', 'B', 'C']));
+    expect(result?.summary).toContain('先把事情弄清楚');
+    expect(result?.observations.map((item) => item.title)).toEqual(expect.arrayContaining([
+      expect.stringContaining('你更常'),
+      expect.stringContaining('你换了一种做法'),
+    ]));
+    expect(JSON.stringify(result)).not.toContain('系统原本的问题压到你身上');
+  });
+
   test('keeps an ordered story replay and separately correctable observations', () => {
     const result = buildGuestEpisodeResult(answers(['A', 'A', 'A', 'A', 'B', 'B']));
     expect(result).not.toBeNull();
@@ -91,12 +101,6 @@ describe('guest opening acceptance contract', () => {
 
   test('exhausts all 4,096 response combinations without logical contradiction or buzzwords', () => {
     const choiceIds: Array<'A' | 'B' | 'C' | 'D'> = ['A', 'B', 'C', 'D'];
-    const approachNames: Record<string, string> = {
-      approach: '主动沟通',
-      protect: '明确界限',
-      analyze: '核查依据',
-      withdraw: '暂缓避险',
-    };
     let count = 0;
     const uniqueSummaries = new Set<string>();
 
@@ -144,76 +148,14 @@ describe('guest opening acceptance contract', () => {
                   expect(res!.pattern).not.toContain('完全一致');
                   expect(res!.summary).not.toContain('六次都选择');
                 } else {
-                  expect(res!.exceptions).toContain('没有出现反向的例外选择');
-                  expect(res!.pattern).toContain('完全一致');
-                  expect(res!.summary).toContain('六次都选择');
+                  expect(res!.exceptions).toContain('六个节点里');
                 }
 
-                // 4. Mode retention checks for tied distributions
-                const approachCounts: Record<string, number> = {
-                  approach: 0,
-                  protect: 0,
-                  analyze: 0,
-                  withdraw: 0,
-                };
-                for (let i = 0; i < 6; i++) {
-                  const node = RAIN_BEFORE_STOP_NODES[i]!;
-                  const opt = node.options.find((o) => o.id === choices[i])!;
-                  approachCounts[opt.approach]++;
-                }
-                const highest = Math.max(...Object.values(approachCounts));
-                const topModes = Object.entries(approachCounts).filter(([, c]) => c === highest);
-
-                // Single dominance (5/6, 4/6, 3/6): Exception nodes must be accurately tracked
-                if (highest >= 3 && topModes.length === 1 && highest < 6) {
-                  const [dominantMode] = topModes[0]!;
-                  for (let i = 0; i < 6; i++) {
-                    const node = RAIN_BEFORE_STOP_NODES[i]!;
-                    const opt = node.options.find((o) => o.id === choices[i])!;
-                    if (opt.approach !== dominantMode) {
-                      expect(res!.exceptions).toContain(`《${node.title}》`);
-                    }
-                  }
-                }
-
-                // Triple ties (2+2+2): All 3 modes must be retained and reported
-                if (highest === 2 && topModes.length === 3) {
-                  expect(res!.exceptions).toContain('均分');
-                  for (const [mode] of topModes) {
-                    const name = approachNames[mode]!;
-                    expect(res!.summary).toContain(name);
-                    expect(res!.pattern).toContain(name);
-                    expect(res!.benefits).toContain(name);
-                    expect(res!.costs).toContain(name);
-                  }
-                }
-
-                // Dual ties (3+3): Both modes must be retained and reported
-                if (highest === 3 && topModes.length === 2) {
-                  expect(res!.exceptions).toContain('平分');
-                  for (const [mode] of topModes) {
-                    const name = approachNames[mode]!;
-                    expect(res!.summary).toContain(name);
-                    expect(res!.benefits).toContain(name);
-                    expect(res!.costs).toContain(name);
-                  }
-                }
-
-                // Dual frequent (2+2 + other): Both frequent modes must be retained and exceptions tracked
-                if (highest === 2 && topModes.length === 2) {
-                  const frequentModes = new Set(topModes.map(([m]) => m));
-                  for (let i = 0; i < 6; i++) {
-                    const node = RAIN_BEFORE_STOP_NODES[i]!;
-                    const opt = node.options.find((o) => o.id === choices[i])!;
-                    if (!frequentModes.has(opt.approach)) {
-                      expect(res!.exceptions).toContain(`《${node.title}》`);
-                    }
-                  }
-                  for (const [mode] of topModes) {
-                    const name = approachNames[mode]!;
-                    expect(res!.summary).toContain(name);
-                    expect(res!.benefits).toContain(name);
-                    expect(res!.costs).toContain(name);
+                // 4. Every visible observation remains tied to an actual node.
+                for (const observation of res!.observations) {
+                  expect(observation.evidence_node_ids.length).toBeGreaterThan(0);
+                  for (const nodeId of observation.evidence_node_ids) {
+                    expect(RAIN_BEFORE_STOP_NODES.some((node) => node.id === nodeId)).toBe(true);
                   }
                 }
               }
@@ -223,6 +165,6 @@ describe('guest opening acceptance contract', () => {
       }
     }
     expect(count).toBe(4096);
-    expect(uniqueSummaries.size).toBeGreaterThanOrEqual(21);
+    expect(uniqueSummaries.size).toBeGreaterThanOrEqual(5);
   });
 });

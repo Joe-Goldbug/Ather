@@ -35,6 +35,7 @@ import { CompletenessEvaluator } from './completeness-evaluator.js';
 import { ScriptGeneratorService } from './script-generator.service.js';
 import { ValidationOrchestrator } from './validation/orchestrator.js';
 import { EvidenceBridgeService, type PlayedChoice } from './evidence-bridge.service.js';
+import { buildDynamicResult, type DynamicObservation } from './dynamic-result.js';
 import { QueueService } from '../../../../queue/queue.service.js';
 import type { StartDynamicDto } from '../../dto/dynamic-script/start.dto.js';
 import type { AnswerDynamicDto } from '../../dto/dynamic-script/answer.dto.js';
@@ -191,6 +192,7 @@ export interface CompleteDynamicSuccessResponse {
     };
   };
   psychological_narrative: string;
+  observations?: DynamicObservation[];
   comparison_summary?: string;
   validation_report: unknown;
   revised: boolean;
@@ -617,7 +619,9 @@ export class DynamicScriptService {
         `Script is not ready yet (status=${status.status})`,
       );
     }
-    const { played_path: _cachedPath, ...result } = status.result as CompleteDynamicSuccessResponse;
+    const { played_path: _cachedPath, psychological_narrative: _cachedNarrative,
+      observations: _cachedObservations, comparison_summary: _cachedComparison, ...result
+    } = status.result as CompleteDynamicSuccessResponse;
     const playback = await this.db.pool.query<{ played_path: PlayedChoice[] | null; play_completed_at: Date | null }>(
       `SELECT played_path, play_completed_at FROM dynamic_scripts
        WHERE id = $1 AND user_id = $2 AND generation_id = $3`,
@@ -625,8 +629,9 @@ export class DynamicScriptService {
     );
     const row = playback.rows[0];
     return row?.play_completed_at && row.played_path
-      ? { ...result, played_path: row.played_path }
-      : result;
+      ? { ...result, played_path: row.played_path,
+          ...buildDynamicResult(result.script.scenes, row.played_path) }
+      : { ...result, psychological_narrative: '', observations: [] };
   }
 
   // ─── abort ────────────────────────────────────────────────────────

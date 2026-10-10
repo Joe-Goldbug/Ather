@@ -58,16 +58,17 @@ describe('theme round completion and result boundary', () => {
   test('makes a vocabulary-specific current-round result with evidence links', () => {
     const result = buildThemeRoundResult('emotion', questions, complete);
     expect(result?.theme_title).toContain('情绪');
-    expect(result?.observations).toHaveLength(4);
+    expect(result?.observations.length).toBeGreaterThanOrEqual(1);
+    expect(result?.observations.length).toBeLessThanOrEqual(2);
     expect(result?.evidence).toHaveLength(6);
-    expect(result?.boundary).toContain('不是对你的永久人格定义');
+    expect(result?.boundary).toContain('不是对你的永久定义');
     expect(JSON.stringify(result)).not.toContain('人格类型');
   });
 
   test('does not invent a dominant response when approaches are tied', () => {
     const result = buildThemeRoundResult('emotion', questions, complete);
     expect(result?.headline).not.toContain('更常');
-    expect(result?.watchout).toContain('不能据此推断稳定倾向');
+    expect(result?.watchout).toContain('不能被自动解释成某种稳定特点');
     expect(result?.observations[0]?.evidence_question_id).toBe(questions[0]?.question_id);
   });
 

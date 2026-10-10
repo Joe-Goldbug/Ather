@@ -91,7 +91,7 @@ type Action =
   | { type: 'generation_status'; status: GenerationStatus; progress: number; step: string }
   | { type: 'script_ready'; script: CompleteDynamicSuccessResponse }
   | { type: 'finish_loading'; path: PlayedChoice[] }
-  | { type: 'finish_ok'; path: PlayedChoice[] }
+  | { type: 'finish_ok'; path: PlayedChoice[]; script: CompleteDynamicSuccessResponse }
   | { type: 'finish_error'; error: string }
   | { type: 'abort_ok' }
   | { type: 'failed'; error: string };
@@ -170,7 +170,7 @@ function reducer(state: DynamicScriptState, action: Action): DynamicScriptState 
       return { ...state, finishSubmitting: true, playedPath: action.path, error: null };
     case 'finish_ok':
       return { ...state, phase: 'finished', finishSubmitting: false, playedPath: action.path,
-        script: state.script ? { ...state.script, played_path: action.path } : null, error: null };
+        script: action.script, error: null };
     case 'finish_error':
       return { ...state, finishSubmitting: false, error: action.error };
     case 'abort_ok':
@@ -245,13 +245,20 @@ export function useDynamicScriptSession(): UseDynamicScriptSessionApi {
           !res.played_path.every((step, i) => step?.scene_id === playedPath[i].scene_id && step?.choice_id === playedPath[i].choice_id)) {
         throw new Error('Playback save was not confirmed. Please retry.');
       }
-      dispatch({ type: 'finish_ok', path: res.played_path });
+      if (!state.generationId) throw new Error('Missing generation identity. Please reload.');
+      const result = await dynamicScriptApi.getScriptResult(state.generationId);
+      if (result.script_id !== state.script.script_id ||
+          result.played_path?.length !== playedPath.length ||
+          !result.played_path.every((step, i) => step.scene_id === playedPath[i].scene_id && step.choice_id === playedPath[i].choice_id)) {
+        throw new Error('Saved observations do not match your answers. Please retry.');
+      }
+      dispatch({ type: 'finish_ok', path: res.played_path, script: result });
     } catch (err) {
       dispatch({ type: 'finish_error', error: err instanceof Error ? err.message : 'Playback save failed' });
     } finally {
       finishInFlightRef.current = false;
     }
-  }, [state.phase, state.script]);
+  }, [state.phase, state.script, state.generationId]);
 
   const start = useCallback(async (initialInput: string, opts?: { locale?: 'zh-CN' | 'en' | 'ja' | 'es' }) => {
     const startedAt = Date.now();

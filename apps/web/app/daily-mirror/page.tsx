@@ -280,6 +280,8 @@ function CaptureTimelineCard({
   onCaptureUpdated: (capture: CaptureRecord) => void;
 }) {
   const { t, locale } = useLocale();
+  const [analyzing, setAnalyzing] = useState(false);
+  const [analysisError, setAnalysisError] = useState(false);
   const [savingPermission, setSavingPermission] = useState(false);
   const [permissionError, setPermissionError] = useState(false);
   const [confirmingId, setConfirmingId] = useState<string | null>(null);
@@ -314,6 +316,30 @@ function CaptureTimelineCard({
       )}
       {capture.summary && (
         <p className="timeline-card-summary">{t('diary.summary_prefix')} {capture.summary}</p>
+      )}
+      {capture.process_mode === 'save_only' && (
+        <div className="timeline-card-actions">
+          <button
+            type="button"
+            className="text-toggle"
+            disabled={analyzing}
+            onClick={async () => {
+              setAnalyzing(true);
+              setAnalysisError(false);
+              try {
+                onCaptureUpdated(await capturesApi.analyze(capture.id));
+              } catch {
+                setAnalysisError(true);
+              } finally {
+                setAnalyzing(false);
+              }
+            }}
+          >
+            {analyzing ? t('common.loading') : t('diary.analyze_this_note')}
+          </button>
+          <p className="timeline-card-boundary">{t('diary.single_note_analysis_boundary')}</p>
+          {analysisError && <p role="alert">{t('diary.analysis_failed')}</p>}
+        </div>
       )}
       {showInterpretations && capture.interpretations && capture.interpretations.length > 0 && (
         <div className="capture-result-interpretations">

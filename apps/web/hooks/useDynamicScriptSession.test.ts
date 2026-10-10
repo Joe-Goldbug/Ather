@@ -62,6 +62,7 @@ describe('useDynamicScriptSession', () => {
     const path = [{ scene_id: 's1', choice_id: 'c1' }];
     let resolve!: (value: unknown) => void;
     mockApi.submitPlayback.mockReturnValue(new Promise(r => { resolve = r; }));
+    mockApi.getScriptResult.mockResolvedValue({ script_id: 'script-play', script: { scenes: [] }, played_path: path });
     let pending!: Promise<void>;
     act(() => { pending = result.current.finish(path); void result.current.finish(path); });
     expect(mockApi.submitPlayback).toHaveBeenCalledTimes(1);
@@ -81,6 +82,7 @@ describe('useDynamicScriptSession', () => {
     expect(result.current.state.error).toBe('save failed');
     expect(result.current.state.playedPath).toEqual(path);
     mockApi.submitPlayback.mockResolvedValueOnce({ script_id: 'script-play', played_path: path, completed: true, replayed: true });
+    mockApi.getScriptResult.mockResolvedValue({ script_id: 'script-play', script: { scenes: [] }, played_path: path });
     await act(async () => { await result.current.finish(result.current.state.playedPath); });
     expect(result.current.state.phase).toBe('finished');
   });

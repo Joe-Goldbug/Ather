@@ -91,6 +91,28 @@ describe('capturesApi', () => {
     );
   });
 
+  it('requests an explicit analysis for one already-saved capture', async () => {
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        capture: {
+          id: 'cap-3', entry_type: 'quick_fragment', process_mode: 'analyze',
+          modality: 'text', raw_text: 'hello', local_date: '2026-10-10',
+          captured_at: '2026-10-10T10:00:00.000Z',
+        },
+        interpretations: [],
+      }),
+    } as Response);
+
+    const capture = await capturesApi.analyze('cap-3');
+
+    expect(capture.process_mode).toBe('analyze');
+    expect(globalThis.fetch).toHaveBeenCalledWith(
+      expect.stringContaining('/captures/cap-3/analyze'),
+      expect.objectContaining({ method: 'POST' }),
+    );
+  });
+
   it('requests an older legacy diary page', async () => {
     vi.spyOn(globalThis, 'fetch').mockResolvedValue({ ok: true, json: async () => [] } as Response);
     await diaryApi.recent(8, 7);

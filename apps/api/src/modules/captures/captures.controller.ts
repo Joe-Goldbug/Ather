@@ -74,6 +74,15 @@ export class CapturesController {
     return this.captures.setWeeklyReviewPermission(req.user.id, captureId, body?.allowed);
   }
 
+  /** Explicitly turn one saved record into a reviewable, rule-based cue set. */
+  @Post(':id/analyze')
+  analyze(
+    @Param('id') captureId: string,
+    @Req() req: { user: AuthUser },
+  ) {
+    return this.captures.analyze(req.user.id, captureId);
+  }
+
   /**
    * POST /captures/:id/interpretations/:iid/confirm
    * Confirm a cue. Updates status and writes candidate evidence, not a formal portrait claim.

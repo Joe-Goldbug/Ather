@@ -1,95 +1,108 @@
-import { describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { CaptureForm } from './capture-form';
 import { messages } from '@/messages';
 
-const { createCapture, confirmInterpretation, refuteInterpretation } = vi.hoisted(() => ({
+const { createCapture, analyzeCapture, setWeeklyReviewPermission, confirmInterpretation, refuteInterpretation } = vi.hoisted(() => ({
   createCapture: vi.fn(),
+  analyzeCapture: vi.fn(),
+  setWeeklyReviewPermission: vi.fn(),
   confirmInterpretation: vi.fn(),
   refuteInterpretation: vi.fn(),
 }));
 
 vi.mock('@/lib/api', () => ({
-  capturesApi: { create: createCapture, confirmInterpretation, refuteInterpretation },
+  capturesApi: {
+    create: createCapture,
+    analyze: analyzeCapture,
+    setWeeklyReviewPermission,
+    confirmInterpretation,
+    refuteInterpretation,
+  },
 }));
-vi.mock('@/app/providers-impl', () => ({
+
+vi.mock('../providers-impl', () => ({
   useLocale: () => ({ t: (key: string) => key }),
 }));
 
-describe('CaptureForm rule-based cues', () => {
-  it('shows visible loading while a newly-created cue is being confirmed', async () => {
-    let resolveConfirm!: (value: { success: boolean }) => void;
-    createCapture.mockResolvedValueOnce({
-      id: 'capture-loading', entry_type: 'quick_fragment', process_mode: 'analyze',
-      modality: 'text', raw_text: 'Synthetic note', allow_weekly_review: false,
-      local_date: '2026-09-26', captured_at: '2026-09-26T00:00:00.000Z',
-      interpretations: [{ id: 'cue-loading', dimension: 'stressResponse',
-        ai_explanation: 'Synthetic cue', status: 'pending', proposed_delta: 1, support_count: 0 }],
+const savedCapture = {
+  id: 'capture-1',
+  entry_type: 'quick_fragment' as const,
+  process_mode: 'save_only' as const,
+  modality: 'text' as const,
+  raw_text: '我在会议里突然不想说话',
+  allow_weekly_review: false,
+  local_date: '2026-10-10',
+  captured_at: '2026-10-10T10:00:00.000Z',
+  interpretations: [],
+};
+
+describe('CaptureForm note-first flow', () => {
+  beforeEach(() => {
+    vi.resetAllMocks();
+  });
+
+  it('saves the original note before offering a review', async () => {
+    createCapture.mockResolvedValue(savedCapture);
+    render(<CaptureForm />);
+
+    expect(screen.queryByText('diary.process_mode_label')).toBeNull();
+    expect(screen.queryByText('diary.entry_type_label')).toBeNull();
+    fireEvent.change(screen.getByLabelText('diary.text_label_quick_fragment'), {
+      target: { value: savedCapture.raw_text },
     });
-    confirmInterpretation.mockReturnValueOnce(new Promise((resolve) => { resolveConfirm = resolve; }));
+    fireEvent.click(screen.getByRole('button', { name: 'diary.save_note' }));
+
+    await screen.findByText('diary.note_saved_prompt');
+    expect(createCapture).toHaveBeenCalledWith(expect.objectContaining({
+      entry_type: 'quick_fragment',
+      process_mode: 'save_only',
+      modality: 'text',
+      raw_text: savedCapture.raw_text,
+    }));
+    expect(createCapture.mock.calls[0][0]).not.toHaveProperty('allow_weekly_review');
+    expect(analyzeCapture).not.toHaveBeenCalled();
+  });
+
+  it('only analyzes after an explicit request and then permits a separate weekly-review choice', async () => {
+    createCapture.mockResolvedValue(savedCapture);
+    analyzeCapture.mockResolvedValue({
+      ...savedCapture,
+      process_mode: 'analyze',
+      interpretations: [{
+        id: 'cue-1',
+        dimension: 'stressResponse',
+        ai_explanation: '这是一条待核对的线索。',
+        status: 'pending',
+        proposed_delta: 2,
+        support_count: 0,
+      }],
+    });
+    setWeeklyReviewPermission.mockResolvedValue({
+      ...savedCapture,
+      process_mode: 'analyze',
+      allow_weekly_review: true,
+    });
 
     render(<CaptureForm />);
-    fireEvent.click(screen.getByText('diary.process_mode_analyze'));
     fireEvent.change(screen.getByLabelText('diary.text_label_quick_fragment'), {
-      target: { value: 'Synthetic note' },
+      target: { value: savedCapture.raw_text },
     });
-    fireEvent.click(screen.getByRole('button', { name: 'diary.submit_capture_aria' }));
-    expect(await screen.findByText('Synthetic cue')).toBeInTheDocument();
-    fireEvent.click(screen.getByRole('button', { name: 'common.confirm' }));
+    fireEvent.click(screen.getByRole('button', { name: 'diary.save_note' }));
+    await screen.findByText('diary.note_saved_prompt');
 
-    const loading = screen.getByRole('button', { name: 'common.loading' });
-    expect(loading).toHaveAttribute('aria-busy', 'true');
-    expect(loading.querySelector('.action-loading-spinner')).not.toBeNull();
-    resolveConfirm({ success: true });
-    expect(await screen.findByText('diary.interpretation_confirmed')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'diary.analyze_this_note' }));
+    expect(await screen.findByText('这是一条待核对的线索。')).toBeInTheDocument();
+    expect(analyzeCapture).toHaveBeenCalledWith('capture-1');
+
+    fireEvent.click(screen.getByLabelText('diary.allow_weekly_review'));
+    await waitFor(() => expect(setWeeklyReviewPermission).toHaveBeenCalledWith('capture-1', true));
   });
 
-  it('shows a failed confirmation and lets the user retry without claiming a formal portrait', async () => {
-    const onCaptureUpdated = vi.fn();
-    createCapture.mockResolvedValueOnce({
-      id: 'capture-1', entry_type: 'quick_fragment', process_mode: 'analyze',
-      modality: 'text', raw_text: '我在工作中感到压力', allow_weekly_review: false,
-      local_date: '2026-09-26', captured_at: '2026-09-26T00:00:00.000Z',
-      summary: '我在工作中感到压力',
-      interpretations: [{ id: 'interpretation-1', dimension: 'stressResponse',
-        ai_explanation: '待核对线索', status: 'pending', proposed_delta: 3, support_count: 0 }],
-    });
-    confirmInterpretation.mockRejectedValueOnce(new Error('network lost'))
-      .mockResolvedValueOnce({ success: true });
-    refuteInterpretation.mockRejectedValueOnce(new Error('network lost'))
-      .mockResolvedValueOnce({ success: true });
-
-    render(<CaptureForm onCaptureUpdated={onCaptureUpdated} />);
-    fireEvent.click(screen.getByText('diary.process_mode_analyze'));
-    fireEvent.change(screen.getByLabelText('diary.text_label_quick_fragment'), {
-      target: { value: '我在工作中感到压力' },
-    });
-    fireEvent.click(screen.getByRole('button', { name: 'diary.submit_capture_aria' }));
-    expect(await screen.findByText('diary.interpretation_scope')).toBeInTheDocument();
-    fireEvent.click(screen.getByRole('button', { name: 'common.confirm' }));
-    expect(await screen.findByRole('alert')).toHaveTextContent('diary.interpretation_confirm_failed');
-    expect(screen.getByText('diary.interpretation_pending')).toBeInTheDocument();
-    fireEvent.click(screen.getByRole('button', { name: 'common.confirm' }));
-    await waitFor(() => expect(screen.getByText('diary.interpretation_confirmed')).toBeInTheDocument());
-    expect(screen.queryByRole('alert')).toBeNull();
-    expect(onCaptureUpdated).toHaveBeenCalledWith(expect.objectContaining({
-      interpretations: [expect.objectContaining({ id: 'interpretation-1', status: 'confirmed' })],
-    }));
-    fireEvent.click(screen.getByRole('button', { name: 'diary.interpretation_refute' }));
-    expect(await screen.findByRole('alert')).toHaveTextContent('diary.interpretation_refute_failed');
-    expect(screen.getByText('diary.interpretation_confirmed')).toBeInTheDocument();
-    fireEvent.click(screen.getByRole('button', { name: 'diary.interpretation_refute' }));
-    await waitFor(() => expect(screen.getByText('diary.interpretation_rejected')).toBeInTheDocument());
-    expect(onCaptureUpdated).toHaveBeenCalledWith(expect.objectContaining({
-      interpretations: [expect.objectContaining({ id: 'interpretation-1', status: 'refuted' })],
-    }));
-  });
-
-  it('describes the local rule path honestly in all supported languages', () => {
-    expect(messages['zh-CN'].diary.process_mode_organize_desc).toContain('不生成摘要');
-    expect(messages.en.diary.process_mode_analyze_desc).toContain('no AI model');
-    expect(messages.ja.diary.process_mode_analyze_desc).toContain('AI は呼び出しません');
-    expect(messages.es.diary.process_mode_analyze_desc).toContain('no se usa IA');
-    expect(messages['zh-CN'].diary.allow_weekly_review).toContain('AI 周回看');
+  it('keeps the single-note boundary and privacy wording localized in all supported languages', () => {
+    expect(messages['zh-CN'].diary.single_note_analysis_boundary).toContain('一次经历');
+    expect(messages.en.diary.single_note_analysis_boundary).toContain('One experience');
+    expect(messages.ja.diary.save_only_notice).toContain('保存');
+    expect(messages.es.diary.weekly_permission_next_step).toContain('revisión semanal');
   });
 });

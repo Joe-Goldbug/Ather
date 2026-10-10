@@ -47,6 +47,7 @@ describe('dynamic playback page integration', () => {
     expect(screen.getByText('Saving your assessment…')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Answer 2' })).toBeDisabled();
     expect(screen.queryByText('Synthetic result')).not.toBeInTheDocument();
+    api.getScriptResult.mockResolvedValueOnce({ ...script, played_path: path, observations: [{ id: 's1:c1', title: '这次你的回应', text: '你的回应来自实际作答', question: '这像你吗？', evidence: { scene_id: 's1', choice_id: 'c1', situation: 'Question 1', choice_text: 'Answer 1' } }] });
     await act(async () => { resolve({ script_id: 'script-1', played_path: path, completed: true, replayed: false }); });
     expect(await screen.findByText('Synthetic result')).toBeInTheDocument();
   });
@@ -57,8 +58,20 @@ describe('dynamic playback page integration', () => {
     expect(await screen.findByRole('alert')).toHaveTextContent('synthetic save failure');
     expect(screen.queryByText('Synthetic result')).not.toBeInTheDocument();
     api.submitPlayback.mockResolvedValueOnce({ script_id: 'script-1', played_path: path, completed: true, replayed: true });
+    api.getScriptResult.mockResolvedValueOnce({ ...script, played_path: path, observations: [{ id: 's1:c1', title: '这次你的回应', text: '你的回应来自实际作答', question: '这像你吗？', evidence: { scene_id: 's1', choice_id: 'c1', situation: 'Question 1', choice_text: 'Answer 1' } }] });
     fireEvent.click(screen.getByRole('button', { name: 'Retry save' }));
     expect(await screen.findByText('Synthetic result')).toBeInTheDocument();
     expect(api.submitPlayback).toHaveBeenLastCalledWith('script-1', path);
+  });
+
+  it('does not show observations returned for a different saved path', async () => {
+    api.submitPlayback.mockResolvedValue({ script_id: 'script-1', played_path: path, completed: true, replayed: false });
+    render(<DynamicScriptPage />);
+    fireEvent.click(await screen.findByRole('button', { name: 'Answer 1' }));
+    api.getScriptResult.mockResolvedValueOnce({ ...script, played_path: [{ scene_id: 's1', choice_id: 'other' }] });
+    fireEvent.click(await screen.findByRole('button', { name: 'Answer 2' }));
+    expect(await screen.findByRole('alert')).toHaveTextContent('Saved observations do not match your answers');
+    expect(screen.queryByText('Synthetic result')).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Retry save' })).toBeInTheDocument();
   });
 });

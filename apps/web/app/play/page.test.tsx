@@ -144,20 +144,18 @@ describe('PlayPage guest opening acceptance', () => {
     }
 
     expect(await screen.findByText('本章记录')).toBeInTheDocument();
-    expect(screen.getByText('应对方式的主要作用')).toBeInTheDocument();
-    expect(screen.getByText('可能付出的潜在代价')).toBeInTheDocument();
-    expect(screen.getByText('不同情境下的变化与例外')).toBeInTheDocument();
+    expect(screen.getByText('这次的你，怎样面对事情')).toBeInTheDocument();
 
-    const confirmBtn = screen.getByRole('button', { name: '符合我的习惯' });
-    const partialBtn = screen.getByRole('button', { name: '部分符合' });
-    const disputeBtn = screen.getByRole('button', { name: '不符合 / 存疑' });
+    const confirmBtn = screen.getByRole('button', { name: '像这次的我' });
+    const partialBtn = screen.getByRole('button', { name: '有一部分像' });
+    const disputeBtn = screen.getByRole('button', { name: '这里说得不对' });
 
     expect(confirmBtn).toHaveAttribute('aria-pressed', 'false');
     expect(partialBtn).toHaveAttribute('aria-pressed', 'false');
     expect(disputeBtn).toHaveAttribute('aria-pressed', 'false');
 
     fireEvent.click(disputeBtn);
-    expect(screen.getByText(/已标记存疑，登录保存后会作为有争议记录保留/)).toBeInTheDocument();
+    expect(screen.getByText(/这条需要重新理解，登录保存后会保留你的异议/)).toBeInTheDocument();
     expect(disputeBtn).toHaveAttribute('aria-pressed', 'true');
     expect(confirmBtn).toHaveAttribute('aria-pressed', 'false');
 
@@ -246,9 +244,9 @@ describe('PlayPage guest opening acceptance', () => {
     render(<PlayPage />);
 
     expect(await screen.findByText('本章记录已保存')).toBeInTheDocument();
-    const confirmBtn = screen.getByRole('button', { name: '✓ 符合我的习惯' });
+    const confirmBtn = screen.getByRole('button', { name: '✓ 像这次的我' });
     expect(confirmBtn).toHaveAttribute('aria-pressed', 'true');
-    expect(screen.getByText('已标记为符合真实习惯。')).toBeInTheDocument();
+    expect(screen.getByText('已记下：这条像你这次的反应。')).toBeInTheDocument();
     expect(screen.getByDisplayValue('这确实符合我的应对方式')).toBeInTheDocument();
     expect(mocks.respond).toHaveBeenCalledWith('round-1', expect.objectContaining({
       action: 'confirm',

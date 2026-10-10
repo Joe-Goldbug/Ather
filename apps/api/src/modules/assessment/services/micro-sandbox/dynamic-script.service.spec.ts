@@ -651,16 +651,27 @@ describe('DynamicScriptService', () => {
 
     expect(result.script_id).toBe('script-1');
     expect(result.script.template_id).toBe('work-conflict-v1');
-    expect(result.psychological_narrative).toBe('故事讲完了...');
+    expect(result.psychological_narrative).toBe('');
+    expect(result.observations).toEqual([]);
+    expect(result.comparison_summary).toBeUndefined();
     expect(result.revised).toBe(false);
   });
 
   test.each([true, false])('getScriptResult exposes path only after completion (%s)', async (completed) => {
     const played_path = [{ scene_id: 's1', choice_id: 'c1' }];
-    jest.spyOn(service, 'getScriptGenerationStatus').mockResolvedValue({ status: 'ready', result: { script_id: 'script-1' } } as any);
+    jest.spyOn(service, 'getScriptGenerationStatus').mockResolvedValue({ status: 'ready', result: {
+      script_id: 'script-1', psychological_narrative: '未经作答的旧叙述', comparison_summary: '未经验证的比较',
+      script: { scenes: [{ scene_id: 's1', scene_number: 1, narrative: '有人把责任推给你',
+        choices: [{ choice_id: 'c1', text: '先说明自己负责的部分' }, { choice_id: 'c2', text: '独自承担' }] }] },
+    } } as any);
     pool.query.mockImplementationOnce(async () => ({ rows: [{ played_path, play_completed_at: completed ? new Date() : null }] }));
     const result = await service.getScriptResult(TEST_USER_ID, 'gen-1');
-    if (completed) expect(result).toHaveProperty('played_path', played_path);
+    if (completed) {
+      expect(result).toHaveProperty('played_path', played_path);
+      expect(result.observations).toHaveLength(1);
+      expect(result.observations![0].evidence.choice_text).toBe('先说明自己负责的部分');
+      expect(JSON.stringify(result.observations)).not.toContain('独自承担');
+    }
     else expect(result).not.toHaveProperty('played_path');
     expect(pool.query).toHaveBeenLastCalledWith(expect.stringContaining('FROM dynamic_scripts'), ['script-1', TEST_USER_ID, 'gen-1']);
   });

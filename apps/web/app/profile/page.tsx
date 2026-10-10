@@ -290,10 +290,10 @@ export default function ProfilePage() {
                     {profileMsg && <p className="report-detail" data-testid="profile-msg">{profileMsg}</p>}
 
                     <div className="profile-dialog-actions">
-                      <button className="btn-secondary" onClick={() => setProfileDialogOpen(false)}>取消</button>
                       <button className="btn-save-minimal" onClick={saveProfile} disabled={profileSaving} data-testid="save-profile">
                         {profileSaving ? '保存中…' : '保存'}
                       </button>
+                      <button className="btn-secondary" onClick={() => setProfileDialogOpen(false)}>取消</button>
                     </div>
                   </div>
                 </div>,
