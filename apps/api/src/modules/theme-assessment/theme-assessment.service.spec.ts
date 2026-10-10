@@ -104,6 +104,7 @@ describe('ThemeAssessmentService result feedback', () => {
     const clientQuery = jest.fn()
       .mockResolvedValue({ rows: [] })
       .mockResolvedValueOnce({ rows: [] })
+      .mockResolvedValueOnce({ rows: [] })
       .mockResolvedValueOnce({ rows: [{
         id: 'round-next', theme_lens: 'workplace', locale: 'zh-CN', status: 'in_progress',
         question_bank_version: 'test-v1', completed_at: null,
@@ -127,6 +128,7 @@ describe('ThemeAssessmentService result feedback', () => {
       .mockResolvedValueOnce({ rows: [{ total: '1' }] });
     const clientQuery = jest.fn()
       .mockResolvedValue({ rows: [] })
+      .mockResolvedValueOnce({ rows: [] })
       .mockResolvedValueOnce({ rows: [] })
       .mockResolvedValueOnce({ rows: [{ id: 'round-next', theme_lens: 'emotion', status: 'in_progress' }] });
     const client = { query: clientQuery, release: jest.fn() };
@@ -161,6 +163,7 @@ describe('ThemeAssessmentService result feedback', () => {
     const query = jest.fn().mockResolvedValue({ rows: [{ total: '1' }] });
     const clientQuery = jest.fn().mockResolvedValue({ rows: [] })
       .mockResolvedValueOnce({ rows: [] })
+      .mockResolvedValueOnce({ rows: [] })
       .mockResolvedValueOnce({ rows: [{ id: 'round-next', theme_lens: 'emotion', status: 'in_progress' }] });
     const client = { query: clientQuery, release: jest.fn() };
     const service = new ThemeAssessmentService({ pool: { query, connect: jest.fn().mockResolvedValue(client) } } as never, {} as never);
@@ -185,6 +188,7 @@ describe('ThemeAssessmentService result feedback', () => {
   it('respects a manually selected different theme without attaching another theme feedback target', async () => {
     const query = jest.fn().mockResolvedValue({ rows: [{ total: '0' }] });
     const clientQuery = jest.fn().mockResolvedValue({ rows: [] })
+      .mockResolvedValueOnce({ rows: [] })
       .mockResolvedValueOnce({ rows: [] })
       .mockResolvedValueOnce({ rows: [{ id: 'round-manual', theme_lens: 'workplace' }] });
     const client = { query: clientQuery, release: jest.fn() };
