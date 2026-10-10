@@ -1,6 +1,6 @@
 import React from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 vi.mock('../components/PageShell', () => ({
   PageShell: ({ children }: { children: React.ReactNode }) => <>{children}</>,
@@ -12,16 +12,38 @@ vi.mock('next/link', () => ({
   ),
 }));
 
+let mockSession = {
+  user: null as any,
+  isAuthed: false,
+  loading: false,
+  refresh: vi.fn(),
+  logout: vi.fn(),
+};
+
+vi.mock('@/hooks/useSession', () => ({
+  useSession: () => mockSession,
+}));
+
 import { Providers } from './providers-impl';
 import LandingPage from './page';
 
 describe('LandingPage (homepage /)', () => {
+  beforeEach(() => {
+    mockSession = {
+      user: null,
+      isAuthed: false,
+      loading: false,
+      refresh: vi.fn(),
+      logout: vi.fn(),
+    };
+  });
+
   it.each([
     ['zh-CN', '开始了解自己'],
     ['en', 'Take Test'],
     ['ja', 'テストを受ける'],
     ['es', 'Hacer Test'],
-  ] as const)('shows the localized test entry for %s', (locale, ctaLabel) => {
+  ] as const)('shows the localized test entry for %s when unauthenticated', (locale, ctaLabel) => {
     const markup = renderToStaticMarkup(
       <Providers initialLocale={locale}>
         <LandingPage />
@@ -33,5 +55,29 @@ describe('LandingPage (homepage /)', () => {
     expect(markup).not.toContain('coming-soon');
     expect(markup).not.toContain('href="/whitepaper"');
     expect(markup).not.toMatch(/[\u{1F300}-\u{1FAFF}]|[\u{2600}-\u{27BF}]/u);
+  });
+
+  it('renders authed cognitive hub with entry cards when user is authenticated', () => {
+    mockSession = {
+      user: { id: 'u1', username: 'Alex', email: 'alex@example.com' },
+      isAuthed: true,
+      loading: false,
+      refresh: vi.fn(),
+      logout: vi.fn(),
+    };
+
+    const markup = renderToStaticMarkup(
+      <Providers initialLocale="zh-CN">
+        <LandingPage />
+      </Providers>
+    );
+
+    // 应该展示用户问候，绝不展示冷启动游客测试按钮
+    expect(markup).toContain('Alex');
+    expect(markup).not.toContain('class="hero-cta"');
+    // 应该展示三大核心入口卡片
+    expect(markup).toContain('href="/theme-assessment"');
+    expect(markup).toContain('href="/profile"');
+    expect(markup).toContain('href="/daily-mirror"');
   });
 });

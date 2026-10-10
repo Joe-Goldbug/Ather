@@ -560,7 +560,7 @@ export const ja = {
   },
 
   landing: {
-    hero_description: 'Evaは、あなたがどんな人なのかを理解する手助けをします。',
+    hero_description: 'あなたがどんな人なのかを理解する手助けをします',
     tagline: '',
     auth_link: 'ログイン / 登録',
     cta_start: 'アセスメントを始める',

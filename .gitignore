@@ -56,6 +56,8 @@ apps/api/*.md
 apps/web/app/chat/*.md
 
 # Local AI agent rules
+.agents/
 AGENTS.md
 CLAUDE.md
+
 

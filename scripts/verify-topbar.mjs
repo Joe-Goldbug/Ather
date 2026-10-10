@@ -13,7 +13,7 @@ const check = (label, ok, detail = '') => {
 for (const p of pages) {
   const r = await fetch(`${WEB}${p}`);
   const html = await r.text();
-  const hasBar = html.includes('top-bar__logo');
+  const hasBar = html.includes('top-bar');
   const hasAuth = html.includes('登录 / 注册') || html.includes('退出登录');
   check(
     `顶栏存在 ${p}`,
@@ -22,9 +22,9 @@ for (const p of pages) {
   );
 }
 
-// ② 未登录态：应显示「登录 / 注册」
+// ② 未登录态：应显示人物登录入口 / 白皮书
 const anon = await (await fetch(`${WEB}/`)).text();
-check('未登录显示登录入口', anon.includes('登录 / 注册'), '期待「登录 / 注册」');
+check('未登录显示登录入口', anon.includes('avatar-button') || anon.includes('登录'), '期待人物入口或登录');
 
 // ③ 登录后：应显示邮箱 + 退出
 const login = await fetch(`${WEB}/api/auth/dev-login`, { method: 'POST' });

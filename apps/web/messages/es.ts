@@ -560,7 +560,7 @@ export const es = {
   },
 
   landing: {
-    hero_description: 'Eva te ayuda a comprender quién eres.',
+    hero_description: 'Te ayuda a comprender quién eres',
     tagline: '',
     auth_link: 'Iniciar sesión / Registrarse',
     cta_start: 'Comenzar Evaluación',

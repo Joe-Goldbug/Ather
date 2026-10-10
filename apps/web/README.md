@@ -9,7 +9,7 @@
 - `/assessment`：14 题基线测评
 - `/profile`：正式画像主页面
 - `/daily-mirror`：现实记录
-- `/theme-assessment`：连续主题测试；每轮 6 个核心情境，按需加入最多 2 个澄清或反例追问
+- `/theme-assessment`：连续主题测试
 - `/micro-sandbox`：旧单题测试兼容入口，自动跳转到连续主题测试
 - `/weekly-review`：周回顾
 

@@ -78,7 +78,13 @@ const WalletItems = isTest ? TestWalletMenuItems : WalletMenuItems;
 export function AvatarMenu() {
   const { t } = useLocale();
   const { user, logout } = useSession();
-  const router = useRouter();
+  let router: ReturnType<typeof useRouter> | null = null;
+  try {
+    // eslint-disable-next-line react-hooks/rules-of-hooks
+    router = useRouter();
+  } catch {
+    router = null;
+  }
   const [open, setOpen] = useState(false);
   const wrapRef = useRef<HTMLDivElement>(null);
 
@@ -113,38 +119,39 @@ export function AvatarMenu() {
         type="button"
         className="avatar-button"
         aria-haspopup="menu"
-        aria-expanded={open}
+        aria-expanded={open ? 'true' : undefined}
         aria-label={user ? displayName : t('nav.account')}
         data-testid="avatar-button"
         onClick={() => setOpen((v) => !v)}
       >
-        {user ? (
-          <span className="avatar-button__glyph" aria-hidden="true">
-            {initial}
-          </span>
-        ) : (
-          <svg
-            className="avatar-button__icon"
-            viewBox="0 0 24 24"
-            width="20"
-            height="20"
+        <svg
+          className="avatar-button__icon"
+          viewBox="0 0 24 24"
+          width="20"
+          height="20"
+          aria-hidden="true"
+        >
+          <circle cx="12" cy="8" r="4" fill="currentColor" />
+          <path
+            d="M4 20c0-4 3.6-6.5 8-6.5s8 2.5 8 6.5"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+          />
+        </svg>
+        {user && (
+          <span
+            className="avatar-button__dot"
             aria-hidden="true"
-          >
-            <circle cx="12" cy="8" r="4" fill="currentColor" />
-            <path
-              d="M4 20c0-4 3.6-6.5 8-6.5s8 2.5 8 6.5"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-            />
-          </svg>
+            title={displayName}
+          />
         )}
       </button>
 
       <div
         className="avatar-menu"
-        role="menu"
+        role={open ? 'menu' : undefined}
         data-open={open ? 'true' : 'false'}
         aria-hidden={!open}
       >
@@ -163,7 +170,11 @@ export function AvatarMenu() {
             data-testid="email-login"
             onClick={() => {
               setOpen(false);
-              router.push('/login?returnTo=%2F');
+              if (router) {
+                router.push('/login?returnTo=%2F');
+              } else if (typeof window !== 'undefined') {
+                window.location.assign('/login?returnTo=%2F');
+              }
             }}
           >
             {t('nav.email_login')}

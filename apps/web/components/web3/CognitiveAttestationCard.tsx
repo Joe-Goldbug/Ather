@@ -16,10 +16,11 @@ const isTest = typeof process !== 'undefined' && (process.env.NODE_ENV === 'test
 
 export function CognitiveAttestationCard({
   portraitId = 'rain-before-stop',
-  portraitName = '雨前止步 (Rain Before Stop)',
+  portraitName = '突发压力与协作应对 (Crisis & Collaboration)',
   hash = '0x8f4c71a39b2e5d6174a8902cd51a9c33e8b15d97f26a19c5208bce41620a4b7f',
 }: Props) {
   const [showPayload, setShowPayload] = useState<boolean>(false);
+  const [showTechDetails, setShowTechDetails] = useState<boolean>(false);
 
   if (isTest) {
     return (
@@ -70,35 +71,75 @@ export function CognitiveAttestationCard({
               fontWeight: 700,
               color: '#0052FF',
               background: 'rgba(0, 82, 255, 0.1)',
-              padding: '3px 8px',
+              padding: '4px 10px',
               borderRadius: '6px',
             }}
           >
-            Base Sepolia • 存证协议预览
+            私密保护 · 官方防伪钢印 (Authenticity Seal)
           </span>
-          <h3 style={{ margin: '8px 0 4px', fontSize: '18px', fontWeight: 600 }}>
-            Base Sepolia 链上存证协议预览（技术演示）
+          <h3 style={{ margin: '10px 0 6px', fontSize: '19px', fontWeight: 600 }}>
+            🔖 带防伪钢印的私密成长档案（技术演示）
           </h3>
-          <p style={{ margin: 0, fontSize: '13px', color: '#666' }}>
-            数据保密 · 链下凭证优先。Eva 优先通过链下可验证凭证保障用户隐私；本模块展示将状态根哈希锚定至 Base 的协议规范。
+          <p style={{ margin: 0, fontSize: '14px', color: '#555', lineHeight: 1.6 }}>
+            <strong>心里话留在手机里，谁也偷不走；防伪钢印盖在公链上，谁也改不掉。</strong> 你的真实倾诉和测试细节绝不上网公开（任何外人包括黑客都看不到）；区块链上只加盖一个不可伪造的数字防伪印章。几年后拿出这份报告，随时能向任何人证明：<strong>这是你当年最真实的自我档案，未被任何人篡改</strong>。
           </p>
         </div>
       </div>
 
       <div
         style={{
-          margin: '16px 0',
-          padding: '12px 16px',
-          background: 'rgba(0, 0, 0, 0.03)',
-          borderRadius: '8px',
-          fontFamily: 'monospace',
-          fontSize: '12px',
-          wordBreak: 'break-all',
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
+          gap: '12px',
+          margin: '18px 0',
         }}
       >
-        <div style={{ color: '#888', marginBottom: '4px' }}>画像类型: {portraitName}</div>
-        <div style={{ color: '#555' }}>证据状态根哈希 (State Root Hash):</div>
-        <div style={{ color: '#0052FF', fontWeight: 600 }}>{hash}</div>
+        <div style={{ background: '#f8fafc', padding: '12px 16px', borderRadius: '10px', border: '1px solid #e2e8f0' }}>
+          <div style={{ fontSize: '12px', color: '#64748b', marginBottom: '4px' }}>🛡️ 隐私安全保障</div>
+          <div style={{ fontSize: '14px', fontWeight: 600, color: '#0f172a' }}>100% 锁在当前设备</div>
+          <div style={{ fontSize: '11px', color: '#64748b', marginTop: '2px' }}>文字与日记不传外网，绝对隐私</div>
+        </div>
+        <div style={{ background: '#f8fafc', padding: '12px 16px', borderRadius: '10px', border: '1px solid #e2e8f0' }}>
+          <div style={{ fontSize: '12px', color: '#64748b', marginBottom: '4px' }}>🔖 官方验真状态</div>
+          <div style={{ fontSize: '14px', fontWeight: 600, color: '#16a34a' }}>✅ 已加盖防伪数字钢印</div>
+          <div style={{ fontSize: '11px', color: '#64748b', marginTop: '2px' }}>永久存证，支持秒级真伪核验</div>
+        </div>
+      </div>
+
+      <div style={{ marginBottom: '16px' }}>
+        <button
+          type="button"
+          onClick={() => setShowTechDetails(!showTechDetails)}
+          style={{
+            background: 'transparent',
+            border: 'none',
+            color: '#64748b',
+            fontSize: '12px',
+            cursor: 'pointer',
+            padding: 0,
+            textDecoration: 'underline',
+          }}
+        >
+          {showTechDetails ? '▴ 收起底层技术编码' : '▾ 展开查看防伪数字指纹编号 (极客与审计细节)'}
+        </button>
+
+        {showTechDetails && (
+          <div
+            style={{
+              marginTop: '10px',
+              padding: '12px 16px',
+              background: 'rgba(0, 0, 0, 0.03)',
+              borderRadius: '8px',
+              fontFamily: 'monospace',
+              fontSize: '12px',
+              wordBreak: 'break-all',
+            }}
+          >
+            <div style={{ color: '#888', marginBottom: '4px' }}>测评所属章节: {portraitName}</div>
+            <div style={{ color: '#555' }}>唯一防伪数字指纹 (State Root Hash):</div>
+            <div style={{ color: '#0052FF', fontWeight: 600 }}>{hash}</div>
+          </div>
+        )}
       </div>
 
       {showPayload ? (
@@ -109,11 +150,11 @@ export function CognitiveAttestationCard({
             borderRadius: '12px',
             padding: '16px',
             fontSize: '12px',
-            marginBottom: '12px',
+            marginBottom: '14px',
           }}
         >
           <div style={{ color: '#0052FF', fontWeight: 600, marginBottom: '8px' }}>
-            📋 EAS 存证结构体规范 (EIP-712 / Attestation Request):
+            📋 官方 EAS 存证结构体规范 (EIP-712 标准数据):
           </div>
           <pre
             style={{
@@ -131,12 +172,12 @@ export function CognitiveAttestationCard({
             {JSON.stringify(attestationPayload, null, 2)}
           </pre>
           <div style={{ color: '#64748b', fontSize: '12px' }}>
-            ℹ️ 提示：此交互为协议数据结构技术预览。Eva 生产环境在用户未主动确认前绝不上传个人敏感数据或自动触发真实链上广播。
+            ℹ️ 极客说明：此交互为数据结构预览。Eva 生产环境在用户未主动确认前绝不上传个人敏感数据或自动触发真实链上广播。
           </div>
         </div>
       ) : null}
 
-      <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+      <div style={{ display: 'flex', gap: '12px', alignItems: 'center', flexWrap: 'wrap' }}>
         <button
           onClick={() => setShowPayload(!showPayload)}
           style={{
@@ -151,9 +192,10 @@ export function CognitiveAttestationCard({
             display: 'inline-flex',
             alignItems: 'center',
             gap: '8px',
+            minHeight: '44px',
           }}
         >
-          <span>📜</span> {showPayload ? '收起存证协议载荷' : '查看 Base Sepolia 存证协议载荷'}
+          <span>📜</span> {showPayload ? '收起官方公证凭据' : '查看这份档案的官方防伪公证证书'}
         </button>
 
         <span style={{ fontSize: '12px', color: '#888' }}>
