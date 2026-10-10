@@ -23,11 +23,19 @@ const defaultThemeRounds = vi.hoisted(() => [{
 
 vi.mock('@/lib/api', () => ({
   authApi: { me: vi.fn().mockResolvedValue({ id: 'user-1', email: 'user@example.com' }) },
+  profileApi: {
+    me: vi.fn().mockResolvedValue({ id: 'user-1', email: 'user@example.com', name: 'User 1', avatar_url: null }),
+    updateName: vi.fn(),
+    uploadAvatar: vi.fn(),
+  },
   consentApi: { exportData: vi.fn().mockResolvedValue({ users: [{ id: 'user-1' }] }) },
   evidenceApi: { getByDimension: vi.fn().mockResolvedValue([]) },
   portraitV1Api: { current: vi.fn().mockResolvedValue(null) },
   observationsV1Api: { list: vi.fn().mockResolvedValue([]) },
   themeAssessmentApi: { history: vi.fn().mockResolvedValue(defaultThemeRounds) },
+  readActiveRound: vi.fn().mockReturnValue(null),
+  clearActiveRound: vi.fn(),
+  abandonAssessmentRound: vi.fn().mockResolvedValue(undefined),
 }));
 const activeLocale = vi.hoisted(() => ({ current: 'zh-CN' as 'zh-CN' | 'en' | 'ja' | 'es' }));
 vi.mock('../providers-impl', async () => {
@@ -92,11 +100,18 @@ describe('profile round history', () => {
   });
 
   it('links an available round result back to its persisted feedback', async () => {
+    const { readActiveRound } = await import('@/lib/api');
+    vi.mocked(readActiveRound).mockReturnValue({
+      roundId: 'round-2',
+      themeTitle: '关系',
+      updatedAt: '2026-09-26T00:00:00.000Z',
+    });
     render(<ProfilePage />);
 
     expect((await screen.findAllByRole('link', { name: '查看本轮结果和反馈' }))[0])
       .toHaveAttribute('href', '/theme-assessment?roundId=round-1');
-    expect(screen.getByRole('link', { name: '继续未完成主题轮' }))
+    fireEvent.click(screen.getByTestId('overview-tab-active'));
+    expect(screen.getByTestId('resume-active-round'))
       .toHaveAttribute('href', '/theme-assessment?roundId=round-2');
   });
 

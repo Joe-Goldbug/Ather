@@ -16,6 +16,8 @@ const api = vi.hoisted(() => ({
   complete: vi.fn(),
   result: vi.fn(),
   respond: vi.fn(),
+  writeActiveRound: vi.fn(),
+  clearActiveRound: vi.fn(),
 }));
 
 const telemetry = vi.hoisted(() => ({
@@ -28,6 +30,8 @@ const activeLocale = vi.hoisted(() => ({ current: 'zh-CN' as 'zh-CN' | 'en' | 'j
 vi.mock('@/lib/api', () => ({
   themeAssessmentApi: api,
   telemetryApi: telemetry,
+  writeActiveRound: api.writeActiveRound,
+  clearActiveRound: api.clearActiveRound,
 }));
 vi.mock('@/hooks/useSession', () => ({
   useSession: () => ({ user: { id: 'user-1' }, loading: false }),

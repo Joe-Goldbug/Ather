@@ -5137,3 +5137,128 @@ textarea:focus {
   }
 }
 
+/* ── Profile Layout & Dialog Tokens (No static inline styles) ── */
+.profile-left-col-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.profile-identity-card-inner {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.profile-avatar-img {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.avatar-initial-box {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: var(--paper, #f5f2ea);
+  border: 1px dashed var(--ink, #1a1a1a);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  color: var(--ink, #1a1a1a);
+}
+
+.profile-identity-info {
+  min-width: 0;
+}
+
+.profile-identity-name {
+  margin: 0;
+  font-weight: 600;
+  word-break: break-all;
+}
+
+.profile-identity-email {
+  margin: 2px 0 0;
+  font-size: 12px;
+  opacity: 0.65;
+  word-break: break-all;
+}
+
+.profile-edit-btn {
+  margin-top: 12px;
+  width: 100%;
+}
+
+.profile-dialog-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.35);
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding-top: 8vh;
+  z-index: 9999;
+}
+
+.profile-dialog-box {
+  width: min(420px, 92vw);
+  background: var(--paper, #fff);
+  z-index: 9999;
+  position: relative;
+}
+
+.profile-dialog-label {
+  display: block;
+  font-size: 13px;
+  margin-bottom: 4px;
+}
+
+.profile-dialog-input {
+  width: 100%;
+  padding: 8px 10px;
+  margin-bottom: 12px;
+}
+
+.profile-dialog-file {
+  width: 100%;
+  margin-bottom: 12px;
+}
+
+.profile-dialog-actions {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+.overview-tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.overview-tab-btn {
+  border-color: transparent;
+  font-weight: 400;
+}
+
+.overview-tab-btn.active {
+  border-color: var(--ink, #1a1a1a);
+  font-weight: 600;
+}
+
+.overview-pagination {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.overview-active-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+}
+

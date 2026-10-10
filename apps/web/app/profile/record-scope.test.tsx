@@ -8,6 +8,11 @@ import { consentApi } from '@/lib/api';
 
 vi.mock('@/lib/api', () => ({
   authApi: { me: vi.fn().mockResolvedValue({ id: 'user-1', email: 'user@example.com' }) },
+  profileApi: {
+    me: vi.fn().mockResolvedValue({ id: 'user-1', email: 'user@example.com', name: 'User 1', avatar_url: null }),
+    updateName: vi.fn(),
+    uploadAvatar: vi.fn(),
+  },
   consentApi: {
     exportData: vi.fn().mockResolvedValue({ users: [{ id: 'user-1' }] }),
     getRecordScope: vi.fn().mockResolvedValue({ scope: 'unset' }),
@@ -17,6 +22,9 @@ vi.mock('@/lib/api', () => ({
   portraitV1Api: { current: vi.fn().mockResolvedValue(null) },
   observationsV1Api: { list: vi.fn().mockResolvedValue([]) },
   themeAssessmentApi: { history: vi.fn().mockResolvedValue([]) },
+  readActiveRound: vi.fn().mockReturnValue(null),
+  clearActiveRound: vi.fn(),
+  abandonAssessmentRound: vi.fn().mockResolvedValue(undefined),
 }));
 
 const mockT = (key: string) => key;

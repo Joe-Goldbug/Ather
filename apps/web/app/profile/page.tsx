@@ -107,16 +107,6 @@ export default function ProfilePage() {
     };
   }, [locale]);
 
-  async function logout() {
-    try {
-      await authApi.logout();
-    } catch {}
-    try {
-      localStorage.removeItem('eva_token');
-      localStorage.removeItem('eva_user_id');
-    } catch {}
-    router.push('/');
-  }
 
   async function exportData() {
     if (exporting) return;
@@ -221,54 +211,39 @@ export default function ProfilePage() {
 
   return (
     <main className="page-container-minimal theme-profile-page">
-      {/* User Toolbar */}
-      <div className="minimal-header" style={{ justifyContent: 'flex-end', marginBottom: '24px' }}>
-        <div className="minimal-user-badge">
-          <span>{user.email}</span>
-          <button onClick={logout} className="minimal-logout">
-            {t('profile.logout')}
-          </button>
-        </div>
-      </div>
 
       {/* Dashboard Grid — 左栏：身份卡 + EVA 记录 + 认知权限；右栏：多轮观察总览 + 数据导出 */}
       <div className="dashboard-grid-minimal">
         <div className="left-col">
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+          <div className="profile-left-col-stack">
             {/* 身份卡：头像 + 名称 + 编辑入口 */}
             <div className="section-card handdrawn-box" data-testid="identity-card">
-              <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+              <div className="profile-identity-card-inner">
                 {user.avatar_url ? (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img
                     src={`${API_BASE}${user.avatar_url}`}
                     alt="头像"
-                    style={{ width: '56px', height: '56px', borderRadius: '50%', objectFit: 'cover' }}
+                    className="profile-avatar-img"
                     data-testid="avatar-image"
                   />
                 ) : (
                   <div
-                    style={{
-                      width: '56px', height: '56px', borderRadius: '50%',
-                      background: 'var(--paper, #f5f2ea)', border: '1px dashed var(--ink, #1a1a1a)',
-                      display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      fontSize: '20px', color: 'var(--ink, #1a1a1a)',
-                    }}
+                    className="avatar-initial-box"
                     data-testid="avatar-initial"
                   >
                     {(user.name?.[0] ?? user.email[0] ?? '?').toUpperCase()}
                   </div>
                 )}
-                <div style={{ minWidth: 0 }}>
-                  <p style={{ margin: 0, fontWeight: 600, wordBreak: 'break-all' }} data-testid="display-name">
+                <div className="profile-identity-info">
+                  <p className="profile-identity-name" data-testid="display-name">
                     {user.name ?? user.email.split('@')[0]}
                   </p>
-                  <p style={{ margin: '2px 0 0', fontSize: '12px', opacity: 0.65, wordBreak: 'break-all' }}>{user.email}</p>
+                  <p className="profile-identity-email">{user.email}</p>
                 </div>
               </div>
               <button
-                className="btn-secondary"
-                style={{ marginTop: '12px', width: '100%' }}
+                className="btn-secondary profile-edit-btn"
                 onClick={() => {
                   setNameDraft(user.name ?? '');
                   setProfileMsg('');
@@ -281,41 +256,40 @@ export default function ProfilePage() {
 
               {profileDialogOpen && createPortal(
                 <div
-                  style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.35)', display: 'flex', alignItems: 'flex-start', justifyContent: 'center', paddingTop: '8vh', zIndex: 9999 }}
+                  className="profile-dialog-overlay"
                   onClick={() => setProfileDialogOpen(false)}
                 >
                   <div
                     role="dialog"
                     aria-label="编辑个人资料"
-                    className="section-card handdrawn-box"
-                    style={{ width: 'min(420px, 92vw)', background: 'var(--paper, #fff)', zIndex: 9999, position: 'relative' }}
+                    className="section-card handdrawn-box profile-dialog-box"
                     onClick={(e) => e.stopPropagation()}
                     data-testid="profile-editor-dialog"
                   >
                     <div className="section-title">编辑个人资料</div>
 
-                    <label style={{ display: 'block', fontSize: '13px', marginBottom: '4px' }}>名称</label>
+                    <label className="profile-dialog-label">名称</label>
                     <input
                       value={nameDraft}
                       maxLength={30}
                       onChange={(e) => setNameDraft(e.target.value)}
                       placeholder="1-30 个字符"
-                      style={{ width: '100%', padding: '8px 10px', marginBottom: '12px' }}
+                      className="profile-dialog-input"
                       data-testid="name-input"
                     />
 
-                    <label style={{ display: 'block', fontSize: '13px', marginBottom: '4px' }}>头像（≤2MB，jpg/png/webp/gif）</label>
+                    <label className="profile-dialog-label">头像（≤2MB，jpg/png/webp/gif）</label>
                     <input
                       type="file"
                       accept="image/jpeg,image/png,image/webp,image/gif"
                       onChange={(e) => setAvatarFile(e.target.files?.[0] ?? null)}
-                      style={{ width: '100%', marginBottom: '12px' }}
+                      className="profile-dialog-file"
                       data-testid="avatar-input"
                     />
 
                     {profileMsg && <p className="report-detail" data-testid="profile-msg">{profileMsg}</p>}
 
-                    <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
+                    <div className="profile-dialog-actions">
                       <button className="btn-secondary" onClick={() => setProfileDialogOpen(false)}>取消</button>
                       <button className="btn-save-minimal" onClick={saveProfile} disabled={profileSaving} data-testid="save-profile">
                         {profileSaving ? '保存中…' : '保存'}
@@ -446,16 +420,12 @@ export default function ProfilePage() {
             <div className="section-title">多轮观察总览</div>
 
             {/* 标签页：成功完成的记录（服务端，分页） / 进行中（浏览器本地，最多一条） */}
-            <div className="overview-tabs" role="tablist" style={{ display: 'flex', gap: '8px', marginBottom: '12px' }}>
+            <div className="overview-tabs" role="tablist">
               <button
                 role="tab"
                 aria-selected={overviewTab === 'completed'}
                 onClick={() => setOverviewTab('completed')}
-                className="btn-secondary"
-                style={{
-                  borderColor: overviewTab === 'completed' ? 'var(--ink, #1a1a1a)' : 'transparent',
-                  fontWeight: overviewTab === 'completed' ? 600 : 400,
-                }}
+                className={`btn-secondary overview-tab-btn ${overviewTab === 'completed' ? 'active' : ''}`}
                 data-testid="overview-tab-completed"
               >
                 成功完成的记录
@@ -464,11 +434,7 @@ export default function ProfilePage() {
                 role="tab"
                 aria-selected={overviewTab === 'active'}
                 onClick={() => setOverviewTab('active')}
-                className="btn-secondary"
-                style={{
-                  borderColor: overviewTab === 'active' ? 'var(--ink, #1a1a1a)' : 'transparent',
-                  fontWeight: overviewTab === 'active' ? 600 : 400,
-                }}
+                className={`btn-secondary overview-tab-btn ${overviewTab === 'active' ? 'active' : ''}`}
                 data-testid="overview-tab-active"
               >
                 进行中{activeRound ? ' (1)' : ' (0)'}
@@ -539,7 +505,7 @@ export default function ProfilePage() {
                     ))}
                   </div>
                   {pageCount > 1 && (
-                    <div className="overview-pagination" style={{ display: 'flex', alignItems: 'center', gap: '12px', marginTop: '12px' }}>
+                    <div className="overview-pagination">
                       <button
                         className="btn-secondary"
                         disabled={safePage <= 1}
@@ -575,7 +541,7 @@ export default function ProfilePage() {
                       ? `最后活动：${new Date(activeRound.updatedAt).toLocaleString(locale)}`
                       : '这轮测试还没有完成，可以随时回来继续作答。'}
                   </p>
-                  <div style={{ display: 'flex', gap: '8px', marginTop: '8px' }}>
+                  <div className="overview-active-actions">
                     <Link
                       href={`/theme-assessment?roundId=${encodeURIComponent(activeRound.roundId)}`}
                       className="evidence-node-link"
